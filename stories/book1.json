@@ -1,0 +1,427 @@
+{
+  "id": "book1",
+  "title": "다시 이어진 길",
+  "sub": "유나와 서아의 이야기",
+  "pages": 20,
+  "standard": ["4정서02-03", "4정서03-02", "4정서02-02"],
+  "cast": [
+    { "id": "yuna", "name": "유나", "top": "#f28b74", "inner": "#fff7ee", "pants": "#5b6b8c", "hair": "bob", "hairColor": "#4a3326", "card": "#d3f0e1", "intro": "유나. 이 이야기 속 ‘나’예요. 모둠에서 색칠 계획을 맡았어요." },
+    { "id": "seoa", "name": "서아", "top": "#9fd6b5", "pants": "#6f86a8", "skirt": true, "hair": "long", "hairColor": "#4a3226", "card": "#f6ead7", "intro": "서아. 유나와 유치원 때부터 단짝이에요. 지도에 길을 그려요." },
+    { "id": "jiwoo", "name": "지우", "top": "#c7b2e6", "pants": "#6b5b8c", "hair": "bun", "hairColor": "#3b2b25", "tie": "#a77fd6", "card": "#ece2f8", "intro": "지우. 지도에 넣을 장소를 조사해요." },
+    { "id": "minjun", "name": "민준", "top": "#f2c45a", "pants": "#4a5168", "hair": "curly", "hairColor": "#3a2a22", "card": "#fde3cf", "intro": "민준이. 지도에 넣을 그림 표시를 만들어요." },
+    { "id": "mom", "name": "엄마", "top": "#b48ad8", "pants": "#5d4a72", "skirt": true, "hair": "long", "hairColor": "#3a2a22", "tall": true, "card": "#efe4f7", "intro": "유나 엄마. 서아 엄마와도 친구예요." },
+    { "id": "teacher", "name": "선생님", "top": "#4fb6b0", "pants": "#3f5560", "hair": "short", "hairColor": "#2d2a2a", "glasses": true, "tall": true, "card": "#dff1ef", "intro": "선생님. 이야기할 준비가 되면 함께 들어 주세요." }
+  ],
+  "start": "s01",
+  "scenes": {
+    "s01": {
+      "stage": "street", "part": "기 · 우리 사이", "page": "1면", "place": "학교 가는 길",
+      "set": { "cast": { "yuna": "walk_l walk joy", "seoa": "walk_r walk joy" } },
+      "explore": [
+        { "on": "yuna", "text": "유나. 이 이야기 속 ‘나’예요." },
+        { "on": "seoa", "text": "서아. 유나와 유치원 때부터 단짝이에요." }
+      ],
+      "panels": [
+        { "shot": "wide", "cap": "서아랑 나는 유치원 때부터 단짝이에요. 엄마들끼리도 친구라서, 우리는 신발 한 켤레처럼 언제나 나란히 걸었지요." },
+        { "shot": "two", "on": ["yuna", "seoa"], "fx": "sparkle", "cap": "날마다 같은 길로 학교에 가고, 같은 길로 집에 왔어요." },
+        { "shot": "close", "on": "yuna", "faces": { "yuna": "joy" }, "cap": "그때는 내가 서아를 제일 잘 안다고 생각했어요. 우리 사이에 안 되는 건 하나도 없다고요." }
+      ],
+      "go": "s02"
+    },
+    "s02": {
+      "stage": "classroom", "page": "2면", "place": "월요일 · 사회 시간",
+      "set": { "cast": { "seoa": "seat_nw sit joy", "jiwoo": "seat_ne sit calm", "yuna": "seat_w sit joy", "minjun": "seat_e sit joy" }, "map": "sketch", "pencils": "box" },
+      "explore": [
+        { "on": "map", "text": "‘우리 주변 장소 지도’. 금요일 전시회에 걸 거예요." },
+        { "on": "jiwoo", "text": "지우. 장소를 조사해요." },
+        { "on": "minjun", "text": "민준이. 그림 표시를 만들어요." }
+      ],
+      "panels": [
+        { "shot": "wide", "cap": "월요일 사회 시간에 모둠마다 ‘우리 주변 장소 지도’를 만들기로 했어요. 금요일에 전시회를 연대요." },
+        { "shot": "group", "on": ["seoa", "jiwoo", "yuna", "minjun"], "cap": "우리 모둠은 서아, 민준이, 지우, 그리고 나예요. 서아는 길을 그리고, 지우는 장소를 조사하고, 민준이는 그림 표시를 만들기로 했어요. 나는 색칠 계획을 맡았지요." },
+        { "shot": "group", "on": ["seoa", "jiwoo", "yuna", "minjun"], "angle": -40, "faces": { "jiwoo": "joy" }, "cap": "무엇부터 칠할지는 넷이 함께 정했어요." },
+        { "shot": "item", "on": "map", "pre": "하얀 종이 위로 연필 길이 뻗어 나갔어요.", "lines": [{ "say": "학교부터 칠하자!" }] }
+      ],
+      "go": "s03"
+    },
+    "s03": {
+      "stage": "classroom", "page": "3면", "place": "월요일 · 교실",
+      "set": { "cast": { "seoa": "seat_nw sit joy", "jiwoo": "seat_ne sit calm", "yuna": "seat_w sit joy", "minjun": "seat_e sit calm" }, "map": "school", "pencils": "open" },
+      "panels": [
+        { "shot": "item", "on": "pencils", "cap": "서아가 새 색연필을 가져왔어요. 지도를 칠할 때 쓰려고 아껴 둔 색연필이에요. 뚜껑을 열자 뾰족한 색연필들이 가지런히 누워 있었어요." },
+        { "whatif": {
+          "q": "서아의 새 색연필. 유나는 어떻게 할까요?",
+          "ask": "친구의 새 물건을 빌려 쓰고 싶을 때는 어떻게 말하면 좋을까요?",
+          "opts": [
+            { "text": "“서아야, 하늘색 써도 돼?” 하고 먼저 묻는다", "panels": [
+              { "shot": "two", "on": ["yuna", "seoa"], "faces": { "yuna": "calm", "seoa": "joy" }, "lines": [{ "who": "yuna", "say": "서아야, 하늘색 써도 돼?" }, { "who": "seoa", "say": "응! 새 거니까 살살 써 줘." }] },
+              { "text": "만약에 유나가 먼저 물었다면, 서아는 기분 좋게 빌려주었을지도 몰라요." }
+            ] },
+            { "text": "묻지 않고 하늘색을 쏙 꺼내 쓴다", "story": true }
+          ],
+          "same": "이야기 속 유나도 묻지 않고 꺼내 썼어요.",
+          "back": "하지만 이야기 속 유나는 묻지 않았어요."
+        } },
+        { "shot": "close", "on": "yuna", "poses": { "yuna": "reach" }, "faces": { "yuna": "joy" }, "cap": "나는 묻지도 않고 하늘색을 쏙 꺼내 썼어요." },
+        { "set": { "pencils": "taken" } },
+        { "shot": "two", "on": ["seoa", "yuna"], "faces": { "seoa": "worried", "yuna": "joy" }, "poses": { "yuna": "show", "seoa": "clasp" }, "lines": [{ "who": "seoa", "say": "그거… 새 건데." }, { "who": "yuna", "say": "우리 사이에 뭐 어때." }] },
+        { "shot": "close", "on": "seoa", "faces": { "seoa": "hurt" }, "poses": { "seoa": "down" }, "cap": "서아는 더 말하지 않았어요. 그래서 나는 서아도 괜찮은 줄만 알았지요." },
+        { "feel": { "who": "seoa", "q": "그때 서아의 마음은 어땠을까요?", "is": ["hurt", "worried"], "reveal": "아껴 둔 새 색연필을 묻지도 않고 써서 서운했어요. 그래도 그 자리에서 말하기는 어려웠어요." } }
+      ],
+      "go": "s04"
+    },
+    "s04": {
+      "stage": "street", "page": "4면", "place": "집에 가는 길",
+      "set": { "cast": { "yuna": "walk_l walk joy", "seoa": "walk_r walk calm", "minjun": "walk_b walk joy" } },
+      "panels": [
+        { "shot": "two", "on": ["yuna", "seoa"], "faces": { "seoa": "yawn" }, "cap": "집에 가는 길에 서아가 입을 크게 벌려 하품했어요." },
+        { "shot": "close", "on": "yuna", "poses": { "yuna": "phone" }, "faces": { "yuna": "laugh" }, "sfx": "찰칵!", "cap": "나는 찰칵 사진을 찍었어요. 묻지도 않고 내 프로필 사진으로 올렸지요." },
+        { "phone": { "profile": { "name": "유나", "photo": { "shot": "close", "on": "seoa", "faces": { "seoa": "yawn" } } } }, "lines": [{ "who": "yuna", "say": "이것 봐!" }], "cap": "화면을 본 민준이랑 나는 깔깔 웃었어요." },
+        { "shot": "two", "on": ["minjun", "yuna"], "faces": { "minjun": "laugh", "yuna": "laugh" }, "fx": "sparkle" },
+        { "shot": "close", "on": "seoa", "faces": { "seoa": "hurt" }, "lines": [{ "who": "seoa", "whisper": "…지워 줘." }], "cap": "서아가 작은 목소리로 말했어요." },
+        { "whatif": {
+          "q": "“…지워 줘.” 서아의 말을 들은 유나는?",
+          "ask": "친구가 싫다고 말하면 장난을 바로 멈추어야 하는 까닭은 무엇일까요?",
+          "opts": [
+            { "text": "“알았어, 지금 지울게.” 하고 바로 지운다", "panels": [
+              { "shot": "two", "on": ["yuna", "seoa"], "faces": { "yuna": "shy", "seoa": "calm" }, "lines": [{ "who": "yuna", "say": "알았어. 지금 지울게. 미안해." }, { "who": "seoa", "say": "고마워." }] },
+              { "text": "만약에 유나가 그 자리에서 멈추었다면, 서아의 마음은 한결 가벼워졌을 거예요." }
+            ] },
+            { "text": "“귀여운데 왜.” 하고 웃어넘긴다", "story": true }
+          ],
+          "same": "이야기 속 유나도 웃어넘겼어요.",
+          "back": "하지만 이야기 속 유나는 멈추지 않았어요."
+        } },
+        { "shot": "close", "on": "yuna", "faces": { "yuna": "joy" }, "lines": [{ "who": "yuna", "say": "귀여운데 왜." }], "cap": "나는 그냥 장난이라고 생각했어요." },
+        { "feel": { "who": "seoa", "q": "“지워 줘.” 하고 말한 서아의 마음은 어땠을까요?", "is": ["hurt", "shy", "sad"], "reveal": "하품하는 얼굴이 모두에게 보여서 부끄러웠어요. 지워 달라고 했는데 웃어서 속상했어요." } }
+      ],
+      "go": "s05"
+    },
+    "s05": {
+      "stage": "bedroom", "page": "5면", "place": "그날 밤 · 유나 방",
+      "set": { "cast": { "yuna": "bed_sit sit worried", "mom": "mom_door stand calm" } },
+      "explore": [{ "on": "yuna", "text": "휴대전화를 꼭 쥐고 서아의 답장을 기다려요." }],
+      "panels": [
+        { "phone": { "chat": { "with": "서아", "msgs": [{ "me": true, "text": "내일 같이 가자!", "time": "밤 9:12", "read": true }] } }, "cap": "그날 밤, 서아에게 “내일 같이 가자!” 하고 메시지를 보냈어요." },
+        { "phone": { "chat": { "with": "서아", "msgs": [{ "me": true, "text": "내일 같이 가자!", "time": "밤 9:12", "read": true }], "wait": "밤 10:40" } }, "cap": "읽었다는 표시는 떴는데, 아무리 기다려도 답이 오지 않았어요." },
+        { "shot": "close", "on": "yuna", "faces": { "yuna": "worried" }, "fx": "gloom", "cap": "가슴이 꽉 막힌 것 같았어요. 휴대전화를 쥔 손끝은 차가워졌고요." },
+        { "shot": "two", "on": ["mom", "yuna"], "faces": { "mom": "worried", "yuna": "angry" }, "lines": [{ "who": "mom", "say": "유나야, 무슨 일 있어?" }], "cap": "엄마가 물었어요." },
+        { "shot": "close", "on": "yuna", "faces": { "yuna": "angry" }, "lines": [{ "who": "yuna", "say": "몰라. 그냥 기분 나빠." }] },
+        { "shot": "close", "on": "yuna", "faces": { "yuna": "hurt" }, "poses": { "yuna": "down" }, "cap": "어떤 마음인지, 나도 잘 몰랐어요." },
+        { "feel": { "who": "yuna", "q": "유나의 마음에 이름을 붙여 볼까요?", "is": ["hurt", "worried", "sad"], "reveal": "답장이 오지 않아서 서운했어요. 서아랑 멀어질까 봐 걱정도 됐어요." } }
+      ],
+      "go": "s06"
+    },
+    "s06": {
+      "stage": "classroom", "part": "승 · 나만 없었어요", "page": "6면", "place": "화요일 아침 · 교실",
+      "set": { "cast": { "seoa": "seat_nw sit calm", "jiwoo": "seat_ne sit joy", "yuna": "stand_w stand hurt" }, "map": "playground", "pencils": "box" },
+      "explore": [{ "on": "map", "text": "서아와 지우가 놀이터를 칠하고 있어요." }],
+      "panels": [
+        { "shot": "two", "on": ["seoa", "jiwoo"], "faces": { "seoa": "joy" }, "cap": "화요일 아침, 서아는 지우랑 먼저 와 있었어요. 둘은 머리를 맞대고 지도에 놀이터를 칠하고 있었지요." },
+        { "shot": "over", "on": ["yuna", "jiwoo"], "faces": { "jiwoo": "joy" }, "lines": [{ "who": "jiwoo", "say": "유나야, 같이 할래?" }], "cap": "지우가 물었어요." },
+        { "shot": "close", "on": "yuna", "faces": { "yuna": "angry" }, "poses": { "yuna": "cross" }, "fx": "focus", "lines": [{ "who": "yuna", "shout": "됐어." }], "cap": "내 목소리가 생각보다 크게 나왔어요." },
+        { "shot": "over", "on": ["yuna", "seoa"], "poses": { "seoa": "down" }, "cap": "나는 서아가 먼저 말을 걸어 주길 기다렸어요. 하지만 서아는 지도만 보고 있었어요." }
+      ],
+      "go": "s07"
+    },
+    "s07": {
+      "stage": "classroom", "page": "7면", "place": "화요일 · 교실",
+      "set": { "cast": { "seoa": "seat_nw sit calm", "jiwoo": "seat_ne sit calm", "yuna": "stand_w stand hurt" }, "map": "playground", "pencils": "box" },
+      "panels": [
+        { "shot": "item", "on": "map_kinder", "cap": "지도 한쪽에 햇살유치원이 있었어요. 서아가 연필로 작게 그려 놓은 거예요." },
+        { "stage": "kinder", "set": { "cast": { "seoa": "door_cry cover cry 0.85", "yuna": "door_reach reach worried 0.85" } } },
+        { "shot": "two", "on": ["seoa", "yuna"], "tone": "memory", "cap": "유치원 첫날, 서아는 문 앞에서 울고 있었어요. 나도 처음 보는 교실이 무서웠어요. 그래도 서아에게 먼저 손을 내밀었지요." },
+        { "set": { "cast": { "yuna": "yard_l jump joy 0.85", "seoa": "yard_r wave joy 0.85" } } },
+        { "shot": "two", "on": ["yuna", "seoa"], "tone": "memory", "cap": "서아는 내가 줄넘기에 걸려도 처음부터 다시 세어 주던 아이였어요." },
+        { "stage": "classroom", "set": { "cast": { "seoa": "seat_nw sit calm", "jiwoo": "seat_ne sit calm", "yuna": "stand_w stand hurt" }, "map": "playground", "pencils": "box" } },
+        { "shot": "close", "on": "yuna", "faces": { "yuna": "sad" }, "cap": "서아랑 나는 원래 이랬는데." }
+      ],
+      "go": "s08"
+    },
+    "s08": {
+      "stage": "classroom", "page": "8면", "place": "화요일 · 교실",
+      "set": { "cast": { "seoa": "seat_nw sit calm", "jiwoo": "seat_ne sit calm", "minjun": "seat_e sit joy", "yuna": "stand_w stand hurt" }, "map": "colored", "pencils": "box" },
+      "panels": [
+        { "shot": "item", "on": "map", "cap": "지도에는 친구들 집이 하나씩 칠해졌어요. 서아네 집은 분홍색, 지우네 집은 초록색이었어요. 내가 칠하겠다고 해 놓은 우리 집만 하얗게 남아 있었어요." },
+        { "shot": "high", "on": "yuna", "fx": "gloom", "cap": "나 혼자 지도 밖에 서 있는 것 같았어요." },
+        { "shot": "close", "on": "yuna", "faces": { "yuna": "angry" }, "poses": { "yuna": "cross" }, "cap": "지우는 왜 저렇게 착한 척할까요. 민준이는 맨날 장난만 치고, 서아는 나한테 말도 안 해요." },
+        { "shot": "close", "on": "yuna", "angle": -25, "faces": { "yuna": "hurt" }, "cap": "나는 친구들의 미운 점만 골라 보고 있었어요." }
+      ],
+      "go": "s09"
+    },
+    "s09": {
+      "stage": "classroom", "page": "9면", "place": "수요일 · 교실",
+      "set": { "cast": { "yuna": "seat_w sit hurt", "minjun": "stand_sw stand calm", "seoa": "seat_nw sit calm", "jiwoo": "seat_ne sit calm" }, "map": "colored", "pencils": "box" },
+      "explore": [{ "on": "minjun", "text": "민준이가 무언가 속삭이려고 해요." }],
+      "panels": [
+        { "shot": "two", "on": ["minjun", "yuna"], "faces": { "yuna": "surprised" }, "pre": "수요일, 민준이가 내 옆에서 속삭였어요.", "lines": [{ "who": "minjun", "whisper": "서아가 너 좀 피곤하대." }] },
+        { "shot": "close", "on": "yuna", "faces": { "yuna": "angry" }, "fx": "heat", "cap": "얼굴이 뜨거워졌어요. 손에 자꾸 힘이 들어갔어요." },
+        { "phone": { "profile": { "name": "서아", "photo": { "shot": "two", "on": ["seoa", "jiwoo"], "faces": { "seoa": "joy", "jiwoo": "joy" } } } }, "cap": "서아의 프로필 사진도 바뀌어 있었어요. 지우랑 둘이 찍은 사진이었어요. 거기에 나만 없었어요." },
+        { "shot": "close", "on": "yuna", "faces": { "yuna": "sad" }, "lines": [{ "who": "yuna", "think": "서아는 이제 나를 싫어하는구나." }] },
+        { "whatif": {
+          "q": "민준이의 말을 들은 유나는?",
+          "ask": "다른 사람에게 전해 들은 말이 사실인지 어떻게 알 수 있을까요?",
+          "opts": [
+            { "text": "서아에게 묻지 않고, 민준이하고만 크게 웃는다", "story": true },
+            { "text": "서아에게 직접 가서 물어본다", "panels": [
+              { "set": { "cast": { "yuna": "stand_nw stand worried" } } },
+              { "shot": "two", "on": ["yuna", "seoa"], "faces": { "yuna": "worried", "seoa": "worried" }, "lines": [{ "who": "yuna", "say": "서아야, 나 때문에 피곤하다는 거 진짜야?" }, { "who": "seoa", "say": "그게 아니라… 그 사진 때문에 힘들었어." }] },
+              { "text": "만약에 유나가 직접 물었다면, 짐작 대신 서아의 진짜 마음을 들었을지도 몰라요." }
+            ] }
+          ],
+          "same": "이야기 속 유나도 서아에게 묻지 않았어요.",
+          "back": "하지만 이야기 속 유나는 묻지 않았어요."
+        } },
+        { "shot": "two", "on": ["yuna", "minjun"], "faces": { "yuna": "laugh", "minjun": "laugh" }, "cap": "나는 서아에게 묻지 않았어요. 대신 일부러 민준이하고만 크게 웃었지요." },
+        { "feel": { "who": "yuna", "q": "크게 웃는 유나의 마음속은 어떨까요?", "is": ["hurt", "angry", "sad"], "reveal": "나만 빠진 것 같아 서운했어요. 그 서운한 마음이 화로 바뀌었어요." } }
+      ],
+      "go": "s10"
+    },
+    "s10": {
+      "stage": "classroom", "part": "전 · 너 때문이야", "page": "10면", "place": "목요일 · 전시회 하루 전",
+      "set": { "cast": { "yuna": "seat_w sit angry", "seoa": "seat_nw sit calm", "jiwoo": "seat_ne sit worried", "minjun": "seat_e sit calm" }, "map": "scribbled", "pencils": "box" },
+      "panels": [
+        { "shot": "item", "on": "map", "cap": "목요일, 전시회를 하루 앞둔 날이었어요. 나는 서아가 그리던 길 위를 색연필로 쓱쓱 칠했어요. 길을 다 그린 뒤에 칠하기로 했는데도요." },
+        { "shot": "close", "on": "seoa", "faces": { "seoa": "worried" }, "lines": [{ "who": "seoa", "say": "거긴 아직 칠할 차례가 아니야." }] },
+        { "shot": "close", "on": "yuna", "faces": { "yuna": "angry" }, "fx": "focus", "pre": "그 말에 꾹 참았던 말이 한꺼번에 쏟아졌어요.", "lines": [{ "who": "yuna", "shout": "너 때문이야! 네가 답도 안 하고 지우랑만 놀았잖아!" }] },
+        { "shot": "two", "on": ["yuna", "seoa"], "poses": { "yuna": "tug", "seoa": "tug" }, "faces": { "yuna": "angry", "seoa": "surprised" }, "cap": "나는 지도를 내 쪽으로 확 잡아당겼어요. 서아도 지도를 붙잡았어요." }
+      ],
+      "go": "s11"
+    },
+    "s11": {
+      "stage": "classroom", "page": "11면", "place": "목요일 · 교실",
+      "set": { "cast": { "yuna": "seat_w sit surprised", "seoa": "seat_nw sit surprised", "jiwoo": "seat_ne sit surprised", "minjun": "seat_e sit surprised" }, "map": "torn", "pencils": "scattered" },
+      "panels": [
+        { "shot": "item", "on": "map", "sfx": "찌이익.", "cap": "지도가 두 쪽으로 찢어졌어요." },
+        { "shot": "item", "on": "floor", "cap": "색연필이 우르르 바닥으로 쏟아졌어요." },
+        { "shot": "group", "on": ["yuna", "seoa", "jiwoo", "minjun"], "cap": "아무도 말하지 않았어요." }
+      ],
+      "go": "s12"
+    },
+    "s12": {
+      "stage": "classroom", "page": "12면", "place": "목요일 · 교실",
+      "set": { "cast": { "yuna": "seat_w sit angry", "minjun": "stand_sw stand worried", "seoa": "seat_e sit sad", "jiwoo": "stand_ne stand worried", "teacher": "teacher stand worried" }, "map": "torn", "pencils": "box" },
+      "panels": [
+        { "shot": "close", "on": "yuna", "faces": { "yuna": "angry" }, "lines": [{ "who": "yuna", "say": "이제 따로 해." }], "cap": "내가 말했어요." },
+        { "shot": "wide", "cap": "민준이는 내 쪽으로, 지우는 서아 쪽으로 갔어요." },
+        { "shot": "two", "on": ["teacher", "seoa"], "cap": "선생님이 다가와 우리가 다치지 않았는지 살피셨어요." },
+        { "shot": "close", "on": "teacher", "faces": { "teacher": "calm" }, "lines": [{ "who": "teacher", "say": "우선 잠깐 쉬자. 이야기할 준비가 되면 알려 주렴. 선생님도 함께 들어 줄게." }] },
+        { "shot": "wide", "angle": 25, "cap": "우리는 반쪽짜리 지도를 하나씩 들고 떨어져 앉았어요." }
+      ],
+      "go": "s13"
+    },
+    "s13": {
+      "stage": "stairs", "page": "13면", "place": "쉬는 시간 · 계단",
+      "set": { "cast": { "yuna": "sit_l sitlow hurt" }, "half": true },
+      "explore": [{ "on": "half", "text": "찢어진 지도 반쪽. 우리 집에서 놀이터로 가는 길이 끊겨 있어요." }],
+      "panels": [
+        { "shot": "item", "on": "half", "cap": "내 반쪽에는 학교와 우리 집이, 서아의 반쪽에는 유치원과 놀이터가 있었어요. 우리 집에서 놀이터로 가는 길이 찢어진 자리에서 뚝 끊겨 있었어요." },
+        { "shot": "wide", "cap": "쉬는 시간, 나는 계단에 앉았어요." },
+        { "shot": "close", "on": "yuna", "faces": { "yuna": "angry" }, "fx": "heat", "cap": "얼굴은 아직 뜨거웠고, 손에도 힘이 잔뜩 들어가 있었어요." }
+      ],
+      "choices": {
+        "q": "얼굴이 뜨겁고 손에 힘이 들어가요. 유나는 무엇을 할까요?",
+        "ask": "화가 날 때 우리 몸에서는 어떤 느낌이 드나요? 그럴 때 해 볼 수 있는 일은 무엇일까요?",
+        "opts": [
+          { "text": "계단에 앉아 천천히 숨을 내쉰다", "add": { "calm": 1 }, "go": "s13a" },
+          { "text": "당장 서아에게 가서 따진다", "add": { "blame": 1 }, "go": "s13b" },
+          { "text": "아무렇지 않은 척 민준이랑 장난친다", "add": { "avoid": 1 }, "go": "s13c" }
+        ]
+      }
+    },
+    "s13a": {
+      "stage": "stairs", "page": "13면", "place": "쉬는 시간 · 계단",
+      "set": { "cast": { "yuna": "sit_l sitlow hurt" }, "half": true },
+      "panels": [
+        { "activity": "breathe" },
+        { "shot": "close", "on": "yuna", "faces": { "yuna": "calm" }, "cap": "나는 천천히 숨을 내쉬었어요. 한 번, 두 번, 세 번. 얼굴은 아직 뜨거웠지만, 손에서는 조금씩 힘이 빠졌어요." },
+        { "shot": "close", "on": "yuna", "angle": -20, "faces": { "yuna": "worried" }, "lines": [{ "who": "yuna", "think": "서아 때문인데." }], "cap": "…정말 서아 때문일까요?" }
+      ],
+      "go": "s14"
+    },
+    "s13b": {
+      "stage": "classroom", "page": "13면", "place": "쉬는 시간 · 교실",
+      "set": { "cast": { "yuna": "face_e stand angry", "seoa": "seat_e sit sad", "jiwoo": "stand_ne stand worried" }, "map": "torn", "pencils": "box" },
+      "panels": [
+        { "shot": "over", "on": ["yuna", "seoa"], "fx": "focus", "pre": "나는 교실로 돌아가 서아 앞에 섰어요.", "lines": [{ "who": "yuna", "shout": "다 너 때문에 망쳤잖아!" }] },
+        { "shot": "close", "on": "seoa", "faces": { "seoa": "sad" }, "poses": { "seoa": "down" }, "cap": "서아는 아무 대답 없이 고개를 숙였어요." },
+        { "shot": "two", "on": ["jiwoo", "yuna"], "lines": [{ "who": "jiwoo", "say": "유나야, 지금은 그만하자." }] },
+        { "shot": "close", "on": "yuna", "faces": { "yuna": "hurt" }, "cap": "말을 쏟아 냈는데도 마음은 하나도 시원해지지 않았어요. 나는 다시 계단으로 갔어요." }
+      ],
+      "go": "s14"
+    },
+    "s13c": {
+      "stage": "stairs", "page": "13면", "place": "쉬는 시간 · 계단",
+      "set": { "cast": { "yuna": "stand_b stand laugh", "minjun": "stand_c stand laugh" }, "half": true },
+      "panels": [
+        { "shot": "two", "on": ["yuna", "minjun"], "cap": "나는 아무 일도 없었던 것처럼 민준이랑 장난을 쳤어요. 일부러 더 크게 웃었지요." },
+        { "shot": "close", "on": "yuna", "faces": { "yuna": "hurt" }, "fx": "gloom", "cap": "그런데 웃을수록 가슴 한쪽이 더 무거워졌어요." },
+        { "shot": "close", "on": "minjun", "faces": { "minjun": "worried" }, "lines": [{ "who": "minjun", "say": "유나야, 잠깐 앉아 볼래?" }] }
+      ],
+      "go": "s14"
+    },
+    "s14": {
+      "stage": "stairs", "page": "14면", "place": "쉬는 시간 · 계단",
+      "set": { "cast": { "yuna": "sit_l sitlow worried", "minjun": "sit_r sitlow worried" }, "half": true },
+      "panels": [
+        { "shot": "two", "on": ["minjun", "yuna"], "pre": "민준이가 슬그머니 옆에 와서 앉았어요.", "lines": [{ "who": "minjun", "say": "어제 내가 말을 잘못 전했어. 서아는 네가 올린 사진 때문에 힘들다고 했어." }] },
+        { "stage": "street", "set": { "cast": { "yuna": "walk_l stand joy", "seoa": "walk_r stand hurt" } } },
+        { "shot": "close", "on": "seoa", "tone": "memory", "pre": "나는 서아의 얼굴을 떠올렸어요.", "lines": [{ "who": "seoa", "whisper": "‘지워 줘.’" }] },
+        { "stage": "stairs", "set": { "cast": { "yuna": "sit_l sitlow worried", "minjun": "sit_r sitlow worried" }, "half": true } },
+        { "shot": "close", "on": "yuna", "faces": { "yuna": "shy" }, "poses": { "yuna": "down" }, "cap": "분명히 들은 말이었어요. 그런데도 나는 웃었어요." },
+        { "shot": "item", "on": "half", "cap": "색연필을 묻지 않고 쓴 것도, 지도를 먼저 잡아당긴 것도 나였어요." },
+        { "shot": "close", "on": "yuna", "angle": -20, "faces": { "yuna": "sad" }, "cap": "서아가 나를 싫어한다는 건 내 짐작이었어요. 나는 서아의 마음을 묻지 않았어요." }
+      ],
+      "go": "s15"
+    },
+    "s15": {
+      "stage": "bedroom", "part": "결 · 다시 이어진 길", "page": "15면", "place": "그날 밤 · 유나 방",
+      "set": { "cast": { "yuna": "bed_sit sit hurt", "mom": "mom_near stand calm" } },
+      "panels": [
+        { "shot": "two", "on": ["mom", "yuna"], "pre": "그날 밤, 엄마에게 있었던 일을 이야기했어요.", "lines": [{ "who": "mom", "say": "엄마가 도와줄까?" }] }
+      ],
+      "choices": {
+        "q": "“엄마가 도와줄까?” 유나는 뭐라고 할까요?",
+        "ask": "어른에게 도움을 청하는 것과 내가 먼저 해 보는 것은 각각 어떤 점이 좋을까요?",
+        "opts": [
+          { "text": "“내가 먼저 이야기해 볼게. 어려우면 도와줘.”", "add": { "own": 1, "deleted": 1 }, "go": "s15a" },
+          { "text": "“엄마가 서아 엄마한테 말해 줘.”", "add": { "deleted": 1 }, "go": "s15b" },
+          { "text": "“몰라. 그냥 잘래.”", "add": { "avoid": 1 }, "go": "s15c" }
+        ]
+      }
+    },
+    "s15a": {
+      "stage": "bedroom", "page": "15면", "place": "그날 밤 · 유나 방",
+      "set": { "cast": { "yuna": "bed_sit sit calm", "mom": "mom_near stand joy" } },
+      "panels": [
+        { "shot": "two", "on": ["yuna", "mom"], "lines": [{ "who": "yuna", "say": "내가 먼저 이야기해 볼게. 어려우면 도와줘." }] },
+        { "phone": { "profile": { "name": "유나", "photo": null } }, "cap": "나는 올려 두었던 서아의 사진을 지웠어요." },
+        { "feel": { "who": "yuna", "q": "화만 난 게 아니었어요. 유나의 마음속에는 또 어떤 마음이 있었을까요?", "is": ["hurt", "worried"], "reveal": "서운했고, 서아랑 멀어질까 봐 무서웠어요." } },
+        { "set": { "cast": { "mom": "hide" } } },
+        { "shot": "close", "on": "yuna", "faces": { "yuna": "calm" }, "poses": { "yuna": "down" }, "pre": "이불 속에서 나에게 작게 말했어요.", "lines": [{ "who": "yuna", "whisper": "유나야, 먼저 말 걸기가 무섭구나. 그래도 유치원 첫날에 손을 내밀어 본 적이 있잖아. 내일은 ‘안녕’부터 해 보자." }] }
+      ],
+      "go": "s16"
+    },
+    "s15b": {
+      "stage": "bedroom", "page": "15면", "place": "그날 밤 · 유나 방",
+      "set": { "cast": { "yuna": "bed_sit sit worried", "mom": "mom_near stand calm" } },
+      "panels": [
+        { "shot": "two", "on": ["yuna", "mom"], "lines": [{ "who": "yuna", "say": "엄마가 서아 엄마한테 말해 줘." }] },
+        { "shot": "close", "on": "mom", "lines": [{ "who": "mom", "say": "그래, 엄마가 도와줄 수 있어. 그런데 서아가 제일 듣고 싶은 말은 누구 목소리일까?" }] },
+        { "shot": "close", "on": "yuna", "poses": { "yuna": "down" }, "cap": "나는 엄마 말을 오래 생각했어요." },
+        { "shot": "two", "on": ["mom", "yuna"], "faces": { "mom": "joy", "yuna": "calm" }, "lines": [{ "who": "mom", "say": "내일 네 마음을 먼저 전해 보렴. 어려우면 그때 엄마가 같이 이야기할게." }] },
+        { "phone": { "profile": { "name": "유나", "photo": null } }, "cap": "나는 올려 두었던 서아의 사진을 지웠어요." }
+      ],
+      "go": "s16"
+    },
+    "s15c": {
+      "stage": "bedroom", "page": "15면", "place": "그날 밤 · 유나 방",
+      "set": { "cast": { "yuna": "bed_sit sit angry", "mom": "mom_near stand worried" } },
+      "panels": [
+        { "shot": "two", "on": ["yuna", "mom"], "lines": [{ "who": "yuna", "say": "몰라. 그냥 잘래." }] },
+        { "shot": "close", "on": "mom", "faces": { "mom": "calm" }, "lines": [{ "who": "mom", "say": "알았어. 이야기하고 싶어지면 언제든 말해 줘." }] },
+        { "set": { "cast": { "mom": "hide" } } },
+        { "shot": "close", "on": "yuna", "faces": { "yuna": "hurt" }, "poses": { "yuna": "down" }, "fx": "gloom", "cap": "이불을 머리끝까지 덮었어요. 프로필 사진도, 찢어진 지도도 그대로였어요." },
+        { "shot": "close", "on": "yuna", "angle": -20, "faces": { "yuna": "worried" }, "lines": [{ "who": "yuna", "think": "내일 서아 얼굴을 어떻게 보지." }] }
+      ],
+      "go": "s16"
+    },
+    "s16": {
+      "stage": "hallway", "page": "16면", "place": "금요일 아침 · 교실 앞",
+      "set": { "cast": { "yuna": "door_y stand worried", "minjun": "door_m stand calm" } },
+      "explore": [{ "on": "yuna", "text": "교실 문 앞이에요. 가슴이 두근거려요." }],
+      "panels": [
+        { "shot": "close", "on": "yuna", "sfx": "쿵쿵", "pre": "금요일 아침, 교실 문 앞에서 가슴이 또 쿵쿵 뛰었어요.", "lines": [{ "who": "yuna", "think": "아, 또 두근거리네." }] },
+        { "activity": "breathe" },
+        { "shot": "close", "on": "yuna", "angle": -20, "faces": { "yuna": "calm" }, "cap": "나는 숨을 천천히 내쉬었어요. 한 번, 두 번, 세 번. 여전히 떨렸지만, 한 걸음은 뗄 수 있었어요." },
+        { "shot": "two", "on": ["yuna", "minjun"], "faces": { "minjun": "joy" }, "lines": [{ "who": "yuna", "say": "민준아, 같이 가 줄래?" }], "cap": "민준이가 고개를 끄덕였어요." },
+        { "stage": "classroom", "set": { "cast": { "yuna": "stand_w stand worried", "minjun": "stand_sw stand calm", "seoa": "seat_e sit calm", "jiwoo": "stand_ne stand calm" }, "map": "torn", "pencils": "box" } },
+        { "shot": "wide", "cap": "우리는 반쪽짜리 지도를 들고 서아와 지우에게 걸어갔어요. 몇 걸음밖에 안 되는데 운동장만큼 멀게 느껴졌어요." }
+      ],
+      "go": "s17"
+    },
+    "s17": {
+      "stage": "classroom", "page": "17면", "place": "금요일 · 교실",
+      "set": { "cast": { "yuna": "face_e stand shy", "minjun": "stand_sw2 stand calm", "seoa": "seat_e sit calm", "jiwoo": "stand_ne stand calm" }, "map": "torn", "pencils": "box" },
+      "explore": [{ "on": "seoa", "text": "서아가 앉아 있어요. 어떤 말로 시작할까요?" }],
+      "panels": [
+        { "shot": "two", "on": ["yuna", "seoa"], "lines": [{ "who": "yuna", "say": "안녕." }, { "who": "seoa", "say": "…안녕." }] }
+      ],
+      "compose": {
+        "q": "서아에게 무슨 말을 할까요? 하고 싶은 말을 모두 골라 보세요.",
+        "ask": "사과할 때 꼭 들어가면 좋은 말은 무엇일까요? 상대의 이야기를 듣는 말은 왜 필요할까요?",
+        "who": "yuna", "to": "seoa", "min": 1,
+        "pieces": [
+          { "id": "photo_done", "when": { "deleted": 1 }, "text": "사진 지웠어. 지워 달라고 했는데 웃어서 미안해.", "add": { "repair": 1 } },
+          { "id": "photo_now", "when": { "deleted": { "max": 0 } }, "text": "사진 아직 못 지웠어. 지금 지울게. 지워 달라고 했는데 웃어서 미안해.", "add": { "repair": 1 } },
+          { "id": "pencil", "text": "색연필도 묻지 않고 썼어.", "add": { "repair": 1 } },
+          { "id": "shout", "when": { "blame": 1 }, "text": "어제 쉬는 시간에 소리친 것도 미안해.", "add": { "repair": 1, "blame": -1 } },
+          { "id": "map", "text": "지도를 잡아당긴 것도 미안해. 우리 넷이 함께 만든 건데.", "add": { "repair": 1 }, "pre": "나는 지우와 민준이도 바라보았어요.", "shot": "group", "on": ["yuna", "seoa", "jiwoo", "minjun"] },
+          { "id": "feel", "text": "답장을 기다리면서 서운했어. 지우랑 있는 걸 보고는 네가 나를 싫어한다고 혼자 생각했어.", "add": { "share": 1 }, "pre": "숨을 한 번 고르고 말을 이었어요." },
+          { "id": "ask", "text": "네 얘기도 들려줄래?", "add": { "listen": 1 }, "pre": "그리고 서아를 바라보았어요.", "shot": "over", "on": ["yuna", "seoa"], "face": "calm" },
+          { "id": "blame", "text": "근데 너도 내 메시지에 답 안 했잖아.", "add": { "blame": 1 }, "face": "angry" },
+          { "id": "rush", "text": "미안. 이제 됐지?", "add": { "blame": 1 }, "face": "calm", "pose": "cross" }
+        ]
+      },
+      "end": true
+    }
+  },
+  "endings": [
+    {
+      "id": "warm", "kind": "good", "title": "다시 이어진 길",
+      "when": { "repair": 2, "listen": 1, "blame": { "max": 0 } },
+      "panels": [
+        { "shot": "close", "on": "seoa", "faces": { "seoa": "hurt" }, "pre": "서아는 한참 뒤에 입을 열었어요.", "lines": [{ "who": "seoa", "say": "사진을 지워 달라고 했는데 네가 웃어서 속상했어. 그날은 바로 이야기하기가 힘들었어." }] },
+        { "shot": "close", "on": "yuna", "faces": { "yuna": "calm" }, "cap": "나는 끼어들지 않고 끝까지 들었어요." },
+        { "shot": "two", "on": ["seoa", "yuna"], "faces": { "seoa": "calm", "yuna": "calm" }, "lines": [{ "who": "seoa", "say": "다음에는 내가 싫다고 하면 멈춰 줘." }, { "who": "yuna", "say": "응. 그럴게." }] },
+        { "shot": "close", "on": "minjun", "faces": { "minjun": "shy" }, "pre": "민준이도 말했어요.", "lines": [{ "who": "minjun", "say": "나도 같이 웃어서 미안해. 네 말도 잘못 전했어." }] },
+        { "shot": "group", "on": ["yuna", "seoa", "jiwoo", "minjun"], "cap": "서아는 바로 웃지는 않았어요. 그래도 우리와 함께 찢어진 지도를 바라보았어요." },
+        { "set": { "cast": { "seoa": "seat_nw sit calm", "jiwoo": "seat_ne sit calm", "yuna": "seat_w sit calm", "minjun": "seat_e sit calm" }, "map": "torn" } },
+        { "shot": "close", "on": "jiwoo", "faces": { "jiwoo": "joy" }, "pre": "지우가 자기 앞의 지도를 책상 가운데로 밀었어요.", "lines": [{ "who": "jiwoo", "say": "전시회까지 한 시간 남았어. 우리, 방법을 찾아보자." }] },
+        { "shot": "two", "on": ["minjun", "yuna"], "faces": { "minjun": "joy", "yuna": "worried" }, "pre": "새로 그리기에는 시간이 모자랐어요.", "lines": [{ "who": "minjun", "say": "테이프로 붙이자." }], "cap": "민준이가 말했어요." },
+        { "shot": "close", "on": "yuna", "faces": { "yuna": "worried" }, "lines": [{ "who": "yuna", "say": "그럼 찢어진 자국이 보이잖아." }] },
+        { "set": { "map": "joined" } },
+        { "shot": "item", "on": "map", "cap": "나는 두 조각을 맞대어 보았어요. 서아가 찢어진 곳을 손가락으로 따라갔어요." },
+        { "shot": "close", "on": "seoa", "faces": { "seoa": "joy" }, "fx": "sparkle", "lines": [{ "who": "seoa", "say": "이 자국을 새 길로 만들면 어때?" }] },
+        { "set": { "map": "mended" } },
+        { "shot": "item", "on": "map", "cap": "우리는 두 쪽을 맞대고 뒤쪽에 테이프를 붙였어요. 찢어진 자국 위에는 넷이 함께 노란 길을 그렸어요." },
+        { "shot": "two", "on": ["yuna", "seoa"], "faces": { "yuna": "shy", "seoa": "joy" }, "lines": [{ "who": "yuna", "say": "색연필 써도 돼?" }, { "who": "seoa", "say": "응." }] },
+        { "shot": "item", "on": "map_home", "cap": "나는 우리 집을 칠하고, 서아네 집까지 이어지는 길도 칠했어요." },
+        { "set": { "cast": { "yuna": "wall_l stand joy", "seoa": "wall_r stand joy", "jiwoo": "wall_rr stand joy", "minjun": "wall_ll stand joy" }, "map": "none", "wall": "mended" } },
+        { "shot": "item", "on": "wall", "cap": "하얀 곳이 남은 지도를 우리는 전시했어요. 다 완성하지는 못했지만, 끊어졌던 길은 다시 이어졌어요." },
+        { "stage": "street", "set": { "cast": { "yuna": "walk_l walk calm", "seoa": "walk_r walk calm" } } },
+        { "shot": "two", "on": ["yuna", "seoa"], "pre": "집에 갈 때, 나는 서아에게 물었어요.", "lines": [{ "who": "yuna", "say": "오늘 같이 갈래?" }], "cap": "서아가 고개를 끄덕였어요." },
+        { "shot": "wide", "faces": { "yuna": "joy", "seoa": "joy" }, "fx": "sparkle", "cap": "우리는 신발 한 켤레처럼 나란히 걸었어요." }
+      ]
+    },
+    {
+      "id": "okay", "kind": "okay", "title": "붙였지만 아직 어색한 길",
+      "when": { "repair": 1, "blame": { "max": 1 } },
+      "panels": [
+        { "shot": "close", "on": "seoa", "faces": { "seoa": "hurt" }, "pre": "서아는 한참 동안 아무 말도 하지 않았어요.", "lines": [{ "who": "seoa", "say": "…응. 알았어." }] },
+        { "shot": "close", "on": "yuna", "faces": { "yuna": "worried" }, "cap": "서아는 고개를 끄덕였지만, 아직 하고 싶은 말이 남은 얼굴이었어요." },
+        { "set": { "cast": { "seoa": "seat_nw sit calm", "jiwoo": "seat_ne sit calm", "yuna": "seat_w sit worried", "minjun": "seat_e sit calm" }, "map": "torn" } },
+        { "shot": "close", "on": "jiwoo", "lines": [{ "who": "jiwoo", "say": "전시회까지 한 시간 남았어. 일단 붙이자." }] },
+        { "set": { "map": "taped" } },
+        { "shot": "item", "on": "map", "cap": "우리는 지도를 테이프로 붙였어요. 찢어진 자국은 그대로 보였어요." },
+        { "set": { "cast": { "yuna": "wall_l stand worried", "seoa": "wall_rr stand calm", "jiwoo": "wall_r stand calm", "minjun": "wall_ll stand calm" }, "map": "none", "wall": "taped" } },
+        { "shot": "item", "on": "wall", "cap": "지도는 전시했지만, 집에 갈 때 서아는 지우와 먼저 나갔어요." },
+        { "stage": "street", "set": { "cast": { "yuna": "alone walk hurt", "seoa": "far_r walk calm", "jiwoo": "far_l walk calm" } } },
+        { "shot": "wide", "cap": "서아랑 나 사이에는 아직 테이프 자국 같은 것이 남아 있었어요." },
+        { "text": "다음에는?\n서아의 마음을 듣는 말을 하나 더 해 보면 어떨까요?", "tone": "next" }
+      ]
+    },
+    {
+      "id": "sorry", "kind": "sorry", "title": "끊어진 채 걸린 지도",
+      "panels": [
+        { "shot": "close", "on": "seoa", "faces": { "seoa": "hurt" }, "pre": "서아의 얼굴이 굳어졌어요.", "lines": [{ "who": "seoa", "say": "…나도 할 말 있었는데." }] },
+        { "shot": "two", "on": ["seoa", "jiwoo"], "faces": { "seoa": "sad", "jiwoo": "worried" }, "cap": "서아는 지우와 함께 자기 반쪽을 들고 돌아섰어요." },
+        { "set": { "cast": { "yuna": "wall_ll stand hurt", "minjun": "wall_l stand worried", "seoa": "wall_rr stand sad", "jiwoo": "wall_r stand worried" }, "map": "none", "wall": "halves" } },
+        { "shot": "item", "on": "wall", "cap": "전시회 벽에는 반쪽짜리 지도 두 장이 따로 붙었어요. 우리 집에서 놀이터로 가는 길은 끊긴 채였어요." },
+        { "stage": "street", "set": { "cast": { "yuna": "alone walk sad" } } },
+        { "shot": "wide", "fx": "gloom", "cap": "집에 가는 길, 내 옆자리가 비어 있었어요." },
+        { "text": "다음에는?\n어떤 말이 서아의 마음에 닿았을까요? 그 장면으로 돌아가 다시 말해 볼 수 있어요.", "tone": "next" }
+      ]
+    }
+  ]
+}

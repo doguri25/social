@@ -1,0 +1,111 @@
+{
+  "faces": ["joy", "sad", "angry", "worried", "surprised", "shy", "hurt", "calm", "laugh", "yawn", "cry"],
+  "emotions": ["joy", "sad", "angry", "worried", "surprised", "shy", "hurt", "calm"],
+  "poses": ["stand", "walk", "sit", "sitlow", "wave", "down", "cross", "reach", "tug", "phone", "hold", "cover", "jump", "point", "show", "clasp"],
+  "shots": ["wide", "group", "two", "close", "over", "item", "high"],
+  "fx": ["focus", "gloom", "heat", "sparkle"],
+  "tones": ["memory", "whatif", "note", "next"],
+  "sizes": ["wide", "tall"],
+  "activities": ["breathe"],
+  "mapStates": ["none", "sketch", "school", "playground", "colored", "scribbled", "torn", "joined", "taped", "mended"],
+  "pencilStates": ["box", "open", "taken", "scattered"],
+  "wallStates": ["none", "mended", "taped", "halves"],
+  "stages": {
+    "shelf": {
+      "light": "day",
+      "wide": { "pos": [0, 1.45, 4.4], "target": [0, 1.05, -0.3], "fov": 40 },
+      "spots": {
+        "shelf_l": [-2.15, 0, 0.45, 25],
+        "shelf_r": [2.15, 0, 0.45, -25]
+      },
+      "items": {}
+    },
+    "street": {
+      "light": "day",
+      "wide": { "pos": [3.6, 4.4, 8.0], "target": [0, 0.5, 0.6], "fov": 42 },
+      "spots": {
+        "walk_l": [-0.3, 0, 1.2, 0],
+        "walk_r": [0.3, 0, 1.2, 0],
+        "walk_b": [-0.05, 0, 0.4, 8],
+        "alone": [0, 0, 1.2, 0],
+        "far_l": [-0.3, 0, -1.8, 180],
+        "far_r": [0.3, 0, -1.8, 180]
+      },
+      "items": {}
+    },
+    "classroom": {
+      "light": "day",
+      "wide": { "pos": [2.0, 3.8, 3.9], "target": [0, 0.55, -0.15], "fov": 40 },
+      "spots": {
+        "seat_nw": [-0.5, 0, -0.866, 30],
+        "seat_ne": [0.5, 0, -0.866, -30],
+        "seat_w": [-0.985, 0, 0.174, 100],
+        "seat_e": [0.985, 0, 0.174, -100],
+        "stand_w": [-1.9, 0, 0.55, 75],
+        "stand_sw": [-1.35, 0, 0.85, 150],
+        "stand_sw2": [0.55, 0, 1.2, 157],
+        "stand_ne": [1.45, 0, -0.95, -55],
+        "stand_nw": [-1.05, 0, -1.25, 55],
+        "face_e": [1.15, 0, 0.95, -168],
+        "teacher": [1.9, 0, 1.05, -130],
+        "wall_ll": [0.75, 0, -1.5, 15],
+        "wall_l": [1.35, 0, -1.6, 5],
+        "wall_r": [2.0, 0, -1.6, -5],
+        "wall_rr": [2.6, 0, -1.5, -15]
+      },
+      "items": {
+        "map": { "t": [0.02, 0.65, 0.04], "c": [0.0, 1.6, 0.8], "fov": 44 },
+        "map_kinder": { "t": [0.2, 0.65, -0.17], "c": [0.25, 1.15, 0.3], "fov": 36 },
+        "map_home": { "t": [-0.33, 0.65, 0.24], "c": [-0.3, 1.15, 0.75], "fov": 38 },
+        "pencils": { "t": [-0.6, 0.87, -0.68], "c": [0.01, 1.17, 0.02], "at": [-0.4, 0.67, -0.45], "fov": 40 },
+        "floor": { "t": [0.4, 0.05, 1.0], "c": [0.55, 1.2, 2.0], "fov": 40 },
+        "wall": { "t": [1.85, 1.35, -2.44], "c": [1.6, 1.35, 0.8], "fov": 40 }
+      }
+    },
+    "bedroom": {
+      "light": "night",
+      "lamp": [1.5, 1.15, -1.9],
+      "wide": { "pos": [1.6, 2.0, 3.4], "target": [-0.6, 0.6, -0.8], "fov": 42 },
+      "spots": {
+        "bed_sit": [-1.42, 0.12, -0.9, 90],
+        "mom_door": [0.5, 0, -1.2, -110],
+        "mom_near": [-0.7, 0, -0.85, -95]
+      },
+      "items": {}
+    },
+    "stairs": {
+      "light": "day",
+      "wide": { "pos": [2.3, 2.0, 4.6], "target": [0, 0.7, 0.5], "fov": 40 },
+      "spots": {
+        "sit_l": [-0.45, 0.13, 0.62, 0],
+        "sit_r": [0.42, 0.13, 0.62, 0],
+        "stand_b": [0.55, 0, 2.1, -20],
+        "stand_c": [1.25, 0, 1.85, -75]
+      },
+      "items": {
+        "half": { "t": [-0.75, 0.49, 0.66], "c": [-0.6, 1.15, 1.35], "fov": 38 }
+      }
+    },
+    "hallway": {
+      "light": "day",
+      "wide": { "pos": [1.8, 2.6, 4.6], "target": [-1.0, 0.55, 0.1], "fov": 42 },
+      "spots": {
+        "door_y": [-2.0, 0, 0.25, -90],
+        "door_m": [-1.55, 0, -0.35, -80],
+        "hall_c": [0.3, 0, 0.4, -30]
+      },
+      "items": {}
+    },
+    "kinder": {
+      "light": "day",
+      "wide": { "pos": [1.5, 2.3, 4.2], "target": [0, 0.5, -0.4], "fov": 40 },
+      "spots": {
+        "door_cry": [-0.45, 0, -1.0, 10],
+        "door_reach": [0.3, 0, -0.8, -60],
+        "yard_l": [-0.6, 0, 0.35, 40],
+        "yard_r": [0.65, 0, 0.35, -40]
+      },
+      "items": {}
+    }
+  }
+}
