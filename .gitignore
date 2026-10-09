@@ -2,3 +2,4 @@
 dist/shots/
 tests/.cache/
 dist/shots-babylon/
+.vercel

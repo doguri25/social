@@ -45,7 +45,6 @@ button:disabled { cursor: default; }
 .top h1 { margin: 0; font-weight: 400; font-size: clamp(22px, 2.3vw, 32px); color: var(--title); white-space: nowrap; }
 .sub { font-size: clamp(14px, 1.2vw, 18px); color: var(--ink-2); border-left: 1.5px solid var(--line); padding-left: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .grow { flex: 1; }
-.pill { font-size: 16px; color: var(--pill-ink); background: var(--pill); border-radius: 999px; padding: 5px 18px; white-space: nowrap; }
 .count { font-size: 18px; padding: 0 14px; border-left: 1.5px solid var(--line); border-right: 1.5px solid var(--line); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .ibtn { width: 42px; height: 42px; flex: none; display: grid; place-items: center; border: 1.5px solid var(--ink); border-radius: 12px; background: var(--card-2); padding: 0; }
 .ibtn.bare { border-color: transparent; background: transparent; }
@@ -57,8 +56,6 @@ button:disabled { cursor: default; }
 #gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; outline: none; }
 .stage::after { content: ''; position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 60px rgba(150, 110, 60, .14); border-radius: inherit; }
 #hint { position: absolute; right: 12px; top: 12px; z-index: 4; font-size: 15px; color: var(--ink-2); background: rgba(255, 253, 248, .9); border: 1.5px solid var(--line); border-radius: 999px; padding: 4px 14px; pointer-events: none; }
-#partTitle { position: absolute; left: 50%; top: 18%; z-index: 8; transform: translateX(-50%); font-size: clamp(26px, 4vw, 44px); color: var(--ink); white-space: nowrap; padding: 4px 18px 10px; background: linear-gradient(transparent 60%, var(--hot) 60%, var(--hot) 88%, transparent 88%); animation: partIn 2.6s ease forwards; pointer-events: none; }
-@keyframes partIn { 0% { opacity: 0; transform: translate(-50%, 10px); } 15%, 75% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; } }
 #hot { position: absolute; inset: 0; z-index: 5; pointer-events: none; overflow: hidden; }
 .hs-a { position: absolute; left: 0; top: 0; width: 0; height: 0; }
 .hs { position: absolute; transform: translate(-50%, -50%); pointer-events: auto; width: 34px; height: 34px; padding: 0; border-radius: 50%; border: 2.5px solid var(--ink); background: var(--hot); font-size: 17px; line-height: 1; animation: pulse 1.8s ease-in-out infinite; }
@@ -102,7 +99,6 @@ button:disabled { cursor: default; }
 .textp.next p:first-child { font-size: 1.2em; }
 .textp.title .page { font-size: calc(46px * var(--fs)); color: var(--title); }
 .textp.title .place { font-size: calc(20px * var(--fs)); color: var(--ink-2); }
-.textp.title .part { justify-self: center; font-size: 15px; color: var(--pill-ink); background: var(--pill); border-radius: 999px; padding: 3px 14px; }
 .cap { margin: 2px 2px 0; font-size: calc(19px * var(--fs)); line-height: 1.5; }
 .cap.pre { color: var(--ink-2); font-size: calc(17px * var(--fs)); }
 .line { display: flex; align-items: center; gap: 10px; }
@@ -248,7 +244,7 @@ button:disabled { cursor: default; }
   .frame { border-radius: 0; border: 0; padding: calc(env(safe-area-inset-top, 0px) + 8px) 16px calc(env(safe-area-inset-bottom, 0px) + 10px); gap: 8px; }
   .top { gap: 8px; }
   .logo { width: 34px; height: 30px; }
-  .sub, .pill { display: none; }
+  .sub { display: none; }
   .count { border: 0; padding: 0 4px; font-size: 16px; }
   .ibtn { width: 38px; height: 38px; }
   .main { display: flex; flex-direction: column; gap: 8px; }
@@ -275,7 +271,6 @@ button:disabled { cursor: default; }
       <h1 id="bookTitle">마음 극장</h1>
       <span class="sub" id="bookSub">사회정서 그림책 놀이</span>
       <span class="grow"></span>
-      <span class="pill" id="part" hidden></span>
       <span class="count" id="count" hidden></span>
       <button class="ibtn" id="btnHome" aria-label="책장으로" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 5h4v14H4zM10 5h4v14h-4zM16.5 6l3.6-.9 3 13.6-3.6.9z"/></svg></button>
       <button class="ibtn" id="btnPause" aria-label="잠깐 멈추기"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1.5" fill="currentColor"/><rect x="14" y="5" width="4" height="14" rx="1.5" fill="currentColor"/></svg></button>
@@ -2465,13 +2460,12 @@ function device(ph, photo) {
   dev.append(av, h('div', 'pname', pr.name), h('div', 'pnote', photo ? '프로필 사진' : '프로필 사진 없음'));
   return dev;
 }
-// 장면 첫 장: 어디인지, 이야기 마디 (면 번호는 쓰지 않는다)
-function titleCard(sc, part) {
+// 장면 첫 장: 어디인지 (면 번호와 기·승·전·결은 쓰지 않는다)
+function titleCard(sc) {
   const t = h('div', 'textp title');
   const segs = sc.place.split(' · '); // 「월요일 · 교실」 → 크게 「교실」, 작게 「월요일」
   t.appendChild(h('div', 'page', segs.pop()));
   if (segs.length) t.appendChild(h('div', 'place', segs.join(' · ')));
-  if (part) t.appendChild(h('div', 'part', part));
   storyEl.replaceChildren(t);
   rise();
 }
@@ -2490,21 +2484,12 @@ function setHeader(page) {
   const inBook = page != null;
   $('#bookTitle').textContent = inBook ? BOOK.title : '마음 극장';
   $('#bookSub').textContent = inBook ? BOOK.sub : '사회정서 그림책 놀이';
-  $('#part').hidden = !inBook || !curPart;
-  $('#part').textContent = curPart || '';
   $('#count').hidden = !inBook;
   $('#btnHome').hidden = !inBook;
   $('#dots').replaceChildren();
   if (!inBook) return;
   $('#count').textContent = `${page} / ${BOOK.pages}`;
   $('#dots').replaceChildren(...Array.from({ length: BOOK.pages }, (_, i) => h('i', i < page - 1 ? 'on' : i === page - 1 ? 'on now' : '')));
-}
-function partBanner(text) {
-  document.querySelectorAll('#partTitle').forEach(e => e.remove());
-  const t = h('div', '', text);
-  t.id = 'partTitle';
-  canvas.parentElement.appendChild(t);
-  setTimeout(() => t.remove(), 2700);
 }
 // ===== 옆 칸 아래: 할 일 (둘러보기, 갈림길, 만약에, 마음 살피기, 말 고르기, 숨 고르기, 결말, 내가 고른 길) =====
 const askEl = $('#ask');
@@ -2562,10 +2547,9 @@ function tally() {
 }
 
 // 장면 첫머리: 무대를 둘러보고 「이야기 보기」
-function askIntro(sc, part) {
+function askIntro(sc) {
   return waitFor(done => {
-    titleCard(sc, part);
-    if (part) partBanner(part);
+    titleCard(sc);
     setAsk('intro', () => {
       const tip = asList(sc.explore).length ? '노란 ? 를 눌러 무대를 살펴보고, 준비되면 「이야기 보기」를 눌러요.' : '무대를 끌어서 돌려 보고, 준비되면 「이야기 보기」를 눌러요.';
       return [heading('무대를 둘러봐요'), h('p', '', tip)];
@@ -2896,7 +2880,7 @@ async function playScene(id, opt, my) {
   setHeader(parseInt(sc.page, 10) || 1);
   resetHist();
   buildHot(asList(sc.explore), it => showPop(it, it.text));
-  if (!from && (stageChanged || partChanged || asList(sc.explore).length)) { await askIntro(sc, partChanged ? sc.part : null); chk(my); }
+  if (!from && (stageChanged || partChanged || asList(sc.explore).length)) { await askIntro(sc); chk(my); }
   if (opt.note) await showAndWait({ text: opt.note, tone: 'note' }, my);
   let pick = opt.pick;
   for (let i = from; i < sc.panels.length; i++) {

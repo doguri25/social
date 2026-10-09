@@ -54,10 +54,9 @@ function tally() {
 }
 
 // 장면 첫머리: 무대를 둘러보고 「이야기 보기」
-function askIntro(sc, part) {
+function askIntro(sc) {
   return waitFor(done => {
-    titleCard(sc, part);
-    if (part) partBanner(part);
+    titleCard(sc);
     setAsk('intro', () => {
       const tip = asList(sc.explore).length ? '노란 ? 를 눌러 무대를 살펴보고, 준비되면 「이야기 보기」를 눌러요.' : '무대를 끌어서 돌려 보고, 준비되면 「이야기 보기」를 눌러요.';
       return [heading('무대를 둘러봐요'), h('p', '', tip)];

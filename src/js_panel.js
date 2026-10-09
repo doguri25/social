@@ -126,13 +126,12 @@ function device(ph, photo) {
   dev.append(av, h('div', 'pname', pr.name), h('div', 'pnote', photo ? '프로필 사진' : '프로필 사진 없음'));
   return dev;
 }
-// 장면 첫 장: 어디인지, 이야기 마디 (면 번호는 쓰지 않는다)
-function titleCard(sc, part) {
+// 장면 첫 장: 어디인지 (면 번호와 기·승·전·결은 쓰지 않는다)
+function titleCard(sc) {
   const t = h('div', 'textp title');
   const segs = sc.place.split(' · '); // 「월요일 · 교실」 → 크게 「교실」, 작게 「월요일」
   t.appendChild(h('div', 'page', segs.pop()));
   if (segs.length) t.appendChild(h('div', 'place', segs.join(' · ')));
-  if (part) t.appendChild(h('div', 'part', part));
   storyEl.replaceChildren(t);
   rise();
 }
@@ -151,19 +150,10 @@ function setHeader(page) {
   const inBook = page != null;
   $('#bookTitle').textContent = inBook ? BOOK.title : '마음 극장';
   $('#bookSub').textContent = inBook ? BOOK.sub : '사회정서 그림책 놀이';
-  $('#part').hidden = !inBook || !curPart;
-  $('#part').textContent = curPart || '';
   $('#count').hidden = !inBook;
   $('#btnHome').hidden = !inBook;
   $('#dots').replaceChildren();
   if (!inBook) return;
   $('#count').textContent = `${page} / ${BOOK.pages}`;
   $('#dots').replaceChildren(...Array.from({ length: BOOK.pages }, (_, i) => h('i', i < page - 1 ? 'on' : i === page - 1 ? 'on now' : '')));
-}
-function partBanner(text) {
-  document.querySelectorAll('#partTitle').forEach(e => e.remove());
-  const t = h('div', '', text);
-  t.id = 'partTitle';
-  canvas.parentElement.appendChild(t);
-  setTimeout(() => t.remove(), 2700);
 }

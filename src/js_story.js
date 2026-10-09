@@ -77,7 +77,7 @@ async function playScene(id, opt, my) {
   setHeader(parseInt(sc.page, 10) || 1);
   resetHist();
   buildHot(asList(sc.explore), it => showPop(it, it.text));
-  if (!from && (stageChanged || partChanged || asList(sc.explore).length)) { await askIntro(sc, partChanged ? sc.part : null); chk(my); }
+  if (!from && (stageChanged || partChanged || asList(sc.explore).length)) { await askIntro(sc); chk(my); }
   if (opt.note) await showAndWait({ text: opt.note, tone: 'note' }, my);
   let pick = opt.pick;
   for (let i = from; i < sc.panels.length; i++) {
