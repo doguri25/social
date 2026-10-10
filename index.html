@@ -241,6 +241,7 @@ button:disabled { cursor: default; }
 .seg button { border: 0; background: transparent; padding: 5px 12px; font-size: 15px; }
 .seg button[aria-pressed="true"] { background: var(--mint); }
 .seg button:disabled { opacity: .4; }
+.ver { font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .linkbox { width: 100%; font-size: 12px; word-break: break-all; background: #fff; border: 1.5px solid var(--line); border-radius: 8px; padding: 6px 8px; user-select: all; -webkit-user-select: all; }
 #loading { background: var(--paper); font-size: 24px; color: var(--ink-2); }
 #toast { position: fixed; left: 50%; bottom: 84px; z-index: 50; transform: translateX(-50%); max-width: calc(100% - 32px); background: var(--ink); color: #fff; border-radius: 999px; padding: 8px 18px; font-size: 17px; }
@@ -366,10 +367,10 @@ const DEFS = {
         "wall_rr": [2.6, 0, -1.5, -15]
       },
       "items": {
-        "map": { "t": [0.02, 0.65, 0.04], "c": [0.0, 1.6, 0.8], "fov": 44 },
-        "map_kinder": { "t": [0.2, 0.65, -0.17], "c": [0.25, 1.15, 0.3], "fov": 36 },
-        "map_home": { "t": [-0.33, 0.65, 0.24], "c": [-0.3, 1.15, 0.75], "fov": 38 },
-        "pencils": { "t": [-0.6, 0.87, -0.68], "c": [0.01, 1.17, 0.02], "at": [-0.4, 0.67, -0.45], "fov": 40 },
+        "map": { "t": [0.02, 0.57, 0.04], "c": [0.0, 1.52, 0.8], "fov": 44 },
+        "map_kinder": { "t": [0.2, 0.57, -0.17], "c": [0.25, 1.07, 0.3], "fov": 36 },
+        "map_home": { "t": [-0.33, 0.57, 0.24], "c": [-0.3, 1.07, 0.75], "fov": 38 },
+        "pencils": { "t": [-0.6, 0.79, -0.68], "c": [0.01, 1.09, 0.02], "at": [-0.4, 0.59, -0.45], "fov": 40 },
         "floor": { "t": [0.4, 0.05, 1.0], "c": [0.55, 1.2, 2.0], "fov": 40 },
         "wall": { "t": [1.85, 1.35, -2.44], "c": [1.6, 1.35, 0.8], "fov": 40 }
       }
@@ -379,7 +380,7 @@ const DEFS = {
       "lamp": [1.5, 1.15, -1.9],
       "wide": { "pos": [1.6, 2.0, 3.4], "target": [-0.6, 0.6, -0.8], "fov": 42 },
       "spots": {
-        "bed_sit": [-1.42, 0.12, -0.9, 90],
+        "bed_sit": [-1.42, 0.16, -0.9, 90],
         "mom_door": [0.5, 0, -1.2, -110],
         "mom_near": [-0.7, 0, -0.85, -95]
       },
@@ -389,8 +390,8 @@ const DEFS = {
       "light": "day",
       "wide": { "pos": [2.3, 2.0, 4.6], "target": [0, 0.7, 0.5], "fov": 40 },
       "spots": {
-        "sit_l": [-0.45, 0.13, 0.62, 0],
-        "sit_r": [0.42, 0.13, 0.62, 0],
+        "sit_l": [-0.45, 0.17, 0.62, 0],
+        "sit_r": [0.42, 0.17, 0.62, 0],
         "stand_b": [0.55, 0, 2.1, -20],
         "stand_c": [1.25, 0, 1.85, -75]
       },
@@ -883,6 +884,7 @@ const MODELS = {
 };
 const COLORMAP = "data:image/png;base64,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";
 // ===== 기본 도구: 저장, 주소, 소리, 읽어 주기, 기다리기 =====
+const VERSION = '0.3.0'; // 올릴 때 CHANGELOG.md 와 함께 바꾼다
 const $ = (s, r = document) => r.querySelector(s);
 const h = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -1004,7 +1006,8 @@ const INK_C = '#2a2433';
 
 // 얼굴은 머리 앞쪽 반구에 붙는 투명 그림. 가운데(128,128)가 머리 정면 가운데.
 // 디오라마처럼 멀리서 봐도 보이게 선을 굵게, 눈과 입을 크게 그린다.
-function drawFace(g, kind) {
+// closed: 눈 깜빡임 — 뜬 눈만 감은 눈으로 바꿔 그린다 (눈썹, 입은 그대로)
+function drawFace(g, kind, closed = false) {
   const L = 88, R = 168, EY = 136, MY = 184;
   g.clearRect(0, 0, FACE_W, FACE_W);
   g.lineCap = g.lineJoin = 'round';
@@ -1012,11 +1015,14 @@ function drawFace(g, kind) {
   g.lineWidth = 10;
   const path = fn => { g.beginPath(); fn(); };
   const fill = (c, fn) => { g.fillStyle = c; path(fn); g.fill(); g.fillStyle = INK_C; };
+  const blinkLid = (x, y) => path(() => { g.arc(x, y - 8, 17, Math.PI * .15, Math.PI * .85); g.stroke(); });
   const eye = (x, y, rx = 14, ry = 19) => {
+    if (closed) return blinkLid(x, y);
     fill(INK_C, () => g.ellipse(x, y, rx, ry, 0, 0, 7));
     fill('#fff', () => g.arc(x - rx * .3, y - ry * .38, rx * .36, 0, 7));
   };
   const lidEye = (x, y) => { // 내리깐 눈: 아래 반쪽만
+    if (closed) return blinkLid(x, y + 4);
     fill(INK_C, () => { g.ellipse(x, y, 14, 15, 0, 0, Math.PI); g.closePath(); });
     path(() => { g.moveTo(x - 17, y - 1); g.lineTo(x + 17, y + 1); g.stroke(); });
   };
@@ -1199,9 +1205,9 @@ shadows.setDarkness(0.15);
 scene.imageProcessingConfiguration.contrast = 1.08;
 function setLight(mode, lampAt) {
   const night = mode === 'night';
-  Object.assign(hemi, { diffuse: C3(night ? '#9aa8e0' : '#fff7ec'), groundColor: C3(night ? '#2c3150' : '#c9b597'), intensity: night ? 0.38 : 0.72 });
+  Object.assign(hemi, { diffuse: C3(night ? '#9aa8e0' : '#fff7ec'), groundColor: C3(night ? '#3a3f60' : '#c9b597'), intensity: night ? 0.58 : 0.72 }); // 밤에도 얼굴은 읽히게
   Object.assign(sun, { diffuse: C3(night ? '#8fa3ff' : '#ffe7c2'), intensity: night ? 0.25 : 1.05 });
-  lamp.intensity = night ? 1.6 : 0;
+  lamp.intensity = night ? 2.2 : 0;
   if (lampAt) lamp.position = V3(...lampAt);
   scene.clearColor = BABYLON.Color4.FromHexString((night ? BG_NIGHT : BG) + 'ff');
   canvas.parentElement.style.background = night ? BG_NIGHT : BG;
@@ -1439,11 +1445,33 @@ engine.runRenderLoop(() => {
 new ResizeObserver(() => { engine.resize(); fitCam(); poke(); }).observe(canvas.parentElement);
 // ===== 인물: 몸은 기본 도형, 얼굴은 캔버스 그림을 머리에 붙인 무늬, 머리카락은 공 여러 개 =====
 const SKIN = '#ffe2cc';
-mat(SKIN).emissiveColor = C3(SKIN).scale(0.22); // 그늘진 얼굴도 밝게
+// 인물 재질: 무광 + 가장자리가 살짝 밝아지는 테두리 빛(만화 같은 입체감). 살색은 그늘에서도 밝게
+const cmats = {};
+function charMat(color) {
+  if (cmats[color]) return cmats[color];
+  const m = Object.assign(new BABYLON.StandardMaterial('c' + color, scene), { diffuseColor: C3(color), specularColor: BLACK });
+  m.emissiveFresnelParameters = Object.assign(new BABYLON.FresnelParameters(), { bias: 0.2, power: 2.2, leftColor: C3('#fff3e0').scale(0.32), rightColor: color === SKIN ? C3(SKIN).scale(0.22) : BLACK });
+  return (cmats[color] = m);
+}
+// 윤곽선: 같은 모양을 법선 방향으로 조금 부풀려 뒷면만 진하게 그린다 (renderOutline 의 깊이 문제가 없다)
+const inkMat = Object.assign(new BABYLON.StandardMaterial('ink', scene), { diffuseColor: BLACK, specularColor: BLACK, emissiveColor: C3('#3b2a22'), disableLighting: true, cullBackFaces: false });
+function hull(m, w) {
+  const h = m.clone('ink', m, true);
+  h.makeGeometryUnique();
+  h.position.setAll(0);
+  h.rotation.setAll(0);
+  h.scaling.setAll(1);
+  const pos = h.getVerticesData(BABYLON.VertexBuffer.PositionKind), nor = h.getVerticesData(BABYLON.VertexBuffer.NormalKind), s = m.scaling;
+  for (let i = 0; i < pos.length; i += 3) { pos[i] += nor[i] * w / s.x; pos[i + 1] += nor[i + 1] * w / s.y; pos[i + 2] += nor[i + 2] * w / s.z; }
+  h.setVerticesData(BABYLON.VertexBuffer.PositionKind, pos);
+  h.refreshBoundingInfo();
+  Object.assign(h, { material: inkMat, isPickable: false, receiveShadows: false, metadata: null });
+  return h;
+}
 // ---- 몸 비율 (m): 2등신 SD 캐릭터. 아이는 키 약 1.09에 머리 지름 0.54(키의 절반), 어른은 키 약 1.42, 머리 약 2.8개 ----
 const KID = { r: 0.27, hip: 0.27, thigh: 0.13, shin: 0.12, legR: 0.055, sh: 0.5, shX: 0.135, upper: 0.12, fore: 0.11, armR: 0.045, neck: 0.53, torsoY: 0.4, torsoR: 0.13, torsoL: 0.12 };
 const ADULT = { r: 0.25, hip: 0.5, thigh: 0.24, shin: 0.23, legR: 0.065, sh: 0.86, shX: 0.17, upper: 0.2, fore: 0.18, armR: 0.052, neck: 0.9, torsoY: 0.7, torsoR: 0.15, torsoL: 0.22 };
-const SEAT = 0.45; // 앉았을 때 엉덩이 관절 높이 (의자 앉는 면 0.40)
+const SEAT = 0.41; // 앉았을 때 엉덩이 관절 높이 (아이 의자 앉는 면 약 0.36)
 
 // ---- 자세: 어깨(aA 오른팔 x<0, aB 왼팔), 팔꿈치(eA, eB), 엉덩이(lA, lB), 무릎(kA, kB), 머리, 몸 기울기 ----
 // 회전 x 가 음수면 앞으로. 팔꿈치는 음수로 굽히고, 무릎은 양수로 굽힌다. sit: 의자 높이로 내려앉음
@@ -1468,7 +1496,8 @@ const POSES = {
 const POSE0 = { aA: [0.04, 0, -0.1], aB: [0.04, 0, 0.1], eA: -0.15, eB: -0.15, lA: [0, 0, 0], lB: [0, 0, 0], kA: 0, kB: 0, hd: [0, 0, 0], lean: 0, y: 0 };
 
 const CH = {};
-const OUT_W = 0.0045; // 인물 윤곽선 두께 (m)
+let blinkOff = false; // 컷과 얼굴 사진을 찍는 동안에는 깜빡이지 않는다
+const OUT_W = 0.006; // 인물 윤곽선 두께 (m)
 const FACE_TEX = FACE_W * 2; // 얼굴 무늬는 두 배 크기로 그려 가까이서도 또렷하게
 // i: 등장 순서 — 층 번호(1 + i)로 써서 컷에서 이 인물만 빼거나 얼굴 사진에 이 인물만 나오게 한다
 function makeChar(d, i) {
@@ -1477,7 +1506,7 @@ function makeChar(d, i) {
   const meshes = [];
   const root = node(d.id);
   const body = node('body', root);
-  const part = (m, color, parent, x = 0, y = 0, z = 0) => { put(m, color, x, y, z, parent); ink(m, OUT_W); meshes.push(m); return m; };
+  const part = (m, color, parent, x = 0, y = 0, z = 0) => { put(m, charMat(color), x, y, z, parent); meshes.push(m); return m; };
   const capsule = (r, len) => MB.CreateCapsule('cap', { radius: r, height: len + 2 * r, tessellation: 16, capSubdivisions: 5 }, scene);
   const limb = (r, len, color, parent) => part(capsule(r, len), color, parent, 0, -len / 2, 0);
 
@@ -1517,7 +1546,7 @@ function makeChar(d, i) {
 
   // 머리: 처음에는 원점에서 만들어 얼굴 무늬를 머리 공에 바로 붙인 다음 몸에 단다
   const head = node('head');
-  const skull = part(MB.CreateSphere('skull', { diameter: D.r * 2, segments: 28 }, scene), SKIN, head, 0, D.r, 0);
+  const skull = part(MB.CreateSphere('skull', { diameter: D.r * 2, segments: 32 }, scene), SKIN, head, 0, D.r, 0);
   skull.computeWorldMatrix(true);
   const faceTex = new BABYLON.DynamicTexture('face', { width: FACE_TEX, height: FACE_TEX }, scene, true);
   faceTex.hasAlpha = true;
@@ -1525,11 +1554,10 @@ function makeChar(d, i) {
   // 오른손 좌표계에서는 무늬 삼각형 방향이 뒤집혀 만들어져 뒷면 숨기기를 끈다
   Object.assign(faceMat, { diffuseTexture: faceTex, useAlphaFromDiffuseTexture: true, specularColor: BLACK, backFaceCulling: false });
   const face = MB.CreateDecal('face', skull, { position: V3(0, D.r, D.r), normal: V3(0, 0, 1), size: V3(D.r * 1.9, D.r * 1.9, D.r * 1.2) });
-  // 윤곽선(renderOutline)은 머리를 윤곽선 두께만큼 부풀린 깊이를 한 번 더 쓰는데, 오른손 좌표계에서는 그 앞면이 얼굴을 덮는다.
-  // 그래서 무늬 점을 머리 가운데에서 3.5%(약 6mm, 윤곽선 4.5mm 보다 바깥) 옮겨 굳힌다
+  // 무늬가 머리 공 표면과 같은 자리라 깊이 싸움에서 지지 않게, 점을 머리 가운데에서 1.2% 바깥으로 옮겨 굳힌다
   const fp = face.getVerticesData(BABYLON.VertexBuffer.PositionKind), fw = face.computeWorldMatrix(true), C = V3(0, D.r, 0);
   for (let k = 0; k < fp.length; k += 3) {
-    const v = BABYLON.Vector3.TransformCoordinates(V3(fp[k], fp[k + 1], fp[k + 2]), fw).subtract(C).scale(1.035).add(C);
+    const v = BABYLON.Vector3.TransformCoordinates(V3(fp[k], fp[k + 1], fp[k + 2]), fw).subtract(C).scale(1.012).add(C);
     fp[k] = v.x; fp[k + 1] = v.y; fp[k + 2] = v.z;
   }
   face.setVerticesData(BABYLON.VertexBuffer.PositionKind, fp);
@@ -1546,7 +1574,7 @@ function makeChar(d, i) {
 
   // 소품: 휴대전화(phone 자세), 줄넘기 줄(jump 자세)
   const phone = part(MB.CreateBox('phone', { width: 0.06, height: 0.11, depth: 0.012 }, scene), '#3a3f52', armA.elbow, 0, -D.fore - 0.02, 0.03);
-  const c = { id: d.id, d, D, r: D.r, i, mask, root, body, head, armA, armB, legA, legB, faceTex, meshes, phone, rope: null, base: 'stand', pose: 'stand', face0: 'calm', face: '', phase: i * 1.7 };
+  const c = { id: d.id, d, D, r: D.r, i, mask, root, body, head, armA, armB, legA, legB, faceTex, meshes, phone, rope: null, base: 'stand', pose: 'stand', face0: 'calm', face: '', phase: i * 1.7, blinkAt: 0, blinking: false };
   setPose(c, 'jump');
   [root, ...root.getChildTransformNodes(false), ...root.getChildMeshes(false)].forEach(n => n.computeWorldMatrix(true));
   const inv = body.getWorldMatrix().clone().invert();
@@ -1556,6 +1584,7 @@ function makeChar(d, i) {
   c.rope = put(MB.CreateTube('rope', { path, radius: 0.008, tessellation: 6 }, scene), '#e8505b', 0, 0, 0, body);
   meshes.push(c.rope);
   meshes.forEach(m => { m.layerMask = mask; m.isPickable = true; m.metadata = { char: d.id }; });
+  meshes.forEach(m => { if (m !== face) hull(m, OUT_W); });
   setPose(c, 'stand');
   setFace(c, 'calm');
   root.setEnabled(false);
@@ -1566,13 +1595,16 @@ function makeChar(d, i) {
 function addHair(d, r, part) {
   const col = d.hairColor;
   const s = (rad, x, y, z, sx = 1, sy = 1, sz = 1, color = col) => {
-    const m = part(MB.CreateSphere('hair', { diameter: rad * 2 * r, segments: 18 }, scene), color, x * r, r + y * r, z * r);
+    const m = part(MB.CreateSphere('hair', { diameter: rad * 2 * r, segments: 24 }, scene), color, x * r, r + y * r, z * r);
     m.scaling.set(sx, sy, sz);
     return m;
   };
   s(1.08, 0, 0.07, -0.1);
   if (d.hair === 'short') s(0.5, 0.15, 0.78, 0.45, 1.5, 0.45, 0.8);
-  else if (d.hair !== 'curly') s(0.62, 0, 0.62, 0.47, 1.5, 0.55, 0.78);
+  else if (d.hair !== 'curly') for (let k = 0; k < 5; k++) { // 앞머리: 이마를 따라 작은 공 다섯 개
+    const t = k / 2 - 1;
+    s(0.3, t * 0.62, 0.6 - Math.abs(t) * 0.12, 0.62 - Math.abs(t) * 0.15, 1.1, 0.78, 0.7);
+  }
   if (d.hair === 'bob') {
     s(0.5, -0.8, -0.38, -0.08, 0.75, 1.25, 1.1);
     s(0.5, 0.8, -0.38, -0.08, 0.75, 1.25, 1.1);
@@ -1624,15 +1656,19 @@ function setPose(c, name, over) {
   c.phone.setEnabled(c.pose === 'phone');
   if (c.rope) c.rope.setEnabled(c.pose === 'jump');
 }
-function setFace(c, kind) {
-  if (c.face === kind) return;
-  c.face = kind;
+function paintFace(c, closed) {
   const g = c.faceTex.getContext();
   g.save();
   g.scale(FACE_TEX / FACE_W, FACE_TEX / FACE_W);
-  drawFace(g, kind);
+  drawFace(g, c.face, closed);
   g.restore();
   c.faceTex.update();
+}
+function setFace(c, kind) {
+  if (c.face === kind && !c.blinking) return;
+  c.face = kind;
+  c.blinking = false;
+  paintFace(c, false);
 }
 // spot: [x, y, z, 돌리기(도)]
 function placeChar(c, spot, scale = 1) {
@@ -1651,6 +1687,12 @@ scene.onBeforeRenderObservable.add(() => {
     const c = CH[id];
     if (!shown(c)) continue;
     c.body.position.y = c.y0 + Math.sin(t * 2 + c.phase) * 0.004;
+    // 눈 깜빡임: 3~6초마다 0.13초 (그리기가 쉬는 동안에는 깜빡이지 않는다)
+    const ms = t * 1000;
+    if (!c.blinkAt) c.blinkAt = ms + 1500 + c.phase * 700;
+    if (blinkOff) continue;
+    if (!c.blinking && ms > c.blinkAt) { c.blinking = true; paintFace(c, true); }
+    else if (c.blinking && ms > c.blinkAt + 130) { c.blinking = false; c.blinkAt = ms + 3000 + Math.random() * 3000; paintFace(c, false); }
     if (c.pose === 'walk') {
       const s = Math.sin(t * 6 + c.phase);
       c.legA.rotation.x = s * 0.45;
@@ -1666,7 +1708,7 @@ scene.onBeforeRenderObservable.add(() => {
 });
 // ===== 무대(디오라마): 둥근 나무 받침 위 작은 세트. 처음 쓸 때 만들고, 한 번에 하나만 보인다 =====
 // 방은 벽 네 개를 묶음으로 만들어, 카메라 쪽 벽은 저절로 걷힌다(js_world 의 벽 자르기). 자리와 카메라 값은 data/defs.json
-const WALL_H = 2.5, WALL_T = 0.12, SILL = 0.85, TABLE_H = 0.64;
+const WALL_H = 2.5, WALL_T = 0.12, SILL = 0.85, TABLE_H = 0.56; // 2등신 아이에게 맞춘 낮은 모둠 탁자
 const WALL_C = '#f8efdf', WAINS_C = '#ecd6b2', RAIL_C = '#d6b084', WOOD = '#e3bf8f', FRAME = '#ffffff';
 
 // ---- 공통 ----
@@ -2044,7 +2086,7 @@ const BUILD = {
     pouch.scaling.z = 0.7;
     ['seat_nw', 'seat_ne', 'seat_w', 'seat_e'].forEach(k => {
       const [x, , z, ry] = s.def.spots[k];
-      model('chair', { h: 0.78, x: x - Math.sin(ry * DEG) * 0.04, z: z - Math.cos(ry * DEG) * 0.04, ry, color: { wood: '#e8c18e' }, ink: 0.004, parent: g });
+      model('chair', { h: 0.7, x: x - Math.sin(ry * DEG) * 0.06, z: z - Math.cos(ry * DEG) * 0.06, ry, color: { wood: '#e8c18e' }, ink: 0.004, parent: g }); // 아이 의자: 앉는 면 약 0.36
     });
     model('rugRectangle', { w: 1.7, d: 1.1, x: 1.55, z: 1.55, ry: 8, color: { carpet: '#efb08a', carpetDarker: '#d98a6a' }, cast: false, parent: g });
     s.apply = set => { map.set(set.map || 'none'); pencils.set(set.pencils || 'box'); wallMap.set(set.wall || 'none'); };
@@ -2234,6 +2276,9 @@ function placeShot(p) {
     let perp = V3(-line.z, 0, line.x).normalize();
     const score = BABYLON.Vector3.Dot(perp, facing(cs[0]).add(facing(cs[1]))) + 0.6 * BABYLON.Vector3.Dot(perp, camDir());
     if (score < 0) perp.scaleInPlace(-1);
+    // 서로 마주 보면 옆얼굴이 큰 머리에 가려서, 앞사람(말하는 사람) 얼굴 쪽으로 카메라를 돌린다
+    const f0 = facing(cs[0]);
+    if (BABYLON.Vector3.Dot(f0, facing(cs[1])) < -0.3) perp = perp.add(f0.scale(0.8)).normalize();
     perp = turnY(perp, turn);
     const r = Math.max(...cs.slice(0, 2).map(c => c.r * c.root.scaling.x)); // 2등신 큰 머리: 머리 크기에 맞춰 물러선다
     pos = mid.add(perp.scale(Math.max(r * 7, line.length() * 0.9 + r * 4))).add(V3(0, r * 1.2, 0));
@@ -2277,7 +2322,16 @@ function placeShot(p) {
 const snap = (cam, w, hh) => BABYLON.CreateScreenshotUsingRenderTargetAsync(engine, cam, { width: w, height: hh }, 'image/png', 1, false, undefined, false, true, true);
 // 찍기는 한 번에 하나씩 (Babylon 의 화면 밖 찍기가 겹치지 않게)
 let capQ = Promise.resolve(), capBusy = 0;
-function serial(fn) { capBusy++; const r = capQ.then(fn).finally(() => { capBusy--; }); capQ = r.catch(() => {}); return r; }
+function serial(fn) {
+  capBusy++;
+  const r = capQ.then(() => {
+    blinkOff = true; // 감은 눈으로 찍히지 않게 눈을 뜨게 하고 깜빡임을 멈춘다
+    for (const id in CH) if (CH[id].blinking) setFace(CH[id], CH[id].face);
+    return fn();
+  }).finally(() => { capBusy--; blinkOff = false; });
+  capQ = r.catch(() => {});
+  return r;
+}
 // 망점: 어두운 곳일수록 45도 격자 점이 커진다
 function screentone(g, W, H) {
   const img = g.getImageData(0, 0, W, H), d = img.data;
@@ -2318,15 +2372,16 @@ function portrait(c, face) {
   const key = `${c.id}:${face || c.face}:${face ? '' : c.pose}`;
   if (portraits[key]) return Promise.resolve(portraits[key]);
   return serial(async () => {
-    const keep = c.face;
+    const keep = c.face, night = stageNow.def.light === 'night';
     if (face) setFace(c, face);
+    if (night) setLight('day'); // 얼굴 사진은 밤 장면에서도 밝게
     scene.render();
     const hp = headPos(c), f = facing(c), r = c.r * c.root.scaling.x;
     faceCam.position.copyFrom(hp.add(f.scale(r * 7)).add(V3(0, r * 0.9, 0)));
     faceCam.setTarget(hp.add(V3(0, r * 0.05, 0)));
     faceCam.fov = 0.42;
     faceCam.layerMask = c.mask;
-    try { return (portraits[key] = await snap(faceCam, 160, 160)); } finally { if (face) setFace(c, keep); }
+    try { return (portraits[key] = await snap(faceCam, 160, 160)); } finally { if (face) setFace(c, keep); if (night) setLight('night', stageNow.def.lamp); }
   });
 }
 // 컷 하나의 표정과 자세를 무대 인물에게도 (다른 인물은 무대에서 정한 표정·자세로)
@@ -3187,6 +3242,7 @@ function openSettings() {
     row('수업 링크', '이 설정 그대로 1권을 바로 여는 주소 (GitHub Pages 주소에서 쓰세요)', copy),
     link,
     row('기록', '본 결말과 감정 카드 답은 이 기기에만 저장돼요', wipe),
+    h('small', 'ver', `마음 극장 v${VERSION}`),
     close,
   );
   ov.replaceChildren(card);

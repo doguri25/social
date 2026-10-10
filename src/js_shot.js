@@ -50,6 +50,9 @@ function placeShot(p) {
     let perp = V3(-line.z, 0, line.x).normalize();
     const score = BABYLON.Vector3.Dot(perp, facing(cs[0]).add(facing(cs[1]))) + 0.6 * BABYLON.Vector3.Dot(perp, camDir());
     if (score < 0) perp.scaleInPlace(-1);
+    // 서로 마주 보면 옆얼굴이 큰 머리에 가려서, 앞사람(말하는 사람) 얼굴 쪽으로 카메라를 돌린다
+    const f0 = facing(cs[0]);
+    if (BABYLON.Vector3.Dot(f0, facing(cs[1])) < -0.3) perp = perp.add(f0.scale(0.8)).normalize();
     perp = turnY(perp, turn);
     const r = Math.max(...cs.slice(0, 2).map(c => c.r * c.root.scaling.x)); // 2등신 큰 머리: 머리 크기에 맞춰 물러선다
     pos = mid.add(perp.scale(Math.max(r * 7, line.length() * 0.9 + r * 4))).add(V3(0, r * 1.2, 0));
@@ -93,7 +96,16 @@ function placeShot(p) {
 const snap = (cam, w, hh) => BABYLON.CreateScreenshotUsingRenderTargetAsync(engine, cam, { width: w, height: hh }, 'image/png', 1, false, undefined, false, true, true);
 // 찍기는 한 번에 하나씩 (Babylon 의 화면 밖 찍기가 겹치지 않게)
 let capQ = Promise.resolve(), capBusy = 0;
-function serial(fn) { capBusy++; const r = capQ.then(fn).finally(() => { capBusy--; }); capQ = r.catch(() => {}); return r; }
+function serial(fn) {
+  capBusy++;
+  const r = capQ.then(() => {
+    blinkOff = true; // 감은 눈으로 찍히지 않게 눈을 뜨게 하고 깜빡임을 멈춘다
+    for (const id in CH) if (CH[id].blinking) setFace(CH[id], CH[id].face);
+    return fn();
+  }).finally(() => { capBusy--; blinkOff = false; });
+  capQ = r.catch(() => {});
+  return r;
+}
 // 망점: 어두운 곳일수록 45도 격자 점이 커진다
 function screentone(g, W, H) {
   const img = g.getImageData(0, 0, W, H), d = img.data;
@@ -134,15 +146,16 @@ function portrait(c, face) {
   const key = `${c.id}:${face || c.face}:${face ? '' : c.pose}`;
   if (portraits[key]) return Promise.resolve(portraits[key]);
   return serial(async () => {
-    const keep = c.face;
+    const keep = c.face, night = stageNow.def.light === 'night';
     if (face) setFace(c, face);
+    if (night) setLight('day'); // 얼굴 사진은 밤 장면에서도 밝게
     scene.render();
     const hp = headPos(c), f = facing(c), r = c.r * c.root.scaling.x;
     faceCam.position.copyFrom(hp.add(f.scale(r * 7)).add(V3(0, r * 0.9, 0)));
     faceCam.setTarget(hp.add(V3(0, r * 0.05, 0)));
     faceCam.fov = 0.42;
     faceCam.layerMask = c.mask;
-    try { return (portraits[key] = await snap(faceCam, 160, 160)); } finally { if (face) setFace(c, keep); }
+    try { return (portraits[key] = await snap(faceCam, 160, 160)); } finally { if (face) setFace(c, keep); if (night) setLight('night', stageNow.def.lamp); }
   });
 }
 // 컷 하나의 표정과 자세를 무대 인물에게도 (다른 인물은 무대에서 정한 표정·자세로)

@@ -1,6 +1,6 @@
 // ===== 무대(디오라마): 둥근 나무 받침 위 작은 세트. 처음 쓸 때 만들고, 한 번에 하나만 보인다 =====
 // 방은 벽 네 개를 묶음으로 만들어, 카메라 쪽 벽은 저절로 걷힌다(js_world 의 벽 자르기). 자리와 카메라 값은 data/defs.json
-const WALL_H = 2.5, WALL_T = 0.12, SILL = 0.85, TABLE_H = 0.64;
+const WALL_H = 2.5, WALL_T = 0.12, SILL = 0.85, TABLE_H = 0.56; // 2등신 아이에게 맞춘 낮은 모둠 탁자
 const WALL_C = '#f8efdf', WAINS_C = '#ecd6b2', RAIL_C = '#d6b084', WOOD = '#e3bf8f', FRAME = '#ffffff';
 
 // ---- 공통 ----
@@ -378,7 +378,7 @@ const BUILD = {
     pouch.scaling.z = 0.7;
     ['seat_nw', 'seat_ne', 'seat_w', 'seat_e'].forEach(k => {
       const [x, , z, ry] = s.def.spots[k];
-      model('chair', { h: 0.78, x: x - Math.sin(ry * DEG) * 0.04, z: z - Math.cos(ry * DEG) * 0.04, ry, color: { wood: '#e8c18e' }, ink: 0.004, parent: g });
+      model('chair', { h: 0.7, x: x - Math.sin(ry * DEG) * 0.06, z: z - Math.cos(ry * DEG) * 0.06, ry, color: { wood: '#e8c18e' }, ink: 0.004, parent: g }); // 아이 의자: 앉는 면 약 0.36
     });
     model('rugRectangle', { w: 1.7, d: 1.1, x: 1.55, z: 1.55, ry: 8, color: { carpet: '#efb08a', carpetDarker: '#d98a6a' }, cast: false, parent: g });
     s.apply = set => { map.set(set.map || 'none'); pencils.set(set.pencils || 'box'); wallMap.set(set.wall || 'none'); };

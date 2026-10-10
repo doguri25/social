@@ -9,7 +9,7 @@ const want = ['warm', 'okay', 'sorry'].find(a => process.argv.includes(a)) || 'w
 const phone = process.argv.includes('phone');
 const every = process.argv.includes('every'); // 컷마다 사진
 const shots = resolve(process.argv.slice(2).find(a => a.startsWith('/')) || 'dist/shots');
-const { send, run, snap, quit, badErrors } = await openPage({ url: 'file://' + resolve('index.html') + '?book=1', shots, phone, prefix: phone ? 'phone-' : '', limit: 420000 });
+const { send, run, snap, quit, badErrors } = await openPage({ url: 'file://' + resolve('index.html') + '?book=1', shots, phone, prefix: phone ? 'phone-' : '', limit: 720000 });
 const state = async () => JSON.parse(await run('JSON.stringify(window.__maum ? window.__maum.state() : null)') || 'null');
 
 // 결말마다 고르는 방법: 갈림길 번호, 말 조각 고르기 (만약에는 돌아가며)

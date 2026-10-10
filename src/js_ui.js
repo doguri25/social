@@ -197,6 +197,7 @@ function openSettings() {
     row('수업 링크', '이 설정 그대로 1권을 바로 여는 주소 (GitHub Pages 주소에서 쓰세요)', copy),
     link,
     row('기록', '본 결말과 감정 카드 답은 이 기기에만 저장돼요', wipe),
+    h('small', 'ver', `마음 극장 v${VERSION}`),
     close,
   );
   ov.replaceChildren(card);

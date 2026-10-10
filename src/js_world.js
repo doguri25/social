@@ -56,9 +56,9 @@ shadows.setDarkness(0.15);
 scene.imageProcessingConfiguration.contrast = 1.08;
 function setLight(mode, lampAt) {
   const night = mode === 'night';
-  Object.assign(hemi, { diffuse: C3(night ? '#9aa8e0' : '#fff7ec'), groundColor: C3(night ? '#2c3150' : '#c9b597'), intensity: night ? 0.38 : 0.72 });
+  Object.assign(hemi, { diffuse: C3(night ? '#9aa8e0' : '#fff7ec'), groundColor: C3(night ? '#3a3f60' : '#c9b597'), intensity: night ? 0.58 : 0.72 }); // 밤에도 얼굴은 읽히게
   Object.assign(sun, { diffuse: C3(night ? '#8fa3ff' : '#ffe7c2'), intensity: night ? 0.25 : 1.05 });
-  lamp.intensity = night ? 1.6 : 0;
+  lamp.intensity = night ? 2.2 : 0;
   if (lampAt) lamp.position = V3(...lampAt);
   scene.clearColor = BABYLON.Color4.FromHexString((night ? BG_NIGHT : BG) + 'ff');
   canvas.parentElement.style.background = night ? BG_NIGHT : BG;

@@ -2,7 +2,7 @@
 
 사회정서를 다루는 동화 5권을 3D 디오라마 무대와 웹툰 컷으로 보여 주고, 사건마다 행동을 골라 이야기의 결과가 달라지는 초등 3~4학년 수업용 게임입니다. 엔진은 Babylon.js 9.27.1, 빌드 방식은 [폭주 구구단](https://github.com/doguri25/pokju-edu)과 같습니다.
 
-현재 버전: **데모 0.2** (1권 「다시 이어진 길」 처음부터 결말 3종까지, Babylon 판)
+현재 버전: **v0.3.0** (1권 「다시 이어진 길」 처음부터 결말 3종까지). 바뀐 점은 [`CHANGELOG.md`](CHANGELOG.md), 내려받기는 [Releases](https://github.com/doguri25/social/releases)
 
 기획은 [`docs/PRD.md`](docs/PRD.md)에 있습니다.
 

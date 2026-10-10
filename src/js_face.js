@@ -4,7 +4,8 @@ const INK_C = '#2a2433';
 
 // 얼굴은 머리 앞쪽 반구에 붙는 투명 그림. 가운데(128,128)가 머리 정면 가운데.
 // 디오라마처럼 멀리서 봐도 보이게 선을 굵게, 눈과 입을 크게 그린다.
-function drawFace(g, kind) {
+// closed: 눈 깜빡임 — 뜬 눈만 감은 눈으로 바꿔 그린다 (눈썹, 입은 그대로)
+function drawFace(g, kind, closed = false) {
   const L = 88, R = 168, EY = 136, MY = 184;
   g.clearRect(0, 0, FACE_W, FACE_W);
   g.lineCap = g.lineJoin = 'round';
@@ -12,11 +13,14 @@ function drawFace(g, kind) {
   g.lineWidth = 10;
   const path = fn => { g.beginPath(); fn(); };
   const fill = (c, fn) => { g.fillStyle = c; path(fn); g.fill(); g.fillStyle = INK_C; };
+  const blinkLid = (x, y) => path(() => { g.arc(x, y - 8, 17, Math.PI * .15, Math.PI * .85); g.stroke(); });
   const eye = (x, y, rx = 14, ry = 19) => {
+    if (closed) return blinkLid(x, y);
     fill(INK_C, () => g.ellipse(x, y, rx, ry, 0, 0, 7));
     fill('#fff', () => g.arc(x - rx * .3, y - ry * .38, rx * .36, 0, 7));
   };
   const lidEye = (x, y) => { // 내리깐 눈: 아래 반쪽만
+    if (closed) return blinkLid(x, y + 4);
     fill(INK_C, () => { g.ellipse(x, y, 14, 15, 0, 0, Math.PI); g.closePath(); });
     path(() => { g.moveTo(x - 17, y - 1); g.lineTo(x + 17, y + 1); g.stroke(); });
   };
