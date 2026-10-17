@@ -30,6 +30,8 @@ function applySet(stageName, set, merge) {
     setFace(c, s.face);
   }
   if (stageNow.apply) stageNow.apply(curSet);
+  setCrowd(stageNow, curSet.crowd);
+  ['ball', 'note', 'spoon'].forEach(k => setProp(k, curSet[k]));
   updateCast();
   poke();
 }
@@ -71,7 +73,7 @@ async function playScene(id, opt, my) {
   const from = opt.from || 0;
   const stageChanged = !stageNow || sc.stage !== stageNow.name;
   applySet(sc.stage, sc.set || {}, false);
-  for (let i = 0; i < from && i < sc.panels.length; i++) if (sc.panels[i].stage || sc.panels[i].set) applyItemSet(sc.panels[i]);
+  for (let i = 0; i < from && i < sc.panels.length; i++) if ((sc.panels[i].stage || sc.panels[i].set) && meets(sc.panels[i].when)) applyItemSet(sc.panels[i]);
   const partChanged = !!sc.part && sc.part !== curPart;
   if (sc.part) curPart = sc.part;
   setHeader(parseInt(sc.page, 10) || 1);
@@ -84,6 +86,7 @@ async function playScene(id, opt, my) {
   let pick = opt.pick;
   for (let i = from; i < sc.panels.length; i++) {
     const it = sc.panels[i];
+    if (!meets(it.when)) continue; // when: 지금까지 고른 길에 맞을 때만 나오는 컷
     if (it.stage || it.set) { applyItemSet(it); continue; }
     if (it.feel) {
       const k = await askFeel(it.feel); chk(my);
@@ -104,8 +107,8 @@ async function playScene(id, opt, my) {
     addFlags(o.add);
     return o.go;
   }
-  if (sc.compose) { await playCompose(sc, id, opt.pieces, my); return null; }
-  if (sc.end) { await playEnding(my); return null; } // 말 고르기 없이 바로 결말 (갈래 길의 끝)
+  if (sc.compose) await playCompose(sc, id, opt.pieces, my); // 고른 말을 다 하면 go 로 이어지거나 결말
+  if (sc.end) { await playEnding(my); return null; }
   return sc.go || null;
 }
 
@@ -117,6 +120,7 @@ async function playWhatif(w, sceneId, at, preset, my) {
   if (o.story) return showAndWait({ text: w.same, tone: 'note' }, my);
   const keepStage = stageNow.name, keepSet = curSet;
   for (const p of o.panels) {
+    if (!meets(p.when)) continue;
     if (p.stage || p.set) { applyItemSet(p); continue; }
     await showAndWait(Object.assign({ tone: 'whatif' }, p), my);
   }
@@ -139,7 +143,6 @@ async function playCompose(sc, id, preset, my) {
       lines: [{ who: spec.who, say: pc.text }],
     }, my);
   }
-  await playEnding(my);
 }
 // 결말: 지금 표시(flag)에 맞는 첫 결말. 남은 면을 결말 장면으로 센다
 async function playEnding(my) {
@@ -147,6 +150,7 @@ async function playEnding(my) {
   setHeader(BOOK.pages - 2);
   resetHist();
   for (const it of end.panels) {
+    if (!meets(it.when)) continue;
     if (it.stage || it.set) { applyItemSet(it); continue; }
     await showAndWait(it, my);
   }

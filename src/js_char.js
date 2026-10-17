@@ -1,4 +1,4 @@
-// ===== 인물: 몸은 기본 도형, 얼굴은 캔버스 그림을 머리에 붙인 무늬, 머리카락은 공 여러 개 =====
+// ===== 인물: 몸은 기본 도형, 얼굴은 캔버스 그림을 머리에 붙인 무늬, 머리카락은 깎은 껍데기 하나. 배경 아이는 한 자세로 굳혀 합친다 =====
 const SKIN = '#ffe2cc';
 // 인물 재질: 무광 + 가장자리가 살짝 밝아지는 테두리 빛(만화 같은 입체감). 살색은 그늘에서도 밝게
 const cmats = {};
@@ -28,7 +28,7 @@ const KID = { r: 0.27, hip: 0.27, thigh: 0.13, shin: 0.12, legR: 0.055, sh: 0.5,
 const ADULT = { r: 0.25, hip: 0.5, thigh: 0.24, shin: 0.23, legR: 0.065, sh: 0.86, shX: 0.17, upper: 0.2, fore: 0.18, armR: 0.052, neck: 0.9, torsoY: 0.7, torsoR: 0.15, torsoL: 0.22 };
 const SEAT = 0.41; // 앉았을 때 엉덩이 관절 높이 (아이 의자 앉는 면 약 0.36)
 
-// ---- 자세: 어깨(aA 오른팔 x<0, aB 왼팔), 팔꿈치(eA, eB), 엉덩이(lA, lB), 무릎(kA, kB), 머리, 몸 기울기 ----
+// ---- 자세: 어깨(aA 오른팔 x<0, aB 왼팔), 팔꿈치(eA, eB), 엉덩이(lA, lB), 무릎(kA, kB), 머리, 몸 기울기(lean 앞뒤, tilt 옆) ----
 // 회전 x 가 음수면 앞으로. 팔꿈치는 음수로 굽히고, 무릎은 양수로 굽힌다. sit: 의자 높이로 내려앉음
 const POSES = {
   stand: {},
@@ -47,15 +47,21 @@ const POSES = {
   point: { aB: [-1.4, 0, -0.1], eB: -0.1 },
   show: { aA: [-0.75, 0, 0.12], eA: -1.65, hd: [0.02, 0, 0] }, // 쥔 것을 오른손으로 들어 보인다
   clasp: { aA: [-0.5, 0, 0.32], eA: -1.95, aB: [-0.5, 0, -0.32], eB: -1.95, hd: [0.12, 0, 0] }, // 두 손을 모은다
+  throw: { aA: [-3.3, 0, -0.2], eA: -1.2, aB: [-1.0, 0, 0.2], eB: -0.3, lA: [0.3, 0, 0], lB: [-0.4, 0, 0], kB: 0.25, lean: 0.12 }, // 오른팔을 머리 뒤로 젖혀 던지려는 참
+  open: { aA: [-1.15, 0, -0.5], eA: -0.45, aB: [-1.15, 0, 0.5], eB: -0.45, lA: [-0.45, 0, 0.15], lB: [-0.45, 0, -0.15], kA: 0.85, kB: 0.85, lean: -0.12, y: -0.035 }, // 무릎을 굽히고 두 팔을 벌려 공을 받으려 한다
+  dodge: { aA: [-0.2, 0, -1.0], eA: -0.4, aB: [-0.2, 0, 1.0], eB: -0.4, lA: [0, 0, -0.3], lB: [0, 0, 0.15], kA: 0.3, tilt: 0.28 }, // 몸을 옆으로 비킨다
+  call: { aA: [-0.85, 0, 0.42], eA: -2.25, aB: [-0.85, 0, -0.42], eB: -2.25, hd: [-0.12, 0, 0] }, // 두 손을 입가에 모아 외친다
+  dance: { aA: [0, 0, -2.3], eA: -0.5, aB: [0, 0, 2.3], eB: -0.5, lA: [0, 0, -0.2], kB: 0.4, tilt: -0.22, hd: [0, 0, 0.15] }, // 엉덩이춤
 };
-const POSE0 = { aA: [0.04, 0, -0.1], aB: [0.04, 0, 0.1], eA: -0.15, eB: -0.15, lA: [0, 0, 0], lB: [0, 0, 0], kA: 0, kB: 0, hd: [0, 0, 0], lean: 0, y: 0 };
+const POSE0 = { aA: [0.04, 0, -0.1], aB: [0.04, 0, 0.1], eA: -0.15, eB: -0.15, lA: [0, 0, 0], lB: [0, 0, 0], kA: 0, kB: 0, hd: [0, 0, 0], lean: 0, tilt: 0, y: 0 };
 
 const CH = {};
 let blinkOff = false; // 컷과 얼굴 사진을 찍는 동안에는 깜빡이지 않는다
 const OUT_W = 0.006; // 인물 윤곽선 두께 (m)
 const FACE_TEX = FACE_W * 2; // 얼굴 무늬는 두 배 크기로 그려 가까이서도 또렷하게
 // i: 등장 순서 — 층 번호(1 + i)로 써서 컷에서 이 인물만 빼거나 얼굴 사진에 이 인물만 나오게 한다
-function makeChar(d, i) {
+// extra: 배경 아이로 쓸 몸만 만들어 돌려준다 (소품·윤곽선·CH 등록 없이)
+function makeChar(d, i, extra) {
   const D = d.tall ? ADULT : KID;
   const mask = 1 << (1 + i);
   const meshes = [];
@@ -69,7 +75,7 @@ function makeChar(d, i) {
     const hip = node('hip', body, x, D.hip, 0);
     const knee = node('knee', hip, 0, -D.thigh, 0);
     limb(D.legR, D.thigh, d.skirt && !d.tall ? SKIN : d.pants, hip);
-    limb(D.legR * 0.9, D.shin, d.skirt ? SKIN : d.pants, knee);
+    limb(D.legR * 0.9, D.shin, d.skirt || d.shorts ? SKIN : d.pants, knee); // 반바지면 무릎 아래는 맨살
     const shoe = part(capsule(D.legR * 1.1, 0.07), '#4a4f63', knee, 0, -D.shin, 0.03);
     shoe.rotation.x = Math.PI / 2;
     hip.knee = knee;
@@ -126,6 +132,7 @@ function makeChar(d, i) {
   addHair(d, D.r, (m, color, x, y, z) => part(m, color, head, x, y, z));
   head.parent = body;
   head.position.y = D.neck + 0.02;
+  if (extra) return { d, D, r: D.r, root, body, head, armA, armB, legA, legB, face, faceTex, meshes };
 
   // 소품: 휴대전화(phone 자세), 줄넘기 줄(jump 자세)
   const phone = part(MB.CreateBox('phone', { width: 0.06, height: 0.11, depth: 0.012 }, scene), '#3a3f52', armA.elbow, 0, -D.fore - 0.02, 0.03);
@@ -235,10 +242,11 @@ function setPose(c, name, over) {
   c.legB.knee.rotation.x = p.kB;
   c.head.rotation.set(...p.hd);
   c.body.rotation.x = p.lean;
+  c.body.rotation.z = p.tilt;
   c.y0 = p.sit ? SEAT - c.D.hip : p.y;
   c.body.position.y = c.y0;
   c.pose = over || name;
-  c.phone.setEnabled(c.pose === 'phone');
+  if (c.phone) c.phone.setEnabled(c.pose === 'phone');
   if (c.rope) c.rope.setEnabled(c.pose === 'jump');
 }
 function paintFace(c, closed) {
@@ -291,3 +299,48 @@ scene.onBeforeRenderObservable.add(() => {
     }
   }
 });
+
+// ---- 배경 아이 (반 친구, 다른 반): 같은 몸을 한 자세로 굳혀 몸 메시 하나 + 윤곽선 + 얼굴로 합친다. 무대 소품처럼 층 1, 누를 수 없음 ----
+const faceMats = {};
+function faceMatOf(kind) {
+  if (faceMats[kind]) return faceMats[kind];
+  const t = new BABYLON.DynamicTexture('faceX', { width: FACE_TEX, height: FACE_TEX }, scene, true);
+  t.hasAlpha = true;
+  const g = t.getContext();
+  g.save();
+  g.scale(FACE_TEX / FACE_W, FACE_TEX / FACE_W);
+  drawFace(g, kind, false);
+  g.restore();
+  t.update();
+  return (faceMats[kind] = Object.assign(new BABYLON.StandardMaterial('faceX', scene), { diffuseTexture: t, useAlphaFromDiffuseTexture: true, specularColor: BLACK, backFaceCulling: false }));
+}
+const EXTRA_TOPS = ['#f6a5a5', '#ffd98a', '#f4a259', '#f2a7c9', '#e9b4e0', '#fbe39a', '#ff8f7a', '#c8e07a']; // 살색과 헷갈리지 않는 밝은 색
+const TEAM_TOPS = { b1: '#7da7e0', b3: '#6c86b8' }; // 다른 반은 푸른 옷으로 한눈에
+const EXTRA_HAIR = ['short', 'bob', 'curly', 'short', 'bun', 'bob', 'short', 'long'];
+function extraLook(k, team) {
+  return {
+    id: 'x', top: TEAM_TOPS[team] || EXTRA_TOPS[k % EXTRA_TOPS.length], pants: ['#4a5168', '#5b6b8c', '#6b5b8c', '#55606e'][k % 4], shorts: true,
+    hair: EXTRA_HAIR[(k * 3 + (team === 'a' ? 0 : 1)) % EXTRA_HAIR.length], hairColor: ['#3a2a22', '#4a3326', '#2d2622', '#5a3d2b'][k % 4], tie: ['#e8708f', '#6fbfee', '#ffcf3f'][k % 3],
+  };
+}
+// spot: [x, y, z, 돌리기(도), 자세, 표정, 반('a' 우리 반, 'b1' 1반, 'b3' 3반)], k: 생김새 번호
+function makeExtra(spot, k, parent) {
+  const [x, y, z, ry, pose = 'stand', face = 'calm', team = 'a'] = spot;
+  const c = makeChar(extraLook(k, team), 0, true);
+  setPose(c, pose);
+  c.face.material.dispose();
+  c.face.material = faceMatOf(face);
+  c.faceTex.dispose();
+  [c.root, ...c.root.getChildTransformNodes(false), ...c.meshes].forEach(n => n.computeWorldMatrix(true));
+  c.face.setParent(null);
+  c.face.bakeCurrentTransformIntoVertices();
+  const body = BABYLON.Mesh.MergeMeshes(c.meshes.filter(m => m !== c.face), true, true, undefined, false, true);
+  c.root.dispose();
+  const n = node('extra', parent, x, y, z);
+  n.rotation.y = ry * DEG;
+  [body, c.face].forEach(m => { m.parent = n; m.isPickable = false; m.layerMask = 1; m.receiveShadows = true; });
+  shadows.addShadowCaster(body);
+  hull(body, OUT_W).layerMask = 1;
+  n.head = V3(x, y + c.D.neck + c.D.r + 0.02 + (POSES[pose] && POSES[pose].sit ? SEAT - c.D.hip : 0), z); // 컷 카메라를 가리는지 볼 때 쓰는 머리 자리
+  return n;
+}

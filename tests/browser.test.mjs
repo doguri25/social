@@ -1,11 +1,11 @@
 // 브라우저 시험: 크롬을 화면 없이 띄워 1권을 처음부터 결말까지 자동으로 넘겨 본다.
-//   node tests/browser.test.mjs [warm|okay|sorry|together|talked] [phone] [every] [사진 폴더]
+//   node tests/browser.test.mjs [palm|pass|finger|start|thu] [phone] [every] [사진 폴더]
 // 교실 첫 장면에서는 둘러보기 점 누르기, 무대 돌리기(카메라 쪽 벽이 걷히는지), 이전 컷 보기도 확인한다.
 // 콘솔 오류가 하나라도 나거나 결말에 닿지 못하면 실패. 고비마다 화면을 찍어 둔다.
 import { resolve } from 'node:path';
 import { openPage, sleep } from './cdp.mjs';
 
-const want = ['warm', 'okay', 'sorry', 'together', 'talked'].find(a => process.argv.includes(a)) || 'warm';
+const want = ['palm', 'pass', 'finger', 'start', 'thu'].find(a => process.argv.includes(a)) || 'palm';
 const phone = process.argv.includes('phone');
 const every = process.argv.includes('every'); // 컷마다 사진
 const shots = resolve(process.argv.slice(2).find(a => a.startsWith('/')) || 'dist/shots');
@@ -13,13 +13,13 @@ const { send, run, snap, quit, badErrors } = await openPage({ url: 'file://' + r
 const state = async () => JSON.parse(await run('JSON.stringify(window.__maum ? window.__maum.state() : null)') || 'null');
 
 // 결말마다 고르는 방법: 장면별 갈림길 번호(없으면 0), 말 조각 고르기
-const BOOK = { s03: 1, s04: 1, s09: 1 }; // 원작 길: 묻지 않고 쓰고, 웃어넘기고, 민준이하고만 웃는다
+const BOOK = { s02: 1, s05: 1, s08: 1 }; // 원작 길: 「나한테 줘」, 「너 때문에」, 「나중에」
 const PLAN = {
-  warm: { choice: { ...BOOK, s13: 0, s15: 0 }, pieces: t => !/근데|됐지/.test(t) },
-  okay: { choice: { ...BOOK, s13: 2, s15: 2 }, pieces: t => /색연필|지도를/.test(t) },
-  sorry: { choice: { ...BOOK, s13: 1, s15: 1 }, pieces: t => /됐지|근데/.test(t) },
-  together: { choice: { s03: 0, s04: 0, s06r: 1 }, pieces: () => true },
-  talked: { choice: { s03: 0, s04: 1, s09: 0 }, pieces: () => true },
+  palm: { choice: { ...BOOK, s12: 0, s16: 0 }, pieces: t => !/근데|됐지/.test(t) },
+  pass: { choice: { ...BOOK, s12: 1, s16: 1 }, pieces: t => /애들 앞에서/.test(t) },
+  finger: { choice: { ...BOOK, s12: 2, s16: 2 }, pieces: t => /됐지|근데/.test(t) },
+  start: { choice: { s02: 0, s05: 0, s06e: 1 }, pieces: () => true },
+  thu: { choice: { s02: 1, s05: 1, s08: 0 }, pieces: () => true },
 }[want];
 
 // 화면에 보이는 것 하나를 눌러 한 걸음 나아간다
@@ -112,6 +112,6 @@ console.log(`결말: ${s.ending} (원하는 결말 ${want}), 내가 고른 길 �
 console.log(`둘러보기 말: ${checks.pop ? '나옴' : '안 나옴'}, 벽 걷힘: ${checks.walls ? '됨' : '안 됨'}, 이전 컷: ${checks.back ? '됨' : '안 됨'}`);
 const bad = badErrors();
 bad.forEach(e => console.log('✗ 콘솔 오류: ' + e));
-const ok = !bad.length && s.ending === want && reviewStops >= (['together', 'talked'].includes(want) ? 4 : 6) && checks.pop && checks.walls && checks.back;
+const ok = !bad.length && s.ending === want && reviewStops >= (['start', 'thu'].includes(want) ? 4 : 6) && checks.pop && checks.walls && checks.back;
 console.log(ok ? `통과 · 사진: ${shots}` : '실패');
 quit(ok ? 0 : 1);

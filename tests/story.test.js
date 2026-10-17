@@ -1,6 +1,6 @@
 // 이야기 데이터 검사: node tests/story.test.js
 // stories/*.json 이 data/defs.json 의 목록(무대, 자리, 표정, 자세, 카메라)에 맞는지,
-// 모든 갈림길과 말 고르기 조합이 막힘없이 결말에 닿는지, 결말 세 개가 모두 나오는지 확인한다.
+// 모든 갈림길과 말 고르기 조합이 막힘없이 결말에 닿는지, 결말이 모두 나오는지 확인한다.
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -31,9 +31,14 @@ for (const file of files) {
       if (face && !has('faces', face)) err(at, `표정 "${face}"가 목록에 없음`);
       if (scale && !(+scale > 0)) err(at, `크기 "${scale}"가 숫자가 아님`);
     }
-    if (set.map && !has('mapStates', set.map)) err(at, `지도 상태 "${set.map}"가 목록에 없음`);
-    if (set.pencils && !has('pencilStates', set.pencils)) err(at, `색연필 상태 "${set.pencils}"가 목록에 없음`);
-    if (set.wall && !has('wallStates', set.wall)) err(at, `벽 지도 상태 "${set.wall}"가 목록에 없음`);
+    if (set.crowd && !(st.crowds || {})[set.crowd]) err(at, `무대 ${stage}에 반 친구 무리 "${set.crowd}"가 없음`);
+    for (const k of ['ball', 'note', 'spoon']) {
+      if (set[k] == null || set[k] === 'none') continue;
+      const [id, how] = String(set[k]).split(':');
+      const inHand = cast.has(id) && (!how || (k === 'ball' && how === 'hug'));
+      if (!inHand && !(st.balls || {})[id]) err(at, `${k} "${set[k]}"가 인물 손도 무대 자리도 아님`);
+      if (cast.has(id) && !(set.cast || {})[id] && !set._merged) warn(at, `${k}를 든 "${id}"가 이 무대 상태에 없음`);
+    }
   }
 
   // ---- 그림 컷 ----
@@ -55,8 +60,9 @@ for (const file of files) {
     }
   }
   function checkPanel(p, stage, at) {
-    const kinds = ['shot', 'text', 'phone'].filter(k => p[k] != null);
-    if (kinds.length !== 1) return err(at, `컷 종류(shot/text/phone)가 하나여야 함: ${kinds.join(',') || '없음'}`);
+    const kinds = ['shot', 'text', 'phone', 'note'].filter(k => p[k] != null);
+    if (kinds.length !== 1) return err(at, `컷 종류(shot/text/phone/note)가 하나여야 함: ${kinds.join(',') || '없음'}`);
+    if (p.note && !has('notes', p.note)) err(at, `수첩 그림 "${p.note}"가 목록에 없음`);
     if (p.shot) checkShot(p, stage, at);
     if (p.phone) {
       const ph = p.phone;
@@ -87,7 +93,7 @@ for (const file of files) {
         if (!DEFS.stages[p.stage]) return err(here, `무대 "${p.stage}"가 없음`);
         stage = p.stage;
       }
-      if (p.stage || p.set) return checkSet(p.set || {}, stage, here);
+      if (p.stage || p.set) return checkSet(Object.assign({ _merged: !p.stage }, p.set), stage, here);
       if (p.feel) return checkFeel(p.feel, here);
       if (p.activity) { if (!has('activities', p.activity)) err(here, `활동 "${p.activity}"가 목록에 없음`); return; }
       if (p.whatif) {
@@ -119,7 +125,7 @@ for (const file of files) {
     });
     stageAtEnd[id] = checkPanels(sc.panels || [], sc.stage, id);
     const ends = ['choices', 'compose', 'go', 'end'].filter(k => sc[k] != null);
-    if (sc.compose && sc.end) ends.splice(ends.indexOf('end'), 1);
+    if (sc.compose) ends.splice(ends.indexOf('compose'), 1); // 말 고르기 뒤에는 go 나 end
     if (ends.length !== 1) err(id, `장면 끝은 choices/compose/go/end 가운데 하나: ${ends.join(',') || '없음'}`);
     if (sc.go && !B.scenes[sc.go]) err(id, `go "${sc.go}" 장면이 없음`);
     if (sc.choices) {
@@ -127,7 +133,6 @@ for (const file of files) {
       sc.choices.opts.forEach((o, k) => { if (!B.scenes[o.go]) err(`${id} 선택${k}`, `go "${o.go}" 장면이 없음`); });
     }
     if (sc.compose) {
-      if (!sc.end) err(id, 'compose 장면은 end: true 로 결말을 고름');
       if (!cast.has(sc.compose.who) || !cast.has(sc.compose.to)) err(id, 'compose의 who/to가 cast에 없음');
       sc.compose.pieces.forEach((pc, k) => { if (pc.face && !has('faces', pc.face)) err(`${id} 말${k}`, `표정 "${pc.face}"가 목록에 없음`); });
     }
@@ -139,8 +144,10 @@ for (const file of files) {
   if (E.length < 1) err('endings', '결말이 없음');
   if (E.length && E[E.length - 1].when) err('endings', '마지막 결말은 when 없는 기본 결말이어야 함');
   if (new Set(E.map(e => e.id)).size !== E.length) err('endings', '결말 id가 겹침');
-  const composeScene = ids.find(id => B.scenes[id].compose || B.scenes[id].end);
-  E.forEach(e => checkPanels(e.panels || [], stageAtEnd[composeScene] || 'classroom', `결말 ${e.id}`));
+  E.forEach(e => {
+    if (!(e.panels || [])[0] || !e.panels[0].stage) err(`결말 ${e.id}`, '결말 첫 컷은 무대(stage)를 정해야 함');
+    checkPanels(e.panels || [], 'shelf', `결말 ${e.id}`);
+  });
 
   // ---- 모든 길 따라가기 ----
   const meets = (cond, f) => Object.entries(cond || {}).every(([k, c]) => {
@@ -163,6 +170,7 @@ for (const file of files) {
         const picked = avail.filter((_, i) => mask & (1 << i));
         if (picked.length < (sc.compose.min || 1)) continue;
         const f = picked.reduce((acc, pc) => add(acc, pc.add), flags);
+        if (sc.go) { walk(sc.go, f, depth + 1, `${trail}>${sc.go}`); continue; }
         const end = E.find(e => meets(e.when, f)) || E[E.length - 1];
         reached[end.id] = (reached[end.id] || 0) + 1;
         paths++;

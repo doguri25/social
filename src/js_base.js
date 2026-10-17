@@ -1,5 +1,5 @@
 // ===== 기본 도구: 저장, 주소, 소리, 읽어 주기, 기다리기 =====
-const VERSION = '0.4.0'; // 올릴 때 CHANGELOG.md 와 함께 바꾼다
+const VERSION = '0.5.0'; // 올릴 때 CHANGELOG.md 와 함께 바꾼다
 const $ = (s, r = document) => r.querySelector(s);
 const h = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -25,6 +25,8 @@ const save = (() => {
 save.set = Object.assign({ read: false, fs: 1, q: 'auto', sound: true, cls: false }, save.set);
 function store() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* 저장 실패해도 놀이는 계속 */ } }
 function bookRec(id) { return save.books[id] || (save.books[id] = { endings: [], feels: {} }); }
+// 본 결말 수: 지금 책에 있는 결말만 센다 (책을 바꾸기 전에 본 결말은 빼고)
+const seenEnds = (rec, book) => book.endings.filter(e => rec.endings.includes(e.id)).length;
 
 // ---- 수업 링크: ?book=1&mode=class 또는 #book1.class (아티팩트는 # 만 전달됨) ----
 const ARGS = new URLSearchParams(location.search);

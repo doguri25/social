@@ -90,7 +90,6 @@ function paper(w, h, lines, bg = '#fffaf0', border = '#e8c9a0') {
   });
 }
 const PENCIL_COLS = ['#e8505b', '#f39c6b', '#ffcf3f', '#78c78a', '#6fbfee', '#5b6ee8', '#b48ad8', '#f497b6'];
-const SKY = 4; // 하늘색 색연필
 function pencilMesh(color, len = 0.17, r = 0.0055) {
   const p = put(MB.CreateCylinder('pencil', { diameter: r * 2, height: len, tessellation: 6 }, scene), color, 0, 0, 0, null, false);
   const tip = put(MB.CreateCylinder('tip', { diameterTop: 0, diameterBottom: r * 2, height: 0.025, tessellation: 6 }, scene), '#f6d9b0', 0, len / 2 + 0.0125, 0, p, false);
@@ -98,100 +97,62 @@ function pencilMesh(color, len = 0.17, r = 0.0055) {
   return p;
 }
 
-// ---- 모둠 지도: 탁자 위 한 장, 찢어진 두 장, 전시 벽에 세운 것 ----
-const MAP_SIZE = [1.05, 1.05 * MAP_H / MAP_W];
-const mapCache = {};
-// half: 'L' | 'R' 이면 찢어진 반쪽만 남기고 나머지는 투명
-function mapTex(st, half) {
-  const key = st + (half || '');
-  if (mapCache[key]) return mapCache[key];
-  return (mapCache[key] = canvasTex(MAP_W, MAP_H, g => {
-    if (!half) return paintMap(g, st);
-    const full = document.createElement('canvas');
-    full.width = MAP_W; full.height = MAP_H;
-    paintMap(full.getContext('2d'), st);
-    g.save();
-    g.beginPath();
-    g.moveTo(half === 'L' ? 0 : MAP_W, 0);
-    TEAR.forEach(([x, y]) => g.lineTo(x, y));
-    g.lineTo(half === 'L' ? 0 : MAP_W, MAP_H);
-    g.closePath();
-    g.clip();
-    g.drawImage(full, 0, 0);
-    g.restore();
-    g.beginPath();
-    TEAR.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)));
-    g.strokeStyle = '#ffffff'; g.lineWidth = 5; g.stroke();
-  }, !!half));
+// ---- 손에 드는 소품: 피구공, 서아 수첩, 민준이 숟가락 ----
+// set.ball / set.note / set.spoon: 인물 id 면 그 아이 손(공은 'id:hug' 면 품에), 무대 defs.balls 의 이름이면 그 자리, 없으면 숨김
+const PROPS = {};
+function makeProp(kind) {
+  const n = node(kind);
+  let m;
+  if (kind === 'ball') {
+    m = ball(0.085, texMat(canvasTex(256, 128, (c, w, hh) => {
+      c.fillStyle = '#e8505b'; c.fillRect(0, 0, w, hh);
+      c.strokeStyle = '#fff3e6'; c.lineWidth = 5;
+      [0.25, 0.75].forEach(k => { c.beginPath(); c.moveTo(w * k, 0); c.bezierCurveTo(w * k + 30, hh * 0.35, w * k - 30, hh * 0.65, w * k, hh); c.stroke(); });
+      c.beginPath(); c.moveTo(0, hh / 2); c.lineTo(w, hh / 2); c.stroke();
+    })), 0, 0, 0, n, 20);
+  } else if (kind === 'note') {
+    m = box(0.11, 0.15, 0.018, '#ffcf3f', 0, 0, 0, n);
+    box(0.1, 0.14, 0.012, '#ffffff', 0.006, 0, 0.004, m, false);
+  } else {
+    m = cyl(0.006, 0.006, 0.13, '#c9ced6', 0, -0.065, 0, n, 8);
+    ball(0.02, '#c9ced6', 0, -0.135, 0.004, n, 10).scaling.set(1, 1.3, 0.5);
+  }
+  hull(m, 0.004).layerMask = 1;
+  n.setEnabled(false);
+  return (PROPS[kind] = n);
 }
-function paperMat(m, tex) {
-  const t = m.material;
-  t.diffuseTexture = tex;
-  t.useAlphaFromDiffuseTexture = tex.hasAlpha;
-  t.transparencyMode = tex.hasAlpha ? BABYLON.Material.MATERIAL_ALPHATEST : BABYLON.Material.MATERIAL_OPAQUE;
-  t.alphaCutOff = 0.5;
+const HELD = {
+  ball: (c, how) => (how === 'hug' ? [c.body, 0, c.D.torsoY + 0.03, c.D.torsoR + 0.1] : [c.armA.hand, 0, -0.08, 0.03]),
+  note: c => [c.armA.hand, 0, -0.06, 0.03],
+  spoon: c => [c.head, 0, c.r * 0.9, c.r * 1.07],
+};
+function setProp(kind, v) {
+  const n = PROPS[kind] || makeProp(kind);
+  const [id, how] = String(v || 'none').split(':');
+  const c = CH[id], at = stageNow.def.balls && stageNow.def.balls[id];
+  if (c && shown(c)) {
+    const [parent, x, y, z] = HELD[kind](c, how);
+    n.parent = parent;
+    n.position.set(x, y, z);
+  } else if (at) {
+    n.parent = stageNow.root;
+    n.position.set(...at);
+  } else return n.setEnabled(false);
+  n.getChildMeshes().forEach(m => { m.layerMask = c && shown(c) ? c.mask : 1; }); // 든 소품은 그 아이와 같은 층: 컷에서 아이를 빼면 소품도 빠진다
+  n.setEnabled(true);
 }
-function makeMapProp(parent, scale = 1, standing = false) {
-  const g = node('map', parent);
-  const [w, d] = MAP_SIZE.map(v => v * scale);
-  const mk = () => (standing ? sheet(w, d, null, 0, 0, 0, 0, g) : lay(w, d, null, 0, 0, 0, g));
-  const full = mk(), L = mk(), R = mk();
-  let cur = null;
-  return {
-    g,
-    set(st) {
-      if (st === cur) return;
-      cur = st;
-      g.setEnabled(st !== 'none');
-      if (st === 'none') return;
-      const torn = st === 'torn' || st === 'halves';
-      full.setEnabled(!torn);
-      L.setEnabled(torn);
-      R.setEnabled(torn);
-      if (!torn) return paperMat(full, mapTex(st));
-      paperMat(L, mapTex('scribbled', 'L'));
-      paperMat(R, mapTex('scribbled', 'R'));
-      const gap = (st === 'halves' ? 0.32 : 0.26) * scale;
-      if (standing) { L.position.set(-gap, 0, 0.002); R.position.set(gap, 0, 0.004); }
-      else { L.position.set(-gap, 0, 0.02); L.rotation.y = 0.07; R.position.set(gap, 0.001, -0.02); R.rotation.y = -0.05; }
-    },
-  };
-}
-// 서아의 새 색연필: 닫힌 상자(box) / 뚜껑 연 상자(open) / 하늘색을 유나가 쥠(taken) / 바닥에 쏟아짐(scattered)
-let handPencil = null;
-function makePencils(parent) {
-  const bx = node('pencilBox', parent, -0.4, TABLE_H, -0.45);
-  bx.rotation.y = 0.75;
-  box(0.2, 0.02, 0.12, '#ffffff', 0, 0.01, 0, bx);
-  const lidShut = box(0.205, 0.008, 0.125, '#6fbfee', 0, 0.024, 0, bx);
-  const lidOpen = box(0.205, 0.008, 0.125, '#6fbfee', 0, 0.062, -0.07, bx);
-  lidOpen.rotation.x = Math.PI / 2 - 0.25;
-  const inBox = PENCIL_COLS.map((c, i) => { const p = pencilMesh(c); p.parent = bx; p.rotation.z = Math.PI / 2; p.position.set(0, 0.026, -0.049 + i * 0.014); return p; });
-  const floor = node('floorPencils', parent);
-  PENCIL_COLS.forEach((c, i) => {
-    const p = pencilMesh(c);
-    const a = i * 0.8 + 0.3;
-    p.parent = floor;
-    p.position.set(0.4 + Math.cos(a) * (0.15 + i * 0.035), 0.007, 1.0 + Math.sin(a) * 0.22);
-    p.rotation.set(0, a * 1.7, Math.PI / 2);
-    shadows.addShadowCaster(p);
-  });
-  return {
-    set(st) {
-      bx.setEnabled(st !== 'scattered');
-      floor.setEnabled(st === 'scattered');
-      lidShut.setEnabled(st === 'box');
-      lidOpen.setEnabled(st === 'open' || st === 'taken');
-      inBox[SKY].setEnabled(st !== 'taken');
-      if (st === 'taken' && !handPencil && CH.yuna) {
-        handPencil = pencilMesh(PENCIL_COLS[SKY], 0.17, 0.007);
-        handPencil.parent = CH.yuna.armA.hand;
-        handPencil.position.set(0, -0.045, 0.015);
-        handPencil.rotation.x = Math.PI; // 손 너머로 뾰족한 끝
-      }
-      if (handPencil) handPencil.setEnabled(st === 'taken');
-    },
-  };
+
+// ---- 배경 아이 무리: defs 의 crowds 에 적은 자리마다 굳힌 아이. 처음 쓸 때 만든다 ----
+function setCrowd(s, name) {
+  s.crowds = s.crowds || {};
+  if (name && !s.crowds[name]) {
+    const g = node('crowd-' + name, s.root);
+    const list = s.def.crowds[name];
+    g.kids = list.map((spot, k) => makeExtra(spot, k + name.length, g));
+    s.crowds[name] = g;
+  }
+  for (const k in s.crowds) s.crowds[k].setEnabled(k === name);
+  s.kids = name ? s.crowds[name].kids : [];
 }
 
 // ---- 무대별 세트 ----
@@ -226,34 +187,7 @@ const BUILD = {
     model('plantSmall2', { h: 0.4, x: -2.6, z: -1.1, parent: g });
   },
 
-  // 학교 가는 길: 길, 집 세 채(지붕 색으로 누구 집인지), 학교, 나무, 가로등
-  street(s) {
-    const g = s.root;
-    stageBase(g, 14, 10);
-    put(MB.CreateGround('grass', { width: 14, height: 10 }, scene), '#a9d98f', 0, 0, 0, g, false);
-    box(2.0, 0.03, 10, '#e9e3d5', 0, 0.012, 0, g, false);
-    box(0.12, 0.08, 10, '#c9c2b4', 1.06, 0.04, 0, g, false);
-    box(3.0, 0.02, 10, '#8f96a3', 2.6, 0.01, 0, g, false);
-    for (let z = -4.6; z < 4.8; z += 1.2) box(0.1, 0.012, 0.6, '#ffffff', 2.6, 0.022, z, g, false);
-    box(1.6, 0.03, 10, '#e9e3d5', 4.9, 0.012, 0, g, false);
-    model('building-type-c', { h: 6.2, x: -4.6, z: -0.6, ry: 90, roof: '#6fbfee', parent: g });
-    model('building-type-k', { h: 6.6, x: 7.6, z: -2.6, ry: -90, roof: '#e8708f', parent: g });
-    model('building-type-p', { h: 6.0, x: 7.4, z: 3.2, ry: -90, roof: '#61cb8b', parent: g });
-    const sc = node('school', g, -1.5, 0, -5.4);
-    box(7, 4.2, 1.2, '#f6efe2', 0, 2.1, 0, sc);
-    box(7.3, 0.25, 1.4, '#e57f5c', 0, 4.3, 0, sc);
-    [-2.6, -1.3, 1.3, 2.6].forEach(x => { box(0.9, 0.8, 0.05, '#bfe6ff', x, 2.9, 0.61, sc, false); box(0.9, 0.8, 0.05, '#bfe6ff', x, 1.4, 0.61, sc, false); });
-    box(1.4, 2.1, 0.06, '#b98a5e', 0, 1.05, 0.61, sc, false);
-    const clockM = cyl(0.35, 0.35, 0.06, '#ffffff', 0, 3.4, 0.62, sc);
-    clockM.rotation.x = Math.PI / 2;
-    [[-1.7, -2.8, 4.6], [-2.2, 2.6, 4.2], [4.2, 0.4, 3.8], [-6.4, 3.6, 5]].forEach(([x, z, h]) => model('tree_default', { h, x, z, ry: x * 40, parent: g }));
-    [[-1.6, -1.0], [-1.7, 0.4], [-1.6, 1.6]].forEach(([x, z], i) => model(i % 2 ? 'plant_bush' : 'plant_bushSmall', { h: 0.32, x, z, parent: g }));
-    [[-1.4, -0.4, 'flower_redA'], [-1.45, 1.0, 'flower_yellowB'], [-1.35, 2.2, 'flower_purpleA']].forEach(([x, z, m]) => model(m, { h: 0.3, x, z, parent: g }));
-    cyl(0.05, 0.06, 3.2, '#5a6278', -1.25, 1.6, -1.8, g);
-    ball(0.16, '#ffe9a0', -1.25, 3.25, -1.8, g).material = Object.assign(new BABYLON.StandardMaterial('lampGlow', scene), { emissiveColor: C3('#fff1b8'), disableLighting: true });
-  },
-
-  // 교실: 둥근 모둠 탁자, 칠판과 전시판(뒤), 창(왼쪽), 문과 약속판(오른쪽), 사물함(앞)
+  // 교실: 둥근 모둠 탁자(set.circle 이면 치우고 의자 열 개를 둥글게), 칠판과 대진표(뒤), 창(왼쪽), 문과 약속판(오른쪽), 사물함(앞)
   classroom(s) {
     const g = s.root, W = 6, D = 5;
     stageBase(g, W, D);
@@ -271,23 +205,28 @@ const BUILD = {
     sheet(2.16, 0.98, canvasTex(1024, 464, (c, w, h) => {
       c.fillStyle = '#2f5d50'; c.fillRect(0, 0, w, h);
       for (let i = 0; i < 40; i++) { c.fillStyle = `rgba(255,255,255,${0.015 + Math.random() * 0.025})`; c.fillRect(Math.random() * w, Math.random() * h, 60 + Math.random() * 200, 8 + Math.random() * 30); }
-      write(c, '우리 동네 지도', 300, 80, 74, 'rgba(250,250,240,.92)');
-      c.strokeStyle = 'rgba(250,250,240,.85)'; c.lineWidth = 5; c.lineJoin = c.lineCap = 'round';
-      c.beginPath(); c.moveTo(120, 340); c.lineTo(120, 260); c.lineTo(190, 205); c.lineTo(260, 260); c.lineTo(260, 340); c.closePath();
-      c.rect(170, 290, 36, 50); c.moveTo(70, 350); c.lineTo(560, 350);
-      c.moveTo(330, 340); c.lineTo(330, 250); c.lineTo(390, 250); c.lineTo(390, 340);
-      c.moveTo(470, 340); c.lineTo(470, 290); c.stroke();
-      c.beginPath(); c.arc(470, 260, 40, 0, 7); c.stroke();
-      c.beginPath(); c.moveTo(640, 225); c.bezierCurveTo(600, 180, 560, 240, 640, 290); c.bezierCurveTo(720, 240, 680, 180, 640, 225); c.stroke();
-      c.setLineDash([14, 14]); c.beginPath(); c.moveTo(560, 350); c.quadraticCurveTo(760, 340, 900, 240); c.stroke();
+      write(c, '3학년 피구 대회', 330, 80, 74, 'rgba(250,250,240,.92)');
+      write(c, '월요일  2반 : 1반', 300, 200, 56, 'rgba(250,250,240,.88)');
+      write(c, '금요일  2반 : 3반', 300, 300, 56, 'rgba(250,250,240,.88)');
+      c.strokeStyle = 'rgba(250,250,240,.85)'; c.lineWidth = 5;
+      c.strokeRect(640, 150, 300, 200); c.beginPath(); c.moveTo(790, 150); c.lineTo(790, 350); c.stroke(); // 코트
+      c.beginPath(); c.arc(720, 250, 26, 0, 7); c.stroke();
+      write(c, '시간이 끝났을 때 더 많이 남은 반이 이겨요', 512, 410, 34, 'rgba(255,236,150,.9)');
     }), -0.35, 1.6, 0.111, 0, b);
     box(2.3, 0.035, 0.1, '#c99a69', -0.35, 1.0, 0.11, b, false);
     sheet(0.56, 0.76, paper(0.56, 0.76, [['함께', 64, '#e8705a'], ['만드는', 56, '#3b302b'], ['좋은 교실', 54, '#3f9c7d']]), -2.25, 1.68, 0.075, 0, b);
-    // 전시판: 「우리 주변 장소 지도 전시회」
+    // 게시판: 우리 반 이름표와 피구 대회 포스터
     box(1.55, 1.05, 0.03, '#d9ae78', 1.85, 1.45, 0.075, b, false);
-    sheet(1.5, 0.2, paper(1.5, 0.2, [['우리 주변 장소 지도 전시회', 50, '#3b302b']], '#fff6d6', null), 1.85, 2.12, 0.075, 0, b);
-    const wallMap = makeMapProp(b, 1, true);
-    wallMap.g.position.set(1.85, 1.43, 0.1);
+    sheet(1.5, 0.2, paper(1.5, 0.2, [['우리 반 스물두 명', 50, '#3b302b']], '#fff6d6', null), 1.85, 2.12, 0.075, 0, b);
+    sheet(1.4, 0.78, canvasTex(700, 390, (c, w, hh) => {
+      c.fillStyle = '#fffaf0'; c.fillRect(0, 0, w, hh);
+      const cols = ['#f6a5a5', '#ffd98a', '#9fd6b5', '#c7b2e6', '#f7c59f', '#a5d8f6'];
+      for (let i = 0; i < 22; i++) {
+        const x = 40 + (i % 8) * 88, y = 40 + Math.floor(i / 8) * 120;
+        c.fillStyle = cols[i % 6]; c.beginPath(); c.arc(x + 20, y + 30, 30, 0, 7); c.fill();
+        c.fillStyle = '#3b302b'; c.fillRect(x - 6, y + 70, 52, 8);
+      }
+    }), 1.85, 1.38, 0.09, 0, b);
     [-1.75, -0.45, 0.85].forEach(x => {
       model('bookcaseOpen', { w: 1.25, h: 0.8, d: 0.36, x, z: 0.26, parent: b, color: { wood: WOOD }, ink: 0.005 });
       model('books', { h: 0.15, x: x - 0.3, y: 0.8, z: 0.26, parent: b, ry: 10 });
@@ -359,71 +298,30 @@ const BUILD = {
       c.lineWidth = 10; c.lineCap = 'round'; c.strokeStyle = '#3b302b';
       c.beginPath(); c.moveTo(128, 128); c.lineTo(128, 62); c.moveTo(128, 128); c.lineTo(178, 140); c.stroke();
     }, true), 1.7, 1.95, 0.075, 0, f);
-    sheet(1.1, 0.34, paper(1.1, 0.34, [['4학년 2반', 64, '#2f6b55']], '#fff6d6'), -0.6, 1.55, 0.075, 0, f);
+    sheet(1.1, 0.34, paper(1.1, 0.34, [['3학년 2반', 64, '#2f6b55']], '#fff6d6'), -0.6, 1.55, 0.075, 0, f);
 
     // 모둠 탁자 (높이 0.64, 지름 1.44)와 의자 넷
     const t = node('table', g);
-    cyl(0.72, 0.72, 0.045, '#f0d6aa', 0, TABLE_H - 0.0225, 0, t, 48); // 윤곽선을 달면 그 깊이가 위에 놓인 지도를 덮어 뺀다
+    cyl(0.72, 0.72, 0.045, '#f0d6aa', 0, TABLE_H - 0.0225, 0, t, 48);
     cyl(0.69, 0.69, 0.05, '#dcb385', 0, TABLE_H - 0.06, 0, t, 48);
     [45, 135, 225, 315].forEach(a => cyl(0.022, 0.022, TABLE_H - 0.05, '#a9aeb8', Math.cos(a * DEG) * 0.5, (TABLE_H - 0.05) / 2, Math.sin(a * DEG) * 0.5, t));
-    const map = makeMapProp(t);
-    map.g.position.set(0.02, TABLE_H + 0.002, 0.04);
-    map.g.rotation.y = 0.12;
-    const pencils = makePencils(g);
+    const sheetMap = lay(0.62, 0.42, paper(0.62, 0.42, [['작전', 60, '#3b302b']], '#ffffff', '#cfd6dd'), 0.05, TABLE_H + 0.002, 0.1, t);
+    sheetMap.rotation.y = 0.15;
     const cup = node('cup', t, 0.46, TABLE_H, 0.3);
     cyl(0.045, 0.04, 0.1, '#f2a99a', 0, 0.05, 0, cup);
     [0, 1, 2, 3, 5, 6].forEach((k, i) => { const p = pencilMesh(PENCIL_COLS[k], 0.15, 0.005); p.parent = cup; p.position.set(Math.cos(i) * 0.018, 0.1, Math.sin(i) * 0.018); p.rotation.set(Math.sin(i) * 0.15, 0, Math.cos(i) * 0.15); });
     const pouch = put(MB.CreateCapsule('pouch', { radius: 0.035, height: 0.22, tessellation: 12 }, scene), '#9fd6b5', 0.12, TABLE_H + 0.03, 0.5, t);
     pouch.rotation.set(0, 0.3, Math.PI / 2);
     pouch.scaling.z = 0.7;
-    ['seat_nw', 'seat_ne', 'seat_w', 'seat_e'].forEach(k => {
+    const chairsAt = (keys, parent) => keys.forEach(k => {
       const [x, , z, ry] = s.def.spots[k];
-      model('chair', { h: 0.7, x: x - Math.sin(ry * DEG) * 0.06, z: z - Math.cos(ry * DEG) * 0.06, ry, color: { wood: '#e8c18e' }, ink: 0.004, parent: g }); // 아이 의자: 앉는 면 약 0.36
+      model('chair', { h: 0.7, x: x - Math.sin(ry * DEG) * 0.06, z: z - Math.cos(ry * DEG) * 0.06, ry, color: { wood: '#e8c18e' }, ink: 0.004, parent }); // 아이 의자: 앉는 면 약 0.36
     });
+    chairsAt(['seat_nw', 'seat_ne', 'seat_w', 'seat_e'], t);
+    const ring = node('ring', g);
+    chairsAt(Object.keys(s.def.spots).filter(k => k.startsWith('ring_')), ring);
     model('rugRectangle', { w: 1.7, d: 1.1, x: 1.55, z: 1.55, ry: 8, color: { carpet: '#efb08a', carpetDarker: '#d98a6a' }, cast: false, parent: g });
-    s.apply = set => { map.set(set.map || 'none'); pencils.set(set.pencils || 'box'); wallMap.set(set.wall || 'none'); };
-  },
-
-  // 그날 밤, 유나 방: 창밖은 밤하늘, 스탠드 불빛
-  bedroom(s) {
-    const g = s.root, W = 5, D = 4.4;
-    stageBase(g, W, D);
-    floorTiles(g, W, D, '#dccaa8', '#d6c3a0', '#c4ae88', 0.55);
-    const r = room(g, W, D);
-    windowWall(r.back, W, [[-0.65, 0.65]], 1.1, 2.0, outsideTex(true), '#c9d4f0');
-    plainWall(r.left, D, '#d6def2');
-    plainWall(r.right, D, '#d6def2');
-    plainWall(r.front, W, '#c9d4f0');
-    model('bookcaseOpen', { h: 1.3, x: 0.6, z: 0.31, parent: r.right, color: { wood: WOOD }, ink: 0.005 });
-    model('bedSingle', { w: 1.0, d: 2.0, h: 0.55, x: -1.95, z: -1.15, color: { carpet: '#ffc94a' }, ink: 0.005, parent: g });
-    model('bear', { h: 0.3, x: -2.2, y: 0.55, z: -1.95, ry: 20, parent: g });
-    model('cabinetBedDrawerTable', { h: 0.5, x: -2.25, z: 0.2, ry: 90, parent: g });
-    model('desk', { w: 1.0, h: 0.66, d: 0.55, x: 1.2, z: -1.9, ink: 0.005, parent: g });
-    model('chair', { h: 0.8, x: 1.2, z: -1.35, color: { wood: '#f2b5c8' }, ink: 0.004, parent: g });
-    model('lampRoundTable', { h: 0.4, x: 1.5, y: 0.66, z: -1.95, parent: g });
-    ball(0.06, '#fff1b8', 1.5, 0.98, -1.95, g).material = Object.assign(new BABYLON.StandardMaterial('lampGlow2', scene), { emissiveColor: C3('#ffe2a0'), disableLighting: true });
-    model('rugRound', { w: 1.7, d: 1.7, x: 0.2, z: 0.4, color: { carpet: '#f2b5c8', carpetDarker: '#e8708f' }, cast: false, parent: g });
-  },
-
-  // 학교 계단: 한 칸 높이 0.16, 깊이 0.3. 찢어진 지도 반쪽이 계단에
-  stairs(s) {
-    const g = s.root;
-    stageBase(g, 5, 6);
-    floorTiles(g, 5, 6, '#d3dae4', '#ccd4df', '#b8c1cf', 0.6);
-    for (let i = 0; i < 8; i++) {
-      box(2.2, 0.16 * (i + 1), 0.3, '#d9d3c7', 0, 0.08 * (i + 1), 1.25 - 0.3 * i, g);
-      box(2.2, 0.025, 0.04, '#5a6278', 0, 0.16 * (i + 1) - 0.01, 1.38 - 0.3 * i, g, false);
-    }
-    box(2.2, 1.28, 1.4, '#d9d3c7', 0, 0.64, -1.7, g);
-    windowWall(wallGroup(g, 'left', -1.16, 0), 6, [[-0.95, 0.15]], 1.25, 2.15, outsideTex(false), '#dde9e2');
-    plainWall(wallGroup(g, 'back', 0, -2.46), 5, '#d5e0ea');
-    for (let i = 0; i < 8; i += 2) cyl(0.02, 0.02, 0.9, '#7a8aa3', 1.02, 0.16 * (i + 1) + 0.45, 1.25 - 0.3 * i, g, 8);
-    const rail = cyl(0.03, 0.03, 2.4, '#7a8aa3', 1.02, 1.62, 0.2, g, 10);
-    rail.rotation.x = Math.atan2(0.16, 0.3) + Math.PI / 2;
-    const half = lay(MAP_SIZE[0] * 0.75, MAP_SIZE[1] * 0.75, null, -0.75, 0.483, 0.66, g);
-    paperMat(half, mapTex('scribbled', 'L'));
-    half.rotation.y = 0.15;
-    s.apply = set => { half.setEnabled(!!set.half); };
+    s.apply = set => { t.setEnabled(!set.circle); ring.setEnabled(!!set.circle); };
   },
 
   // 교실 앞 복도: 창, 교실 문과 반 이름, 사물함, 의자
@@ -441,24 +339,119 @@ const BUILD = {
     wainscot(left, 3.8);
     model('doorway', { h: 2.05, x: -0.2, z: 0.08, parent: left });
     box(0.9, 1.98, 0.04, '#e9b783', -0.2, 0.99, 0.08, left, false);
-    sheet(0.7, 0.2, paper(0.7, 0.2, [['4학년 2반', 60, '#3b302b']], '#fff6d6'), -0.2, 2.3, 0.08, 0, left);
+    sheet(0.7, 0.2, paper(0.7, 0.2, [['3학년 2반', 60, '#3b302b']], '#fff6d6'), -0.2, 2.3, 0.08, 0, left);
   },
 
-  // 햇살유치원 (기억 장면)
-  kinder(s) {
-    const g = s.root;
-    stageBase(g, 5, 4);
-    put(MB.CreateGround('yard', { width: 5, height: 4 }, scene), '#f3e3b5', 0, 0, 0, g, false);
-    box(5, 2.6, 0.15, '#ffe9a8', 0, 1.3, -1.62, g, false);
-    model('doorway', { h: 2.0, x: -0.45, z: -1.52, parent: g });
-    box(0.86, 1.92, 0.04, '#f2a99a', -0.45, 0.96, -1.53, g, false);
-    sheet(1.6, 0.4, paper(1.6, 0.4, [['☀ 햇살유치원', 64, '#e8708f']], '#ffffff', '#f2a99a'), 0.9, 2.1, -1.53, 0, g);
-    ['flower_redA', 'flower_yellowB', 'flower_purpleA', 'flower_redA', 'flower_yellowB', 'flower_purpleA'].forEach((m, i) => model(m, { h: 0.28, x: 0.4 + i * 0.32, z: -1.32, ry: i * 50, parent: g }));
-    model('plant_bush', { h: 0.45, x: -1.5, z: -1.3, parent: g });
-    for (let i = 0; i < 3; i++) model('fence_simple', { w: 1.0, h: 0.6, x: -2.0 + i * 1.0, z: 1.75, parent: g });
-    model('tree_oak', { h: 3.0, x: 1.9, z: 0.9, parent: g });
-    model('grass', { h: 0.2, x: -1.2, z: 0.9, parent: g });
-    model('grass', { h: 0.2, x: 0.9, z: 1.3, parent: g });
+  // 운동장: 피구 코트(x -3~3, z -1.8~1.8, 가운데 선으로 두 편), 뒤에 스탠드 세 칸, 왼쪽 앞 수돗가와 긴 의자, 나무
+  court(s) {
+    const g = s.root, W = 11, D = 9;
+    stageBase(g, W, D);
+    lay(W, D, canvasTex(1100, 900, (c, w, hh) => {
+      c.fillStyle = '#e9cf9f'; c.fillRect(0, 0, w, hh);
+      for (let i = 0; i < 1400; i++) { c.fillStyle = Math.random() < 0.5 ? 'rgba(160,120,70,.12)' : 'rgba(255,250,235,.2)'; c.fillRect(Math.random() * w, Math.random() * hh, 3 + Math.random() * 5, 2 + Math.random() * 3); }
+      const px = x => (x + W / 2) * 100, pz = z => (z + D / 2) * 100;
+      c.strokeStyle = 'rgba(255,255,255,.92)'; c.lineWidth = 6;
+      c.strokeRect(px(-3), pz(-1.8), 600, 360);
+      c.beginPath(); c.moveTo(px(0), pz(-1.8)); c.lineTo(px(0), pz(1.8)); c.stroke();
+    }), 0, 0.002, 0, g);
+    // 스탠드: 한 칸 높이 0.36(앉는 면), 깊이 0.6. 칸마다 앉는 면 색
+    [['#8fc0de', 0], ['#f6d77a', 1], ['#f2a99a', 2]].forEach(([col, i]) => {
+      const top = 0.36 * (i + 1), z = -2.6 - 0.6 * i;
+      box(7.4, top, 0.6, '#d9d3c7', 0, top / 2, z, g);
+      box(7.4, 0.03, 0.6, col, 0, top + 0.015, z, g, false);
+    });
+    box(7.4, 1.08, 0.3, '#d9d3c7', 0, 0.54, -4.25, g);
+    box(1.9, 0.5, 0.04, '#c99a69', 0, 1.6, -4.1, g, false);
+    sheet(1.8, 0.42, paper(1.8, 0.42, [['3학년 피구 대회', 64, '#e8705a']], '#fffaf0', '#f2a99a'), 0, 1.6, -4.07, 0, g);
+    [-3.8, 3.8].forEach(x => cyl(0.04, 0.04, 1.4, '#7a8aa3', x, 0.7, -4.1, g, 8));
+    // 수돗가: 긴 개수대와 꼭지 셋. 아이는 -z 쪽에 서서 +z 를 본다
+    const sk = node('sink', g, -4.1, 0, 2.75);
+    box(1.4, 0.5, 0.45, '#cfd6dd', 0, 0.25, 0, sk);
+    box(1.28, 0.06, 0.33, '#9aa6b2', 0, 0.48, 0, sk, false);
+    box(1.4, 0.16, 0.08, '#cfd6dd', 0, 0.58, 0.2, sk);
+    [-0.45, 0, 0.45].forEach(x => {
+      cyl(0.02, 0.02, 0.1, '#e9eef1', x, 0.71, 0.16, sk, 10);
+      box(0.03, 0.03, 0.12, '#e9eef1', x, 0.76, 0.1, sk, false);
+    });
+    box(1.4, 0.04, 1.2, '#c9c2b4', 0, 0.02, -0.2, sk, false);
+    const bench = node('bench', g, -2.2, 0, 3.04);
+    box(1.4, 0.06, 0.34, '#c08a58', 0, 0.33, 0, bench);
+    [-0.6, 0.6].forEach(x => box(0.08, 0.3, 0.28, '#8a6a4a', x, 0.15, 0, bench));
+    [[-4.6, -4.6, 3.4], [-1.9, -4.7, 3.0], [1.9, -4.6, 3.2], [4.6, -4.5, 3.6], [-5.0, -1.2, 2.8], [5.0, 0.8, 3.0]].forEach(([x, z, h], i) => model(i % 2 ? 'tree_default' : 'tree_oak', { h, x, z, ry: x * 30, parent: g }));
+    [[-5.0, 1.6], [5.1, -1.6], [4.9, 2.6], [-0.5, 4.2], [2.4, 4.1]].forEach(([x, z], i) => model(i % 2 ? 'plant_bushSmall' : 'plant_bush', { h: 0.35, x, z, parent: g }));
+    [[3.3, 3.6, 'flower_redA'], [3.7, 3.9, 'flower_yellowB'], [-3.0, 4.0, 'flower_purpleA']].forEach(([x, z, m]) => model(m, { h: 0.28, x, z, parent: g }));
+  },
+
+  // 급식실: 긴 식탁 둘(z 0.8, -0.8)과 긴 의자, 식판. 뒤에 배식대와 오늘의 급식
+  cafeteria(s) {
+    const g = s.root, W = 6.4, D = 5;
+    stageBase(g, W, D);
+    floorTiles(g, W, D, '#e6eef0', '#dde7ea', '#c6d3d8', 0.5);
+    const r = room(g, W, D), WALL2 = '#f3efe6';
+    plainWall(r.back, W, WALL2);
+    wainscot(r.back, W);
+    box(3.2, 0.8, 0.55, '#c9d2d8', -0.8, 0.4, 0.35, r.back);
+    box(3.3, 0.04, 0.6, '#e9eef1', -0.8, 0.82, 0.35, r.back, false);
+    [-1.9, -1.1, -0.3, 0.5].forEach((x, i) => cyl(0.16, 0.15, 0.22, ['#d9dfe4', '#e8b4a0', '#d9dfe4', '#f6d77a'][i], x, 0.95, 0.35, r.back, 16));
+    sheet(1.1, 0.72, paper(1.1, 0.72, [['오늘의 급식', 54, '#e8705a'], ['달걀말이', 46, '#3b302b'], ['미역국 · 밥 · 김치', 40, '#3b302b']]), 1.75, 1.55, 0.075, 0, r.back);
+    windowWall(r.left, D, [[-1.7, -0.5], [0.5, 1.7]], SILL, 2.15, outsideTex(false), WALL2);
+    wainscot(r.left, D);
+    plainWall(r.right, D, WALL2);
+    wainscot(r.right, D);
+    model('pottedPlant', { h: 0.9, x: -1.8, z: 0.33, parent: r.right });
+    plainWall(r.front, W, WALL2);
+    wainscot(r.front, W);
+    const tray = (x, z, ry) => {
+      const t = node('tray', g, x, TABLE_H, z);
+      t.rotation.y = ry * DEG;
+      box(0.34, 0.02, 0.24, '#d9dfe4', 0, 0.01, 0, t, false);
+      box(0.12, 0.022, 0.08, '#f6d77a', -0.09, 0.022, -0.05, t, false);
+      box(0.12, 0.022, 0.08, '#e8705a', 0.06, 0.022, -0.05, t, false);
+      cyl(0.05, 0.045, 0.04, '#f8f4ea', -0.08, 0.04, 0.06, t, 14);
+      cyl(0.05, 0.045, 0.04, '#9cc17a', 0.07, 0.04, 0.06, t, 14);
+    };
+    [0.8, -0.8].forEach(z => {
+      box(3.0, 0.04, 0.7, '#f0d6aa', 0, TABLE_H - 0.02, z, g);
+      [-1.35, 1.35].forEach(x => box(0.05, TABLE_H - 0.04, 0.6, '#a9aeb8', x, (TABLE_H - 0.04) / 2, z, g));
+      [-0.55, 0.55].forEach(dz => {
+        box(3.0, 0.05, 0.3, '#c08a58', 0, 0.335, z + dz * 1.04, g);
+        [-1.3, 1.3].forEach(x => box(0.06, 0.31, 0.24, '#8a6a4a', x, 0.155, z + dz * 1.04, g));
+      });
+    });
+    // 앉는 자리(l_ 로 시작하는 자리와 반 친구 자리)마다 앞에 식판
+    [...Object.entries(s.def.spots).filter(([k]) => k.startsWith('l_')).map(([, v]) => v), ...s.def.crowds.lunch].forEach(([x, , z, ry]) => tray(x + Math.sin(ry * DEG) * 0.37, z + Math.cos(ry * DEG) * 0.37, ry));
+  },
+
+  // 그날 저녁, 유나네 부엌: 식탁과 의자, 달걀말이 접시, 창밖은 저녁 하늘
+  kitchen(s) {
+    const g = s.root, W = 4.6, D = 3.8, WALL3 = '#f1e3cf';
+    stageBase(g, W, D);
+    floorTiles(g, W, D, '#e8d5b5', '#e2cdab', '#cdb48e', 0.45);
+    const r = room(g, W, D);
+    windowWall(r.back, W, [[0.5, 1.5]], 1.1, 2.0, outsideTex(true), WALL3);
+    box(1.6, 0.85, 0.55, '#f6efe2', -1.2, 0.425, 0.3, r.back);
+    box(1.65, 0.04, 0.6, '#d9c6a8', -1.2, 0.87, 0.3, r.back, false);
+    box(1.6, 0.6, 0.35, '#f6efe2', -1.2, 1.8, 0.2, r.back);
+    cyl(0.12, 0.12, 0.14, '#e8705a', -1.5, 0.96, 0.3, r.back, 16);
+    plainWall(r.left, D, WALL3);
+    box(0.7, 1.6, 0.6, '#e8eef2', 0.9, 0.8, 0.33, r.left);
+    plainWall(r.right, D, WALL3);
+    model('pottedPlant', { h: 0.8, x: 1.2, z: 0.33, parent: r.right });
+    plainWall(r.front, W, WALL3);
+    const t = node('table', g, 0, 0, -0.2);
+    box(1.3, 0.04, 0.85, '#e3bf8f', 0, TABLE_H - 0.02, 0, t);
+    [[-0.58, -0.36], [0.58, -0.36], [-0.58, 0.36], [0.58, 0.36]].forEach(([x, z]) => box(0.05, TABLE_H - 0.04, 0.05, '#a97a49', x, (TABLE_H - 0.04) / 2, z, t));
+    const [yx, , yz] = s.def.spots.k_y;
+    model('chair', { h: 0.7, x: yx, z: yz - 0.06, color: { wood: '#f2b5c8' }, ink: 0.004, parent: g });
+    model('chair', { h: 0.7, x: 0, z: 0.41, ry: 180, color: { wood: '#e8c18e' }, ink: 0.004, parent: g }); // 엄마 자리 (식탁 앞쪽)
+    cyl(0.12, 0.1, 0.02, '#ffffff', yx, TABLE_H + 0.01, yz + 0.32, g, 20);
+    for (let i = 0; i < 5; i++) { const e = box(0.05, 0.045, 0.06, '#ffd45a', yx - 0.08 + i * 0.04, TABLE_H + 0.04, yz + 0.32, g); e.rotation.y = 0.1; }
+    cyl(0.06, 0.05, 0.06, '#f8f4ea', yx + 0.2, TABLE_H + 0.03, yz + 0.25, g, 14);
+    cyl(0.005, 0.005, 0.2, '#3b302b', yx - 0.17, TABLE_H + 0.008, yz + 0.3, g, 6).rotation.x = Math.PI / 2;
+    const lampAt = s.def.lamp;
+    cyl(0.005, 0.005, 2.5 - lampAt[1], '#3b302b', lampAt[0], (2.5 + lampAt[1]) / 2, lampAt[2], g, 6);
+    cyl(0.06, 0.2, 0.14, '#f6d77a', lampAt[0], lampAt[1] + 0.05, lampAt[2], g, 20);
+    ball(0.05, '#fff1b8', lampAt[0], lampAt[1] - 0.02, lampAt[2], g).material = Object.assign(new BABYLON.StandardMaterial('lampGlow3', scene), { emissiveColor: C3('#ffe2a0'), disableLighting: true });
   },
 };
 // 교실 왼쪽 창으로 든 햇빛 자국 (창살 그림자까지)
@@ -509,7 +502,6 @@ function showStage(name) {
   for (const k in STAGES) STAGES[k].root.setEnabled(false);
   stageNow = getStage(name);
   stageNow.root.setEnabled(true);
-  if (handPencil) handPencil.setEnabled(false);
   setLight(stageNow.def.light, stageNow.def.lamp);
   homeCam(stageNow.def);
   stageNow.walls.forEach(w => { w.vis = -1; });

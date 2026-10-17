@@ -243,7 +243,7 @@ function endingCard(end) {
       s.append(h('i', 'road ' + e.kind), h('span', '', got ? `${e.title} · ${KIND[e.kind]}` : '아직 못 본 결말'));
       slots.appendChild(s);
     });
-    card.append(h('div', 'eyebrow', KIND[end.kind]), h('h3', '', end.title), h('p', 'countline', `본 결말 ${rec.endings.length} / ${BOOK.endings.length}`), slots);
+    card.append(h('div', 'eyebrow', KIND[end.kind]), h('h3', '', end.title), h('p', 'countline', `본 결말 ${seenEnds(rec, BOOK)} / ${BOOK.endings.length}`), slots);
     storyEl.replaceChildren(card);
     rise();
     setAsk('ending', () => {

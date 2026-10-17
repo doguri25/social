@@ -30,7 +30,8 @@ async function makeEntry(p) {
   applyCut(p);
   const ph = p.phone && p.phone.profile && p.phone.profile.photo;
   if (ph) { applyCut(ph); e.photo = await shoot(ph, 320, 320); applyCut(p); }
-  if (p.text == null && !p.phone) { const w = panelW(); e.img = await shoot(p, w, Math.round(w / 1.6)); }
+  if (p.note) e.img = noteImg(p.note);
+  else if (p.text == null && !p.phone) { const w = panelW(); e.img = await shoot(p, w, Math.round(w / 1.6)); }
   for (const l of asList(p.lines)) {
     const kind = ['shout', 'think', 'whisper', 'say'].find(k => l[k]);
     const c = l.who && CH[l.who];

@@ -14,15 +14,20 @@ function camDir() {
   return d.normalize();
 }
 // 카메라에서 주인공까지 가는 시선 가까이, 주인공보다 카메라 쪽에 있는 아이는 이 컷에서 뺀다
-function blocks(c, pos, look) {
-  const p = headPos(c).add(V3(0, -0.25, 0));
+function blocks(c, pos, look) { return blocksAt(headPos(c), pos, look); }
+function blocksAt(head, pos, look) {
+  const p = head.add(V3(0, -0.25, 0));
+  if (BABYLON.Vector3.Distance(p, pos) < 0.5) return true; // 카메라가 그 아이 몸 안에 들어간 경우
   const dir = look.subtract(pos);
   const L = dir.length();
   dir.normalize();
   const t = BABYLON.Vector3.Dot(p.subtract(pos), dir);
-  return t > 0 && t < L - 0.2 && BABYLON.Vector3.Distance(pos.add(dir.scale(t)), p) < 0.45;
+  // 카메라 바로 앞(1.2m 안)의 큰 머리는 시선에서 조금 비켜 있어도 컷 가장자리를 덮는다
+  return t > 0 && t < L - 0.2 && BABYLON.Vector3.Distance(pos.add(dir.scale(t)), p) < (t < 1.2 ? 0.8 : 0.45);
 }
+let hiddenKids = [];
 function placeShot(p) {
+  hiddenKids.forEach(n => n.setEnabled(true)); // 앞 컷이 중간에 멈췄어도 숨긴 아이를 되돌린다
   const on = [].concat(p.on || []);
   const cs = on.map(id => CH[id]).filter(c => c && shown(c));
   const w = stageNow.def.wide;
@@ -92,6 +97,9 @@ function placeShot(p) {
   let mask = 1;
   for (const id in CH) { const c = CH[id]; if (shown(c) && (keepAll || on.includes(id) || !blocks(c, pos, look))) mask |= c.mask; }
   shotCam.layerMask = mask;
+  // 배경 아이는 층이 무대와 같아서, 가리는 아이만 찍는 동안 잠깐 숨긴다 (shoot 이 되돌린다)
+  hiddenKids = keepAll ? [] : (stageNow.kids || []).filter(n => n.isEnabled() && blocksAt(BABYLON.Vector3.TransformCoordinates(n.head, stageNow.root.getWorldMatrix()), pos, look));
+  hiddenKids.forEach(n => n.setEnabled(false));
 }
 const snap = (cam, w, hh) => BABYLON.CreateScreenshotUsingRenderTargetAsync(engine, cam, { width: w, height: hh }, 'image/png', 1, false, undefined, false, true, true);
 // 찍기는 한 번에 하나씩 (Babylon 의 화면 밖 찍기가 겹치지 않게)
@@ -129,7 +137,7 @@ function shoot(p, w, hh) {
     placeShot(p);
     wallsForShot(shotCam.position);
     let url;
-    try { url = await snap(shotCam, w, hh); } finally { restoreWalls(); }
+    try { url = await snap(shotCam, w, hh); } finally { restoreWalls(); hiddenKids.forEach(n => n.setEnabled(true)); hiddenKids = []; }
     const img = await loadImg(url);
     const cv = document.createElement('canvas');
     cv.width = w;

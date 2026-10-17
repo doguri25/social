@@ -134,7 +134,7 @@ function showShelf() {
     const sp = h('i', 'spine');
     sp.style.setProperty('--c', col);
     const txt = h('span', '');
-    txt.append(h('b', '', i ? `${t} · 준비 중` : `1권 · ${t}`), h('small', '', i ? '곧 만나요' : `${STORIES.book1.sub} · 본 결말 ${rec.endings.length} / ${STORIES.book1.endings.length}`));
+    txt.append(h('b', '', i ? `${t} · 준비 중` : `1권 · ${t}`), h('small', '', i ? '곧 만나요' : `${STORIES.book1.sub} · 본 결말 ${seenEnds(rec, STORIES.book1)} / ${STORIES.book1.endings.length}`));
     row.append(sp, txt);
     if (i) row.disabled = true;
     books.appendChild(row);
