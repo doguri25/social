@@ -14,9 +14,11 @@ const ROADS = [
   [[860, 300], [860, 452]],
   [[690, 155], [690, 300]],
 ];
+// done: 찢어지지 않고 다 칠한 지도 (갈래 길의 결말)
 function mapFlags(st) {
+  if (st === 'done') return { school: true, playground: true, houses: true, home: true, road: true };
   const lvl = ['torn', 'joined', 'taped', 'mended'].includes(st) ? 4 : ['sketch', 'school', 'playground', 'colored', 'scribbled'].indexOf(st);
-  return { school: lvl >= 1, playground: lvl >= 2, houses: lvl >= 3, scribble: lvl >= 4, tear: ['joined', 'taped', 'mended'].includes(st), tape: st === 'taped', mended: st === 'mended' };
+  return { school: lvl >= 1, playground: lvl >= 2, houses: lvl >= 3, scribble: lvl >= 4, tear: ['joined', 'taped', 'mended'].includes(st), tape: st === 'taped', mended: st === 'mended', home: st === 'mended', road: st === 'mended' };
 }
 function paintMap(g, st) {
   const f = mapFlags(st);
@@ -50,7 +52,7 @@ function paintMap(g, st) {
   const house = (x, y, s) => () => { g.beginPath(); g.moveTo(x - 50 * s, y); g.lineTo(x - 50 * s, y - 55 * s); g.lineTo(x, y - 95 * s); g.lineTo(x + 50 * s, y - 55 * s); g.lineTo(x + 50 * s, y); g.closePath(); };
   const place = (shape, color, on, text, lx, ly, size) => { if (on) hatch(shape, color); outline(shape); label(text, lx, ly, size); };
   place(() => { g.beginPath(); g.rect(130, 70, 200, 120); }, '#f39c6b', f.school, '학교', 230, 142, 32);
-  place(house(170, 520, 1), '#6fbfee', f.mended, '유나네 집', 170, 560, 26);
+  place(house(170, 520, 1), '#6fbfee', f.home, '유나네 집', 170, 560, 26);
   place(() => { g.beginPath(); g.rect(620, 60, 140, 95); }, '#ffd36a', f.houses, '햇살유치원', 690, 116, 22);
   place(() => { g.beginPath(); g.ellipse(640, 390, 95, 55, 0, 0, 7); }, '#9ad47f', f.playground, '놀이터', 640, 400, 26);
   place(house(860, 200, .9), '#f497b6', f.houses, '서아네 집', 860, 232, 24);
@@ -63,8 +65,8 @@ function paintMap(g, st) {
     g.stroke();
   }
   if (f.tear) line(TEAR, '#5a6278', 3);
+  if (f.road) line([[170, 425], [170, 360], [230, 360], [230, 300], [860, 300], [860, 210]], 'rgba(111,191,238,.9)', 14);
   if (f.mended) {
-    line([[170, 425], [170, 360], [230, 360], [230, 300], [860, 300], [860, 210]], 'rgba(111,191,238,.9)', 14);
     line(TEAR, '#232a3d', 24);
     line(TEAR, '#ffcf3f', 18);
   }

@@ -76,7 +76,9 @@ async function playScene(id, opt, my) {
   if (sc.part) curPart = sc.part;
   setHeader(parseInt(sc.page, 10) || 1);
   resetHist();
-  buildHot(asList(sc.explore), it => showPop(it, it.text));
+  // 인물의 둘러보기 말은 무대 위 점 대신 인물 카드의 ? 표시로 (점이 아이들 얼굴을 가리지 않게)
+  buildHot(asList(sc.explore).filter(x => !BOOK.castById[x.on]), it => showPop(it, it.text));
+  markCards();
   if (!from && (stageChanged || partChanged || asList(sc.explore).length)) { await askIntro(sc); chk(my); }
   if (opt.note) await showAndWait({ text: opt.note, tone: 'note' }, my);
   let pick = opt.pick;
@@ -103,6 +105,7 @@ async function playScene(id, opt, my) {
     return o.go;
   }
   if (sc.compose) { await playCompose(sc, id, opt.pieces, my); return null; }
+  if (sc.end) { await playEnding(my); return null; } // 말 고르기 없이 바로 결말 (갈래 길의 끝)
   return sc.go || null;
 }
 
@@ -136,7 +139,10 @@ async function playCompose(sc, id, preset, my) {
       lines: [{ who: spec.who, say: pc.text }],
     }, my);
   }
-  // 결말: 남은 면을 결말 장면으로 센다
+  await playEnding(my);
+}
+// 결말: 지금 표시(flag)에 맞는 첫 결말. 남은 면을 결말 장면으로 센다
+async function playEnding(my) {
   const end = BOOK.endings.find(e => meets(e.when)) || BOOK.endings[BOOK.endings.length - 1];
   setHeader(BOOK.pages - 2);
   resetHist();
@@ -157,7 +163,7 @@ async function endingMenu(end, my) {
   const act = await endingCard(end);
   chk(my);
   if (act === 'review') return reviewMenu(my);
-  if (act === 'retry') { const i = trail.map(t => t.type).lastIndexOf('compose'); return replayFrom(i, undefined); }
+  if (act === 'retry') return replayFrom(trail.length - 1, undefined); // 마지막 갈림길(또는 말 고르기)로
   if (act === 'restart') return startBook(BOOK.id);
   toShelf();
 }

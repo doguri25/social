@@ -250,7 +250,7 @@ function endingCard(end) {
       const row = h('div', 'btnrow');
       row.append(
         btn('내가 고른 길 보기', 'sbtn primary', () => { sfx('tap'); done('review'); }),
-        btn(end.kind === 'good' ? '다른 말도 해 보기' : '그 장면으로 돌아가기', 'sbtn', () => { sfx('tap'); done('retry'); }),
+        btn(trail.length && trail[trail.length - 1].type === 'compose' ? '다른 말도 해 보기' : '마지막 갈림길로 돌아가기', 'sbtn', () => { sfx('tap'); done('retry'); }),
         btn('처음부터', 'sbtn', () => { sfx('tap'); done('restart'); }),
         btn('책장으로', 'sbtn', () => { sfx('tap'); done('shelf'); }),
       );

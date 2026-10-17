@@ -179,7 +179,7 @@ for (const file of files) {
 
   const decisions = ids.reduce((n, id) => n + (B.scenes[id].choices || B.scenes[id].compose ? 1 : 0), 0);
   const whatifs = ids.reduce((n, id) => n + (B.scenes[id].panels || []).filter(p => p.whatif).length, 0);
-  if (decisions !== 3) warn('분량', `진짜 갈림길이 ${decisions}개 (기준 3개)`);
+  if (decisions < 3) warn('분량', `진짜 갈림길이 ${decisions}개 (기준 3개 이상)`);
   console.log(`· ${file}: 장면 ${ids.length}개, 갈림길 ${decisions}개, 만약에 ${whatifs}개, 길 ${paths}가지, 결말 ${E.map(e => `${e.id} ${reached[e.id] || 0}`).join(' / ')}`);
 }
 

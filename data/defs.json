@@ -7,9 +7,9 @@
   "tones": ["memory", "whatif", "note", "next"],
   "sizes": ["wide", "tall"],
   "activities": ["breathe"],
-  "mapStates": ["none", "sketch", "school", "playground", "colored", "scribbled", "torn", "joined", "taped", "mended"],
+  "mapStates": ["none", "sketch", "school", "playground", "colored", "scribbled", "torn", "joined", "taped", "mended", "done"],
   "pencilStates": ["box", "open", "taken", "scattered"],
-  "wallStates": ["none", "mended", "taped", "halves"],
+  "wallStates": ["none", "mended", "taped", "halves", "done"],
   "stages": {
     "shelf": {
       "light": "day",

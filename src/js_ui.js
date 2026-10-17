@@ -90,10 +90,15 @@ scene.onBeforeRenderObservable.add(() => {
 // ---- 인물 카드 (무대 왼쪽 아래): 지금 무대에 있는 인물. 카드 사진은 웃는 얼굴로 한 번 찍어 둔다 ----
 const cardPic = {};
 function selectCard(id) { $('#cast').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.id === id)); }
+// 지금 장면에서 할 말이 있는 인물 카드에 ? 표시
+function markCards() {
+  const ex = curScene ? asList(BOOK.scenes[curScene].explore).map(x => x.on) : [];
+  $('#cast').querySelectorAll('button').forEach(b => b.classList.toggle('ask', ex.includes(b.dataset.id)));
+}
 function updateCast() {
   const ids = BOOK.cast.map(d => d.id).filter(id => shown(CH[id]));
   const nav = $('#cast');
-  if (nav.dataset.ids === ids.join()) return;
+  if (nav.dataset.ids === ids.join()) return markCards();
   nav.dataset.ids = ids.join();
   nav.replaceChildren(...ids.map(id => {
     const d = BOOK.castById[id];
@@ -109,6 +114,7 @@ function updateCast() {
     b.append(img, h('span', '', d.name));
     return b;
   }));
+  markCards();
 }
 
 // ---- 책장: 처음 화면 ----

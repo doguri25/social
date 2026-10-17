@@ -147,40 +147,70 @@ function makeChar(d, i) {
   return c;
 }
 // 머리카락: 머리 위와 뒤를 덮는 큰 공 + 앞머리 + 모양마다 덧붙이는 공. 값은 머리 반지름 r 단위
+// 머리카락 결: 머리 색 위에 밝고 어두운 가는 줄을 위아래로 긋는다 (공 모양 대신 머리카락처럼 보이게)
+const hairMats = {};
+function hairMat(color) {
+  if (hairMats[color]) return hairMats[color];
+  const tex = canvasTex(256, 256, (g, W, H) => {
+    g.fillStyle = color;
+    g.fillRect(0, 0, W, H);
+    for (let i = 0; i < 110; i++) {
+      const x = Math.random() * W;
+      g.strokeStyle = Math.random() < 0.5 ? 'rgba(255,236,214,.16)' : 'rgba(20,10,5,.24)';
+      g.lineWidth = 1 + Math.random() * 2.5;
+      g.beginPath();
+      g.moveTo(x, 0);
+      g.bezierCurveTo(x + 6, H * 0.33, x - 6, H * 0.66, x + 2, H);
+      g.stroke();
+    }
+  });
+  tex.wrapU = BABYLON.Texture.WRAP_ADDRESSMODE;
+  tex.uScale = 3;
+  const m = charMat(color).clone('hair' + color);
+  m.diffuseColor = BABYLON.Color3.White();
+  m.diffuseTexture = tex;
+  return (hairMats[color] = m);
+}
+// 머리카락 껍데기: 머리보다 조금 큰 공 하나를 깎는다. 얼굴 쪽(앞머리 선 아래)과 머리 길이 아래는 머리 속으로 넣어 감춘다.
+// o.hl: 앞머리 선 높이, o.scallop: 앞머리 끝 물결, o.side: 얼굴 옆을 감싸는 정도, o.bottom(z): 길이(뒤쪽 z<0), o.curl: 곱슬 굴곡
+function hairShell(r, o) {
+  const m = MB.CreateSphere('hair', { diameter: 2, segments: 48 }, scene);
+  const pos = m.getVerticesData(BABYLON.VertexBuffer.PositionKind), idx = m.getIndices(), nor = [];
+  const ss = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+  for (let i = 0; i < pos.length; i += 3) {
+    const x = pos[i], y = pos[i + 1], z = pos[i + 2];
+    const hl = o.hl - o.scallop * (0.5 + 0.5 * Math.cos(x * 9.5));
+    const face = ss(0.12, 0.4, z) * (1 - ss(hl - 0.06, hl + 0.06, y)) * (1 - ss(o.side, o.side + 0.12, Math.abs(x)));
+    const low = o.bottom(z), below = 1 - ss(low - 0.06, low + 0.06, y);
+    const cover = 1 - Math.max(face, below);
+    const curl = o.curl ? o.curl * (0.5 + 0.5 * Math.sin(Math.atan2(x, z) * 9) * Math.sin(Math.acos(clamp(y, -1, 1)) * 9)) : 0;
+    const k = (0.9 + (0.17 + curl) * cover) * r;
+    pos[i] = x * k; pos[i + 1] = y * k + r; pos[i + 2] = z * k - 0.02 * r;
+  }
+  m.setVerticesData(BABYLON.VertexBuffer.PositionKind, pos);
+  BABYLON.VertexData.ComputeNormals(pos, idx, nor);
+  m.setVerticesData(BABYLON.VertexBuffer.NormalKind, nor);
+  m.refreshBoundingInfo();
+  return m;
+}
+const HAIR = {
+  bob: { hl: 0.33, scallop: 0.1, side: 0.8, bottom: z => -0.52 + 0.08 * z },
+  long: { hl: 0.33, scallop: 0.08, side: 0.82, bottom: () => -0.4 },
+  bun: { hl: 0.36, scallop: 0.06, side: 0.88, bottom: z => -0.5 + 0.3 * z },
+  curly: { hl: 0.36, scallop: 0.05, side: 0.88, bottom: z => -0.35 - 0.25 * Math.max(0, -z), curl: 0.12 },
+  short: { hl: 0.46, scallop: 0.03, side: 0.9, bottom: z => -0.15 - 0.3 * Math.max(0, -z) },
+};
 function addHair(d, r, part) {
-  const col = d.hairColor;
-  const s = (rad, x, y, z, sx = 1, sy = 1, sz = 1, color = col) => {
-    const m = part(MB.CreateSphere('hair', { diameter: rad * 2 * r, segments: 24 }, scene), color, x * r, r + y * r, z * r);
-    m.scaling.set(sx, sy, sz);
-    return m;
-  };
-  s(1.08, 0, 0.07, -0.1);
-  if (d.hair === 'short') s(0.5, 0.15, 0.78, 0.45, 1.5, 0.45, 0.8);
-  else if (d.hair !== 'curly') for (let k = 0; k < 5; k++) { // 앞머리: 이마를 따라 작은 공 다섯 개
-    const t = k / 2 - 1;
-    s(0.3, t * 0.62, 0.6 - Math.abs(t) * 0.12, 0.62 - Math.abs(t) * 0.15, 1.1, 0.78, 0.7);
-  }
-  if (d.hair === 'bob') {
-    s(0.5, -0.8, -0.38, -0.08, 0.75, 1.25, 1.1);
-    s(0.5, 0.8, -0.38, -0.08, 0.75, 1.25, 1.1);
-    s(0.9, 0, -0.35, -0.42, 1.15, 0.8, 0.75);
-  }
-  if (d.hair === 'long') {
-    s(0.95, 0, -1.05, -0.5, 1.05, 1.45, 0.5);
-    s(0.36, -0.84, -0.8, 0.02, 0.7, 2.0, 0.9);
-    s(0.36, 0.84, -0.8, 0.02, 0.7, 2.0, 0.9);
+  const hm = hairMat(d.hairColor);
+  const add = (m, x = 0, y = 0, z = 0) => { part(m, d.hairColor, x, y, z); m.material = hm; return m; };
+  add(hairShell(r, HAIR[d.hair] || HAIR.bob));
+  if (d.hair === 'long') { // 어깨까지 내려오는 뒷머리: 위가 좁고 아래가 살짝 퍼지는 반쪽 원통
+    const back = add(MB.CreateCylinder('hairBack', { height: 1.3 * r, diameterTop: 1.9 * r, diameterBottom: 2.15 * r, tessellation: 32, arc: 0.5, enclose: false, cap: BABYLON.Mesh.NO_CAP, sideOrientation: BABYLON.Mesh.DOUBLESIDE }, scene), 0, 0.1 * r, -0.04 * r);
   }
   if (d.hair === 'bun') {
-    s(0.46, 0, 1.08, -0.42);
+    add(MB.CreateSphere('bun', { diameter: 0.92 * r, segments: 24 }, scene), 0, r + 1.08 * r, -0.42 * r);
     const t = part(MB.CreateTorus('tie', { diameter: 0.62 * r, thickness: 0.16 * r, tessellation: 24 }, scene), d.tie || '#a77fd6', 0, r + 0.78 * r, -0.36 * r);
     t.rotation.x = -0.45;
-  }
-  if (d.hair === 'curly') {
-    for (let k = 0; k < 9; k++) {
-      const a = k / 9 * Math.PI * 2;
-      s(0.36, Math.cos(a) * 0.74, 0.55 + Math.sin(a * 2) * 0.05, Math.sin(a) * 0.74 - 0.1);
-    }
-    s(0.42, -0.2, 0.92, 0.25); s(0.38, 0.25, 0.95, 0.15); s(0.34, 0, 0.75, 0.6, 1.4, 0.7, 0.8);
   }
   if (d.glasses) {
     [-0.34, 0.34].forEach(x => { part(MB.CreateTorus('glass', { diameter: 0.42 * r, thickness: 0.07 * r, tessellation: 24 }, scene), '#2f3442', x * r, r - 0.05 * r, 1.07 * r).rotation.x = Math.PI / 2; });
