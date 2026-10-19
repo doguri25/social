@@ -97,7 +97,7 @@ function pencilMesh(color, len = 0.17, r = 0.0055) {
   return p;
 }
 
-// ---- 손에 드는 소품: 피구공, 서아 수첩, 민준이 숟가락 ----
+// ---- 손에 드는 소품: 피구공, 보라 수첩, 하준이 숟가락 ----
 // set.ball / set.note / set.spoon: 인물 id 면 그 아이 손(공은 'id:hug' 면 품에), 무대 defs.balls 의 이름이면 그 자리, 없으면 숨김
 const PROPS = {};
 function makeProp(kind) {
@@ -422,7 +422,7 @@ const BUILD = {
     [...Object.entries(s.def.spots).filter(([k]) => k.startsWith('l_')).map(([, v]) => v), ...s.def.crowds.lunch].forEach(([x, , z, ry]) => tray(x + Math.sin(ry * DEG) * 0.37, z + Math.cos(ry * DEG) * 0.37, ry));
   },
 
-  // 그날 저녁, 유나네 부엌: 식탁과 의자, 달걀말이 접시, 창밖은 저녁 하늘
+  // 그날 저녁, 수아네 부엌: 식탁과 의자, 달걀말이 접시, 창밖은 저녁 하늘
   kitchen(s) {
     const g = s.root, W = 4.6, D = 3.8, WALL3 = '#f1e3cf';
     stageBase(g, W, D);
@@ -444,7 +444,7 @@ const BUILD = {
     const [yx, , yz] = s.def.spots.k_y;
     model('chair', { h: 0.7, x: yx, z: yz - 0.06, color: { wood: '#f2b5c8' }, ink: 0.004, parent: g });
     model('chair', { h: 0.7, x: 0, z: 0.41, ry: 180, color: { wood: '#e8c18e' }, ink: 0.004, parent: g }); // 엄마 자리 (식탁 앞쪽)
-    const meal = node('meal', g); // 유나네 저녁(달걀말이): set.meal 일 때만
+    const meal = node('meal', g); // 수아네 저녁(달걀말이): set.meal 일 때만
     cyl(0.12, 0.1, 0.02, '#ffffff', yx, TABLE_H + 0.01, yz + 0.32, meal, 20);
     for (let i = 0; i < 5; i++) { const e = box(0.05, 0.045, 0.06, '#ffd45a', yx - 0.08 + i * 0.04, TABLE_H + 0.04, yz + 0.32, meal); e.rotation.y = 0.1; }
     cyl(0.06, 0.05, 0.06, '#f8f4ea', yx + 0.2, TABLE_H + 0.03, yz + 0.25, meal, 14);

@@ -83,7 +83,7 @@ const second = await shown();
 ok(second !== first && titles.some(x => second.includes(x)), '쓰기 전에는 다른 이야기 시작으로 바꿀 수 있음');
 await run(`(() => { const t = document.querySelector('.afterta'); t.value = '가'.repeat(501); t.dispatchEvent(new Event('input')); })()`);
 ok(await run(`document.querySelector('#btnNext').disabled && document.querySelector('.aftercount').classList.contains('over')`), '500자를 넘기면 낼 수 없음');
-await run(`(() => { const t = document.querySelector('.afterta'); t.value = '다음 주 월요일, 지우가 먼저 공을 받아 보겠다고 했어요. '.repeat(10); t.dispatchEvent(new Event('input')); })()`);
+await run(`(() => { const t = document.querySelector('.afterta'); t.value = '다음 주 월요일, 현우가 먼저 공을 받아 보겠다고 했어요. '.repeat(10); t.dispatchEvent(new Event('input')); })()`);
 await snap('05-after');
 ok(!(await run(`document.querySelector('#btnNext').disabled`)), '200자를 넘기면 낼 수 있음');
 await run(`document.querySelector('#btnNext').click()`);

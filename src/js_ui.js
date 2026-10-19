@@ -181,7 +181,7 @@ async function openBook(id) {
 // ---- 이후의 이야기: 1~4권에서 결말을 하나씩 본 뒤에 열린다. 선생님이 들려주는 이야기 시작(여섯 가지 가운데 하나, 무작위)을 읽고 이어 쓴다.
 // 학생은 학급 서버로 내고, 로그인 없이 쓰면 이 기기에만
 const AFTER_PROMPT = '선생님이 들려준 이야기의 시작을 읽고, 그다음에 벌어질 일을 상상해서 이어 써 보세요.';
-const AFTER_RULES = ['유나·지우·민준·서아 가운데 한 명 이상이 나오고, 이야기 흐름이 이어지게', '중심 문장 하나 + 뒷받침 문장', "'대포알·숟가락·수첩' 같은 감각적 표현(비유) 한 가지"];
+const AFTER_RULES = ['수아·현우·하준·보라 가운데 한 명 이상이 나오고, 이야기 흐름이 이어지게', '중심 문장 하나 + 뒷받침 문장', "'대포알·숟가락·수첩' 같은 감각적 표현(비유) 한 가지"];
 const afterDoc = () => (NET.mode === 'student' ? NET.me.story : save.after) || null;
 const afterText = () => (afterDoc() || {}).text || '';
 const draftKey = () => `social-draft-${NET.mode === 'student' ? NET.me.no : 'guest'}`;

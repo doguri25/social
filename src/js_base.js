@@ -1,5 +1,5 @@
 // ===== 기본 도구: 저장, 주소, 소리, 읽어 주기, 기다리기 =====
-const VERSION = '0.8.0'; // 올릴 때 CHANGELOG.md 와 함께 바꾼다
+const VERSION = '0.8.1'; // 올릴 때 CHANGELOG.md 와 함께 바꾼다
 const $ = (s, r = document) => r.querySelector(s);
 const h = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -11,7 +11,7 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 // 받침 있는 이름 뒤에는 '은', 없으면 '는'
-const withP = name => { const c = name.charCodeAt(name.length - 1) - 0xac00; return name + (c >= 0 && c < 11172 && c % 28 ? '과' : '와'); }; // 지우와, 민준과
+const withP = name => { const c = name.charCodeAt(name.length - 1) - 0xac00; return name + (c >= 0 && c < 11172 && c % 28 ? '과' : '와'); }; // 현우와, 하준과
 const topic = name => { const c = name.charCodeAt(name.length - 1) - 0xac00; return c >= 0 && c < 11172 && c % 28 ? '은' : '는'; };
 
 // ---- 저장: 「로그인 없이 하기」는 이 기기에만. 학급 접속(학생)이면 설정만 이 기기에, 진행·답은 서버로 (js_net) ----
