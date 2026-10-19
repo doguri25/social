@@ -28,7 +28,7 @@ try {
   ok((await T('teacher', 'login', { password: '0000' })).status === 401, '틀린 비밀번호는 거절');
   ok((await T('teacher', 'login', { password: '1324' })).status === 200, '처음 비밀번호 1324 로 로그인');
   ok((await T('teacher', 'roster', { text: '1 햇살' })).status === 403, '처음 비밀번호로는 비밀번호 바꾸기만 됨');
-  ok((await T('teacher', 'changePin', { current: '1324', next: '5678' })).status === 400, '새 비밀번호는 6자리 이상');
+  ok((await T('teacher', 'changePin', { current: '1324', next: '12' })).status === 400, '새 비밀번호는 4자리 이상');
   ok((await T('teacher', 'changePin', { current: '1324', next: '246813' })).status === 200, '비밀번호 바꾸기');
   const r = await T('teacher', 'roster', { text: '1 햇살\n2 구름\n2 중복\n잘못된 줄\n3 단풍' });
   ok(r.body.students.length === 3 && /^[2-9A-HJ-NP-Z]{6}$/.test(r.body.students[0].code), '명단 3명, 코드 여섯 글자');

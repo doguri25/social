@@ -33,7 +33,7 @@ const open = {
 const guarded = {
   changePin: async ({ req, res, pin, body }) => {
     const next = text(body.next, 20);
-    if (!validPin(next)) throw httpError(400, '새 비밀번호는 숫자 6~12자리로 해 주세요.');
+    if (!validPin(next)) throw httpError(400, '새 비밀번호는 숫자 4~12자리로 해 주세요.');
     if (next === '1324') throw httpError(400, '처음 비밀번호와 다른 번호로 해 주세요.');
     const r = await checkPassword(body.current, pin, req);
     if (!r.ok) throw httpError(401, r.wait ? `${r.wait}초 뒤에 다시 해 주세요.` : '지금 비밀번호가 맞지 않아요.');

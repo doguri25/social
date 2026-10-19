@@ -98,10 +98,10 @@ async function throttle(key, max, windowMs) {
 }
 const forgive = key => db().del('meta', `try:${key}`);
 
-// ---- 교사 비밀번호: 처음은 1324. 바꾸면 scrypt 로 바꿔 저장(숫자 6~12자리).
+// ---- 교사 비밀번호: 처음은 1324. 바꾸면 scrypt 로 바꿔 저장(숫자 4~12자리, 마음빛과 같게).
 // 버셀 환경 변수 TEACHER_PASSWORD 가 있으면 그 값은 늘 들어갈 수 있는 되찾기 비밀번호가 되고, 처음 비밀번호 1324 는 쓰지 않는다 ----
 const scrypt = (pin, salt) => crypto.scryptSync(pin, salt, 32).toString('base64url');
-const validPin = pin => /^\d{6,12}$/.test(pin);
+const validPin = pin => /^\d{4,12}$/.test(pin);
 const makePin = (pin, v) => { const salt = crypto.randomBytes(16).toString('base64url'); return { salt, hash: scrypt(pin, salt), v }; };
 const same = (a, b) => { const x = Buffer.from(a), y = Buffer.from(b); return x.length === y.length && crypto.timingSafeEqual(x, y); };
 async function checkPassword(input, pin, req) {

@@ -104,7 +104,7 @@ async function load() {
   const list = data.pinSet ? [['roster', '명단·QR'], ['records', '학생 기록'], ['stories', '이후의 이야기'], ['settings', '설정']] : [['settings', '비밀번호 바꾸기']];
   tabs.replaceChildren(...list.map(([k, t]) => h('button', { 'aria-pressed': String(tab === k), on: { click: () => { tab = k; load(); } } }, t)));
   ({ roster, records, stories, settings })[tab]();
-  if (!data.pinSet) $('#main').prepend(h('section', { class: 'card', style: 'border-color:#c0503c' }, h('b', { class: 'err' }, '처음 비밀번호(1324)는 누구나 알 수 있어요. 먼저 숫자 6~12자리 새 비밀번호로 바꿔야 명단과 기록을 열 수 있어요.')));
+  if (!data.pinSet) $('#main').prepend(h('section', { class: 'card', style: 'border-color:#c0503c' }, h('b', { class: 'err' }, '처음 비밀번호(1324)는 누구나 알 수 있어요. 먼저 숫자 4~12자리 새 비밀번호로 바꿔야 명단과 기록을 열 수 있어요.')));
 }
 
 // ---- 명단·코드·QR ----
@@ -182,7 +182,7 @@ async function stories() {
 // ---- 설정: 비밀번호, AI 키 4종, 채점 기준, 글자 수, 글감, 기록 지우기 ----
 function settings() {
   const st = data.settings;
-  const cur = h('input', { type: 'password', inputmode: 'numeric', placeholder: '지금 비밀번호' }), nx = h('input', { type: 'password', inputmode: 'numeric', placeholder: '새 비밀번호 (숫자 6~12자리)' });
+  const cur = h('input', { type: 'password', inputmode: 'numeric', placeholder: '지금 비밀번호' }), nx = h('input', { type: 'password', inputmode: 'numeric', placeholder: '새 비밀번호 (숫자 4~12자리)' });
   const pinMsg = h('span', { class: 'soft' });
   let provider = st.provider;
   const keys = {}, models = { ...st.models };
@@ -204,7 +204,7 @@ function settings() {
   const prompt = h('textarea', { rows: 3 }, st.prompt);
   const msg = h('span', { class: 'soft' });
   async function saveSettings(extra = {}) { const r = await api('settings', extra); data.settings = r.settings; Object.assign(st, r.settings); }
-  const pinCard = h('section', { class: 'card' }, h('h2', {}, '선생님 비밀번호'), h('p', { class: 'soft' }, data.pinSet ? '비밀번호를 바꾸면 다른 기기의 선생님 로그인은 풀려요. 잊었을 때는 버셀 환경 변수 TEACHER_PASSWORD 로 들어와 다시 바꿔요.' : '지금은 처음 비밀번호(1324)예요. 숫자 6~12자리로 바꿔 주세요.'), h('div', { class: 'row' }, cur, nx),
+  const pinCard = h('section', { class: 'card' }, h('h2', {}, '선생님 비밀번호'), h('p', { class: 'soft' }, data.pinSet ? '비밀번호를 바꾸면 다른 기기의 선생님 로그인은 풀려요. 잊었을 때는 버셀 환경 변수 TEACHER_PASSWORD 로 들어와 다시 바꿔요.' : '지금은 처음 비밀번호(1324)예요. 숫자 4~12자리로 바꿔 주세요.'), h('div', { class: 'row' }, cur, nx),
     h('div', { class: 'row', style: 'margin-top:8px' }, pinMsg, h('span', { class: 'grow' }), h('button', { class: 'btn', on: { click: async () => { try { await api('changePin', { current: cur.value, next: nx.value }); pinMsg.textContent = '바꿨어요.'; cur.value = nx.value = ''; if (!data.pinSet) { data.pinSet = true; tab = 'roster'; load(); } } catch (e) { pinMsg.textContent = e.message; } } } }, '비밀번호 바꾸기')));
   if (!data.pinSet) return $('#main').replaceChildren(pinCard);
   $('#main').replaceChildren(
