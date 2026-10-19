@@ -2,21 +2,22 @@
 'use strict';
 const { db, route, httpError, sign, unsign, cookies, setCookie, validPin, makePin, checkPassword, encrypt, newCode, text, int } = require('../server/core');
 const { getSettings, publicSettings, getRoster, setRoster, aiGrade, pingAI, PROVIDER_IDS } = require('../server/data');
+const { makeDemo } = require('../server/demo');
 
 const COOKIE = 'maum_t';
 const HOURS = 8;
 // 표 안의 v 는 비밀번호 판: 비밀번호를 바꾸면 다른 기기의 예전 로그인은 풀린다. m 은 되찾기 비밀번호(TEACHER_PASSWORD)로 들어온 표
 const token = (v, master) => sign(`t:${Date.now() + HOURS * 3600000}:${v}${master ? ':m' : ''}`);
-// 처음 비밀번호(1324)로 들어온 동안에는 비밀번호 바꾸기만 할 수 있다 (공개된 처음 값으로 학급 기록을 열지 못하게)
-const FIRST_ONLY = ['overview', 'changePin'];
-async function auth(req, action) {
+// 처음 비밀번호(1324)로도 모든 화면이 열린다(시연판). 실제 수업 기록을 모을 때는 「설정」에서 바꾼다
+async function auth(req) {
   const pin = await db().get('meta', 'pin');
   const x = unsign(cookies(req)[COOKIE]);
-  const [, exp, v, m] = (x || '').split(':');
+  const [, exp, v] = (x || '').split(':');
   if (!x || !x.startsWith('t:') || Number(exp) < Date.now() || Number(v) !== ((pin && pin.v) || 0)) throw httpError(401, '선생님 비밀번호를 입력해 주세요.');
-  if (!pin && m !== 'm' && !FIRST_ONLY.includes(action)) throw httpError(403, '처음 비밀번호(1324)를 먼저 바꿔 주세요. 「설정」에서 바꿀 수 있어요.');
   return pin;
 }
+// 한 학생의 진행·답·글을 지운다 (명단은 그대로)
+const wipe = no => Promise.all([db().del('progress', `s${no}`), db().delWhere('answers', { no }), db().del('stories', `s${no}`)]);
 const scoreSum = g => (g && g.scores ? Object.values(g.scores).reduce((a, b) => a + b, 0) : null);
 
 const open = {
@@ -36,7 +37,7 @@ const guarded = {
     if (!validPin(next)) throw httpError(400, '새 비밀번호는 숫자 4~12자리로 해 주세요.');
     if (next === '1324') throw httpError(400, '처음 비밀번호와 다른 번호로 해 주세요.');
     const r = await checkPassword(body.current, pin, req);
-    if (!r.ok) throw httpError(401, r.wait ? `${r.wait}초 뒤에 다시 해 주세요.` : '지금 비밀번호가 맞지 않아요.');
+    if (!r.ok) throw httpError(r.wait ? 429 : 400, r.wait ? `${r.wait}초 뒤에 다시 해 주세요.` : '지금 비밀번호가 맞지 않아요.'); // 401 이면 화면이 로그인으로 돌아가 버린다
     const np = makePin(next, ((pin && pin.v) || 0) + 1);
     await db().set('meta', 'pin', np);
     setCookie(res, COOKIE, token(np.v), HOURS * 3600);
@@ -51,9 +52,9 @@ const guarded = {
       students: students.map(st => {
         const p = progress.find(x => x.no === st.no), y = stories.find(x => x.no === st.no);
         return {
-          no: st.no, alias: st.alias, code: st.code, at: p ? p.at : null, answers: count[st.no] || 0,
+          no: st.no, alias: st.alias, code: st.code, demo: !!st.demo, at: p ? p.at : null, answers: count[st.no] || 0,
           books: Object.fromEntries(Object.entries((p && p.books) || {}).map(([id, b]) => [id, b.endings.length])),
-          story: y ? { chars: [...y.text.replace(/\s/g, '')].length, at: y.at, teacher: scoreSum(y.teacher), ai: scoreSum(y.ai) } : null,
+          story: y ? { chars: [...y.text.replace(/\s/g, '')].length, at: y.at, starter: y.starter, teacher: scoreSum(y.teacher), ai: scoreSum(y.ai) } : null,
         };
       }),
     };
@@ -61,6 +62,8 @@ const guarded = {
   // 명단: 한 줄에 「번호 가명」. 같은 번호는 원래 코드를 그대로 쓴다. dropRemoved: 명단에서 빠진 번호의 기록도 지운다
   roster: async ({ body }) => {
     const old = await getRoster();
+    // 예시 학생은 명단 글에 나오지 않고 그대로 남는다. 같은 번호를 적으면 실제 학생이 그 자리를 쓰고 예시 기록은 지운다
+    const demo = old.filter(s => s.demo);
     const taken = new Set(old.map(s => s.code));
     const seen = new Set();
     const students = [];
@@ -70,15 +73,16 @@ const guarded = {
       const no = Number(m[1]);
       if (seen.has(no)) continue;
       seen.add(no);
-      const prev = old.find(s => s.no === no);
+      const prev = old.find(s => s.no === no && !s.demo);
       const code = prev ? prev.code : newCode(taken);
       taken.add(code);
       students.push({ no, alias: m[2].slice(0, 20), code });
     }
     if (students.length > 60) throw httpError(400, '한 반은 60명까지예요.');
+    for (const d of demo) if (seen.has(d.no)) await wipe(d.no); else students.push(d);
     students.sort((a, b) => a.no - b.no);
-    const removed = old.filter(s => !seen.has(s.no)).map(s => s.no);
-    if (body.dropRemoved) for (const no of removed) await Promise.all([db().del('progress', `s${no}`), db().delWhere('answers', { no }), db().del('stories', `s${no}`)]);
+    const removed = old.filter(s => !s.demo && !seen.has(s.no)).map(s => s.no);
+    if (body.dropRemoved) for (const no of removed) await wipe(no);
     await setRoster(students);
     return { students, removed };
   },
@@ -113,13 +117,15 @@ const guarded = {
   // AI 채점: 한 명(no) 또는 아직 AI 채점이 없는 글 모두(all). 학생 글만 AI 로 간다
   aiGrade: async ({ body }) => {
     const s = await getSettings();
-    const list = body.all ? (await db().find('stories')).filter(y => !y.ai || y.ai.at < y.at) : [await db().get('stories', `s${int(body.no, 0, 999)}`)];
+    // 모두 채점에서는 예시 학생 글을 빼서 선생님 키를 쓰지 않는다
+    const demo = body.all ? new Set((await getRoster()).filter(x => x.demo).map(x => x.no)) : null;
+    const list = body.all ? (await db().find('stories')).filter(y => !demo.has(y.no) && (!y.ai || y.ai.at < y.at)) : [await db().get('stories', `s${int(body.no, 0, 999)}`)];
     let done = 0;
     const t0 = Date.now();
     for (const y of list.slice(0, 3)) { // 함수 한 번에 세 편까지, 35초를 넘기면 멈춘다 (버셀 시간 제한 60초)
       if (!y) throw httpError(404, '아직 쓴 글이 없어요.');
       if (done && Date.now() - t0 > 35000) break;
-      const ai = await aiGrade(s, y.text);
+      const ai = await aiGrade(s, y.text, y.starter);
       const { id, ...doc } = y;
       await db().set('stories', `s${y.no}`, { ...doc, ai });
       done++;
@@ -141,22 +147,42 @@ const guarded = {
       next.rubric = body.rubric.slice(0, 6).map((r, i) => ({ id: text(r.id || `c${i}`, 20).replace(/[^\w]/g, '') || `c${i}`, name: text(r.name, 30), levels: [0, 1, 2].map(k => text(r.levels && r.levels[k], 200)) }));
     }
     if (body.minChars != null) next.minChars = int(body.minChars, 50, 2000);
+    if (body.maxChars != null) next.maxChars = int(body.maxChars, next.minChars, 5000);
     if (typeof body.prompt === 'string' && body.prompt.trim()) next.prompt = text(body.prompt.trim(), 500);
     const { id, ...doc } = next;
     await db().set('meta', 'settings', doc);
     return { settings: publicSettings(next) };
   },
   testAI: async ({ body }) => pingAI(await getSettings(), body.provider),
+  // 예시 학생: 명단에 「예시-」 학생 다섯 명과 읽은 기록·답·이후의 이야기를 넣는다(다시 누르면 새로 만든다). 지우면 예시 학생과 그 기록만 지운다
+  seedDemo: async () => {
+    const [all, progress, stories, count] = await Promise.all([getRoster(), db().find('progress'), db().find('stories'), db().countBy('answers', 'no')]);
+    const old = all.filter(s => !s.demo), was = new Set(all.filter(s => s.demo).map(s => s.no));
+    for (const no of was) await wipe(no);
+    // 명단에서 빠졌지만 기록을 남겨 둔 번호에도 예시 학생을 넣지 않는다
+    const used = [...progress.map(x => x.no), ...stories.map(x => x.no), ...Object.keys(count).map(Number)].filter(no => !was.has(no));
+    const demo = makeDemo(old, used);
+    for (const d of demo.students) await Promise.all([db().set('progress', `s${d.no}`, d.progress), db().delWhere('answers', { no: d.no }), d.story ? db().set('stories', `s${d.no}`, d.story) : db().del('stories', `s${d.no}`)]);
+    for (const d of demo.students) await db().insertMany('answers', d.answers);
+    await setRoster([...old, ...demo.students.map(d => d.entry)].sort((a, b) => a.no - b.no));
+    return { added: demo.students.length };
+  },
+  clearDemo: async () => {
+    const all = await getRoster();
+    const demo = all.filter(s => s.demo);
+    for (const s of demo) await wipe(s.no);
+    await setRoster(all.filter(s => !s.demo));
+    return { removed: demo.length };
+  },
   // 기록 지우기: 한 명(no) 또는 반 전체(all). 명단과 설정은 남는다
   clear: async ({ body }) => {
     if (body.all) { for (const col of ['progress', 'answers', 'stories']) await db().delWhere(col, {}); return { ok: true }; }
-    const no = int(body.no, 0, 999);
-    await Promise.all([db().del('progress', `s${no}`), db().delWhere('answers', { no }), db().del('stories', `s${no}`)]);
+    await wipe(int(body.no, 0, 999));
     return { ok: true };
   },
 };
 
 module.exports = route({
   ...open,
-  ...Object.fromEntries(Object.entries(guarded).map(([k, fn]) => [k, async ctx => fn({ ...ctx, pin: await auth(ctx.req, k) })])),
+  ...Object.fromEntries(Object.entries(guarded).map(([k, fn]) => [k, async ctx => fn({ ...ctx, pin: await auth(ctx.req) })])),
 });

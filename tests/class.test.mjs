@@ -20,7 +20,6 @@ const teacher = async (action, data = {}) => {
 };
 for (let i = 0; i < 40; i++) { try { await fetch(base); break; } catch { await sleep(150); } }
 await teacher('login', { password: '1324' });
-await teacher('changePin', { current: '1324', next: '246813' }); // 처음 비밀번호로는 명단을 만들 수 없다
 const code = (await teacher('roster', { text: '1 햇살\n2 구름' })).students[0].code;
 
 let fails = 0;
@@ -75,18 +74,36 @@ ok(await wait(`document.querySelector('#loading').hidden && /이제 쓸 수 있�
 await run(`[...document.querySelectorAll('.bookrow')].pop().click()`);
 ok(await wait(`!!document.querySelector('.afterta')`), '이후의 이야기 쓰는 화면');
 ok(await run(`document.querySelector('#btnNext').disabled`), '200자 전에는 낼 수 없음');
+const titles = JSON.parse((await import('node:fs')).readFileSync('server/starters.json', 'utf8')).map(x => x.title);
+const shown = async () => run(`(document.querySelector('.starter b') || {}).textContent || ''`);
+const first = await shown();
+ok(titles.some(x => first.includes(x)) && await run(`document.querySelectorAll('.starter p').length >= 4`), '선생님이 들려주는 이야기 시작이 몇 줄 나옴');
+await run(`[...document.querySelectorAll('#ask .sbtn')].find(b => b.textContent === '다른 이야기 시작').click()`);
+const second = await shown();
+ok(second !== first && titles.some(x => second.includes(x)), '쓰기 전에는 다른 이야기 시작으로 바꿀 수 있음');
+await run(`(() => { const t = document.querySelector('.afterta'); t.value = '가'.repeat(501); t.dispatchEvent(new Event('input')); })()`);
+ok(await run(`document.querySelector('#btnNext').disabled && document.querySelector('.aftercount').classList.contains('over')`), '500자를 넘기면 낼 수 없음');
 await run(`(() => { const t = document.querySelector('.afterta'); t.value = '다음 주 월요일, 지우가 먼저 공을 받아 보겠다고 했어요. '.repeat(10); t.dispatchEvent(new Event('input')); })()`);
 await snap('05-after');
 ok(!(await run(`document.querySelector('#btnNext').disabled`)), '200자를 넘기면 낼 수 있음');
 await run(`document.querySelector('#btnNext').click()`);
 await sleep(1500);
 const ys = (await teacher('stories')).stories;
-ok(ys.length === 1 && ys[0].text.startsWith('다음 주 월요일'), '낸 글이 학급 서버에 저장됨');
+ok(ys.length === 1 && ys[0].text.startsWith('다음 주 월요일') && second.includes(titles[ys[0].starter]), '낸 글과 이야기 시작이 학급 서버에 저장됨');
+// 4권 결말 화면에서 바로 이후의 이야기로
+await send('Page.navigate', { url: base + '?book=4&scene=s15' });
+let found = false;
+for (let i = 0; i < 60 && !found; i++) {
+  await sleep(700);
+  found = await run(`(() => { const b = [...document.querySelectorAll('#ask .sbtn')].find(x => x.textContent === '이후의 이야기 쓰기'); if (b) b.click(); return !!b; })()`);
+  if (!found) await run(`(() => { const b = document.querySelector('#btnNext'); if (b && !b.disabled) b.click(); const o = document.querySelector('#ask .opt'); if (o) o.click(); })()`);
+}
+ok(found && await wait(`!!document.querySelector('.afterta') && document.querySelector('.afterta').value.startsWith('다음 주 월요일')`), '4권 결말 화면에 「이후의 이야기 쓰기」, 누르면 낸 글이 이어서 나옴');
 // 선생님 화면
 await send('Page.navigate', { url: base + 'teacher.html' });
 ok(await wait(`!!document.querySelector('input[type=password]')`), '선생님 로그인 화면');
-await run(`(() => { document.querySelector('input[type=password]').value = '246813'; document.querySelector('.btn').click(); })()`);
-ok(await wait(`/명단·QR/.test(document.querySelector('#tabs').textContent) && document.querySelectorAll('.qr img').length === 2`), '명단과 QR 카드 2장');
+await run(`(() => { document.querySelector('input[type=password]').value = '1324'; document.querySelector('.btn').click(); })()`);
+ok(await wait(`/명단·QR/.test(document.querySelector('#tabs').textContent) && document.querySelectorAll('.qr img').length === 2`), '처음 비밀번호 1324 로 바로 명단과 QR 카드 2장');
 await snap('05-teacher-roster');
 await run(`[...document.querySelectorAll('#tabs button')].find(b => b.textContent === '학생 기록').click()`);
 ok(await wait(`document.querySelectorAll('tbody tr').length === 2`), '학생 기록 표');
@@ -94,7 +111,7 @@ await run(`document.querySelector('tbody tr').click()`);
 ok(await wait(`document.querySelectorAll('.answer').length > 0`), '학생을 누르면 답이 시간순으로');
 await snap('06-teacher-records');
 await run(`[...document.querySelectorAll('#tabs button')].find(b => b.textContent === '이후의 이야기').click()`);
-ok(await wait(`document.querySelectorAll('.story').length === 1 && document.querySelectorAll('.rub fieldset').length === 4`), '이후의 이야기 글과 채점 기준 4가지');
+ok(await wait(`document.querySelectorAll('section > .story').length === 1 && document.querySelectorAll('.rub fieldset').length === 4 && document.querySelectorAll('section > details').length === 1`), '이후의 이야기 글, 이야기 시작, 채점 기준 4가지');
 await run(`(() => { document.querySelectorAll('.rub fieldset').forEach(f => f.querySelectorAll('input')[2].click()); [...document.querySelectorAll('.btn')].find(b => b.textContent === '선생님 채점 저장').click(); })()`);
 await sleep(800);
 ok((await teacher('stories')).stories[0].teacher.scores.link === 3, '선생님 채점 저장');
@@ -104,6 +121,16 @@ await snap('08-teacher-stories');
 await run(`[...document.querySelectorAll('#tabs button')].find(b => b.textContent === '설정').click()`);
 ok(await wait(`document.querySelectorAll('.prov').length === 4`), '설정에 AI 4종');
 await snap('07-teacher-settings');
+await run(`[...document.querySelectorAll('#tabs button')].find(b => b.textContent === '수업 흐름').click()`);
+ok(await wait(`document.querySelectorAll('main > section').length === 3 && document.querySelectorAll('details').length === 6 && document.querySelectorAll('a.sub[href*="book="]').length === 4`), '수업 흐름 세 차시, 책 띄우기 링크, 이야기 시작 여섯 가지');
+await snap('09-teacher-lesson');
+await run(`[...document.querySelectorAll('#tabs button')].find(b => b.textContent === '명단·QR').click()`);
+await wait(`!!document.querySelector('.qr img')`);
+await run(`[...document.querySelectorAll('.sub')].find(b => b.textContent === '예시 학생 넣기').click()`);
+ok(await wait(`document.querySelectorAll('.qr img').length === 7 && /예시 학생 지우기/.test(document.querySelector('main').textContent) && !/예시-/.test(document.querySelector('textarea').value)`), '예시 학생 넣기: QR 카드 7장, 반 명단 글에는 안 나옴');
+await run(`[...document.querySelectorAll('#tabs button')].find(b => b.textContent === '학생 기록').click()`);
+ok(await wait(`document.querySelectorAll('tbody tr').length === 7 && document.querySelectorAll('tbody .tag.demo').length === 5`), '학생 기록에 예시 학생과 예시 표시');
+await snap('10-teacher-demo');
 const bad = badErrors().filter(e => !/401|Unauthorized|400 \(Bad Request\) .*api\/teacher/.test(e)); // 로그인 전 401, AI 키 없을 때 400 은 일부러 낸 것
 bad.forEach(e => console.log('✗ 콘솔 오류: ' + e));
 console.log(fails || bad.length ? `실패 ${fails + bad.length}개` : `통과 · 사진: ${shots}`);

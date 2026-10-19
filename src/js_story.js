@@ -183,6 +183,7 @@ async function endingMenu(end, my) {
   chk(my);
   if (act === 'review') return reviewMenu(my);
   if (act === 'talk') { await talkCard(); chk(my); return endingMenu(end, my); }
+  if (act === 'after') return openAfter();
   if (act === 'retry') return replayFrom(trail.length - 1, undefined); // 마지막 갈림길(또는 말 고르기)로
   if (act === 'restart') return startBook(BOOK.id);
   toShelf();

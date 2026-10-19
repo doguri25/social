@@ -23,6 +23,8 @@ pack() {
           { printf '"%s": ' "$(basename "$f" .json)"; cat "$f"; printf ',\n'; } >> "$out"
         done
         printf '};\n' >> "$out" ;;
+      @starters) # 이후의 이야기 시작 여섯 가지 (서버와 같은 파일)
+        { printf 'const STARTERS = '; cat server/starters.json; printf ';\n'; } >> "$out" ;;
       @i18n) # 이야기 번역: stories/i18n/<언어>/<책>.json → STORY_I18N[언어][책]
         printf 'const STORY_I18N = {\n' >> "$out"
         for d in stories/i18n/*/; do
@@ -60,7 +62,7 @@ check() {
 }
 
 MODEL_LIST=$(for f in assets/models/*.glb; do basename "$f" .glb; done)
-pack dist/artifact.html head.html @defs @stories @i18n @models js_base.js js_i18n.js js_net.js js_face.js js_note.js js_world.js js_char.js js_stage.js js_shot.js js_panel.js js_sheet.js js_story.js js_ui.js
+pack dist/artifact.html head.html @defs @stories @i18n @starters @models js_base.js js_i18n.js js_net.js js_face.js js_note.js js_world.js js_char.js js_stage.js js_shot.js js_panel.js js_sheet.js js_story.js js_ui.js
 page dist/artifact.html index.html
 check dist/artifact.html
 

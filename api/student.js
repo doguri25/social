@@ -2,7 +2,7 @@
 // 접속 코드(또는 QR 의 ?c=코드)로 들어오면 서명한 쿠키를 준다. 저장하는 것: 번호, 가명(교사가 정함), 읽은 결말·이어 보기 자리, 고른 답, 「이후의 이야기」
 'use strict';
 const { db, route, httpError, sign, unsign, cookies, setCookie, text, storageReady, ipOf, throttle, forgive } = require('../server/core');
-const { getRoster, getSettings, unlocked, BOOKS } = require('../server/data');
+const { getRoster, getSettings, unlocked, BOOKS, STARTERS } = require('../server/data');
 
 const COOKIE = 'maum_s';
 const KINDS = ['choice', 'whatif', 'feel', 'compose', 'signals', 'sort', 'role', 'ending'];
@@ -57,7 +57,7 @@ module.exports = route({
   me: async ({ req }) => {
     const s = await who(req);
     const [prog, story, set] = await Promise.all([db().get('progress', `s${s.no}`), db().get('stories', `s${s.no}`), getSettings()]);
-    return { no: s.no, alias: s.alias, progress: prog ? { books: prog.books, resume: prog.resume } : { books: {}, resume: {} }, story: story ? { text: story.text, at: story.at } : null, minChars: set.minChars, prompt: set.prompt, books: BOOKS };
+    return { no: s.no, alias: s.alias, progress: prog ? { books: prog.books, resume: prog.resume } : { books: {}, resume: {} }, story: story ? { text: story.text, at: story.at, starter: story.starter } : null, minChars: set.minChars, maxChars: set.maxChars, prompt: set.prompt, books: BOOKS };
   },
   // 진행 저장 + 새로 고른 답 쌓기 (답은 지우지 않고 계속 쌓는다)
   save: async ({ req, body }) => {
@@ -69,14 +69,17 @@ module.exports = route({
     await db().insertMany('answers', answers);
     return { ok: true, saved: answers.length };
   },
-  // 이후의 이야기: 1~4권을 모두 읽은 뒤에만, 정해진 글자 수 이상
+  // 이후의 이야기: 1~4권을 모두 읽은 뒤에만, 정해진 글자 수(띄어쓰기 빼고) 안에서. starter: 선생님이 들려준 이야기 시작 번호
   story: async ({ req, body }) => {
     const s = await who(req);
     const [prog, set, old] = await Promise.all([db().get('progress', `s${s.no}`), getSettings(), db().get('stories', `s${s.no}`)]);
     if (!unlocked(prog)) throw httpError(403, '1~4권을 모두 끝까지 읽으면 쓸 수 있어요.');
-    const t = text(body.text, 5000).trim();
-    if ([...t.replace(/\s/g, '')].length < set.minChars) throw httpError(400, `${set.minChars}자 넘게 써 주세요.`);
-    await db().set('stories', `s${s.no}`, { no: s.no, text: t, at: Date.now(), versions: ((old && old.versions) || 0) + 1, teacher: (old && old.teacher) || null, ai: (old && old.ai) || null });
+    const t = text(body.text, 12000).trim(); // 최대 5000자 + 띄어쓰기
+    const n = [...t.replace(/\s/g, '')].length;
+    if (n < set.minChars) throw httpError(400, `${set.minChars}자 넘게 써 주세요.`);
+    if (n > set.maxChars) throw httpError(400, `${set.maxChars}자 안으로 줄여 주세요.`);
+    const starter = STARTERS.some(x => x.id === body.starter) ? body.starter : null;
+    await db().set('stories', `s${s.no}`, { no: s.no, text: t, starter, at: Date.now(), versions: ((old && old.versions) || 0) + 1, teacher: (old && old.teacher) || null, ai: (old && old.ai) || null });
     return { ok: true };
   },
 });

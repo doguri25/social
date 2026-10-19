@@ -178,51 +178,75 @@ async function openBook(id) {
   }
   startBook(id, ARGS.get('scene'));
 }
-// ---- 이후의 이야기: 1~4권에서 결말을 하나씩 본 뒤에 열린다. 학생은 학급 서버로 내고, 로그인 없이 쓰면 이 기기에만 ----
-const AFTER_PROMPT = '1권부터 4권까지, 같은 한 주를 유나·지우·민준·서아의 눈으로 읽었어요. 그다음 주에 우리 반에는 어떤 일이 있었을까요? 네 친구 가운데 한 명이 되어 「이후의 이야기」를 써 보세요.';
-const afterText = () => (NET.mode === 'student' ? NET.me.story && NET.me.story.text : save.after && save.after.text) || '';
+// ---- 이후의 이야기: 1~4권에서 결말을 하나씩 본 뒤에 열린다. 선생님이 들려주는 이야기 시작(여섯 가지 가운데 하나, 무작위)을 읽고 이어 쓴다.
+// 학생은 학급 서버로 내고, 로그인 없이 쓰면 이 기기에만
+const AFTER_PROMPT = '선생님이 들려준 이야기의 시작을 읽고, 그다음에 벌어질 일을 상상해서 이어 써 보세요.';
+const AFTER_RULES = ['유나·지우·민준·서아 가운데 한 명 이상이 나오고, 이야기 흐름이 이어지게', '중심 문장 하나 + 뒷받침 문장', "'대포알·숟가락·수첩' 같은 감각적 표현(비유) 한 가지"];
+const afterDoc = () => (NET.mode === 'student' ? NET.me.story : save.after) || null;
+const afterText = () => (afterDoc() || {}).text || '';
 const draftKey = () => `social-draft-${NET.mode === 'student' ? NET.me.no : 'guest'}`;
+function readDraft() {
+  let raw = null;
+  try { raw = localStorage.getItem(draftKey()); const d = JSON.parse(raw); if (d && typeof d === 'object') return d; } catch (e) { /* v0.7 은 글만 그대로 저장했다 */ }
+  return raw ? { text: raw } : null;
+}
 function openAfter() {
   if (!unlockedAfter()) return toast('1~4권에서 결말을 하나씩 보면 열려요.');
   sfx('pick');
   runId++;
   cancelFlow();
   buildHot([], () => {});
+  setHeader(null);
   const student = NET.mode === 'student';
-  const min = student ? NET.me.minChars : 200;
+  const min = student ? NET.me.minChars : 200, max = student ? NET.me.maxChars || 500 : 500;
+  const draft = readDraft(), doc = afterDoc();
+  // 이야기 시작: 낸 글이나 쓰던 글의 시작을 그대로, 없으면 여섯 가지 가운데 하나를 무작위로
+  let starter = [draft && draft.starter, doc && doc.starter].find(v => STARTERS.some(x => x.id === v));
+  if (starter == null) starter = STARTERS[Math.floor(Math.random() * STARTERS.length)].id;
   const ta = h('textarea', 'afterta');
-  let draft = '';
-  try { draft = localStorage.getItem(draftKey()) || ''; } catch (e) { /* 없음 */ }
-  ta.value = draft || afterText();
-  ta.placeholder = '여기에 써요. 누가, 언제, 어디서, 무슨 일이 있었는지, 그때 마음은 어땠는지 써 보세요.';
+  ta.value = (draft && draft.text) || afterText();
+  ta.placeholder = '이야기 시작 바로 다음부터 이어서 써요.';
   ta.setAttribute('aria-label', '이후의 이야기');
   const count = h('div', 'aftercount');
+  const box = h('div', 'starter');
+  const drawStarter = () => {
+    const st = STARTERS.find(x => x.id === starter);
+    box.replaceChildren(h('b', '', `「${st.title}」 · ${st.who}가 들려주는 이야기`), ...st.text.split('\n').map(l => h('p', '', l)));
+  };
+  const keep = () => { try { localStorage.setItem(draftKey(), JSON.stringify({ text: ta.value, starter })); } catch (e) { /* 저장 못 해도 쓰기는 계속 */ } };
   const submit = async () => {
     const text = ta.value.trim();
     try {
-      if (student) { await api('story', { text }); NET.me.story = { text, at: Date.now() }; }
-      else { save.after = { text, at: Date.now() }; store(); }
+      if (student) { await api('story', { text, starter }); NET.me.story = { text, starter, at: Date.now() }; }
+      else { save.after = { text, starter, at: Date.now() }; store(); }
       try { localStorage.removeItem(draftKey()); } catch (e) { /* 없음 */ }
       sfx('end');
-      toast(student ? '냈어요! 선생님이 읽어 볼 거예요. 다시 고쳐 낼 수도 있어요.' : '이 기기에 저장했어요.');
+      toast(student ? '냈어요! 선생님이 읽어 볼 거예요. 짝과 바꿔 읽은 뒤 고쳐서 다시 낼 수도 있어요.' : '이 기기에 저장했어요.');
     } catch (e) { toast(e.message); }
   };
   const upd = () => {
     const n = [...ta.value.replace(/\s/g, '')].length;
-    count.textContent = `${n} / ${min}자 (띄어쓰기 빼고)`;
-    count.classList.toggle('ok', n >= min);
-    setNext(n >= min ? submit : null, student ? '선생님께 내기' : '이 기기에 저장');
-    try { localStorage.setItem(draftKey(), ta.value); } catch (e) { /* 저장 못 해도 쓰기는 계속 */ }
+    count.textContent = `${n}자 · ${min}~${max}자 (띄어쓰기 빼고)`;
+    count.classList.toggle('ok', n >= min && n <= max);
+    count.classList.toggle('over', n > max);
+    setNext(n >= min && n <= max ? submit : null, student ? '선생님께 내기' : '이 기기에 저장');
+    keep();
+    renderAsk();
   };
   ta.addEventListener('input', upd);
+  drawStarter();
   const card = h('div', 'endcard after');
-  card.append(h('div', 'eyebrow', '이후의 이야기'), h('h3', '', '그다음 이야기를 써요'), h('p', 'aprompt', student ? NET.me.prompt : AFTER_PROMPT), ta, count);
+  card.append(h('div', 'eyebrow', '이후의 이야기'), h('h3', '', '그다음 이야기를 써요'), box, h('p', 'aprompt', student ? NET.me.prompt : AFTER_PROMPT), ta, count);
   storyEl.replaceChildren(card);
   rise();
   setAsk('after', () => {
     const r = h('div', 'btnrow');
+    // 아직 한 글자도 쓰지 않았을 때만 다른 이야기 시작으로 바꿀 수 있다
+    if (!ta.value.trim()) r.append(btn('다른 이야기 시작', 'sbtn', () => { const rest = STARTERS.filter(x => x.id !== starter); starter = rest[Math.floor(Math.random() * rest.length)].id; drawStarter(); keep(); sfx('tap'); }));
     r.append(btn('책장으로', 'sbtn', showShelf));
-    return [heading('이후의 이야기', 'spark'), h('p', '', student ? `${min}자 넘게 쓰면 선생님께 낼 수 있어요. 낸 뒤에도 고쳐서 다시 낼 수 있어요.` : `로그인 없이 쓰는 글은 이 기기에만 저장되고 선생님께 가지 않아요. ${min}자 넘게 써 보세요.`), r];
+    const rules = h('ul', 'rules');
+    AFTER_RULES.forEach(t2 => rules.appendChild(h('li', '', t2)));
+    return [heading('이렇게 써 보세요', 'spark'), rules, h('p', '', student ? '다 쓰면 선생님께 내요. 짝과 바꿔 읽고 한 문장을 고친 뒤 다시 낼 수 있어요.' : '로그인 없이 쓰는 글은 이 기기에만 저장되고 선생님께 가지 않아요.'), r];
   });
   upd();
   setTimeout(() => ta.focus({ preventScroll: true }), 80);

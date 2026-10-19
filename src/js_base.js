@@ -1,5 +1,5 @@
 // ===== 기본 도구: 저장, 주소, 소리, 읽어 주기, 기다리기 =====
-const VERSION = '0.7.1'; // 올릴 때 CHANGELOG.md 와 함께 바꾼다
+const VERSION = '0.8.0'; // 올릴 때 CHANGELOG.md 와 함께 바꾼다
 const $ = (s, r = document) => r.querySelector(s);
 const h = (tag, cls, text) => {
   const e = document.createElement(tag);

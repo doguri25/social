@@ -290,6 +290,11 @@ svg.body [data-part].real.on { fill: #9fe0c2; }
 .afterta:focus { border-color: var(--green); outline: none; }
 .aftercount { text-align: right; font-size: 14px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .aftercount.ok { color: var(--green); }
+.aftercount.over { color: #c0503c; }
+.starter { padding: 10px 12px; border-radius: 12px; background: #fff8e1; border: 1.5px dashed var(--pill-ink); font-size: calc(16px * var(--fs)); line-height: 1.55; }
+.starter b { display: block; font-weight: 400; color: var(--pill-ink); font-size: 14px; margin-bottom: 4px; }
+.starter p { margin: 0; }
+.rules { margin: 0 0 6px; padding-left: 1.2em; display: grid; gap: 4px; font-size: calc(15px * var(--fs)); color: var(--ink); }
 /* 손가락으로 누르는 기기(태블릿·휴대전화): 누르는 곳을 44px 이상으로, 글자는 조금 크게 */
 @media (pointer: coarse) {
   .sbtn, .chip, .bodychip { min-height: 44px; padding-left: 14px; padding-right: 14px; }

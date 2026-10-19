@@ -437,6 +437,7 @@ function endingCard(end) {
         btn('책장으로', 'sbtn', () => { sfx('tap'); done('shelf'); }),
       );
       if (BOOK.talk) row.prepend(btn('생각 나누기', 'sbtn primary', () => { sfx('tap'); done('talk'); }));
+      if (BOOK.id === 'book4' && unlockedAfter()) row.prepend(btn('이후의 이야기 쓰기', 'sbtn primary', () => { sfx('pick'); done('after'); })); // 3차시: 곁이야기 3 다음에 바로 이어 쓰기
       return [heading('이야기를 다 읽었어요', 'heart'), h('p', '', '내가 고른 길을 돌아보거나, 다른 말을 골라 다른 결말을 만나 보세요.'), row];
     });
     setNext(() => done('review'), '내가 고른 길');
