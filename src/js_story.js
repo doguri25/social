@@ -2,12 +2,13 @@
 let BOOK = null;
 let flags = {};
 let trail = []; // 지나온 갈림길 기록
-let curScene = null, curPart = null, curSet = null, runId = 0, lastEnd = null;
+let curScene = null, curPart = null, curSet = null, runId = 0, lastEnd = null, lastBook = null;
+const narrator = () => BOOK.castById[BOOK.narrator || 'yuna']; // 이 책을 들려주는 「나」
 
 function loadBook(id) {
   BOOK = STORIES[id];
   BOOK.castById = {};
-  BOOK.cast.forEach((c, i) => { BOOK.castById[c.id] = c; if (!CH[c.id]) makeChar(c, i); });
+  BOOK.cast.forEach(c => { BOOK.castById[c.id] = c; if (!CH[c.id]) makeChar(c, Object.keys(CH).length); }); // 층 번호는 책을 넘어 겹치지 않게
 }
 // "자리 자세 표정 [크기]"
 function parseCast(str) { const [spot, pose = 'stand', face = 'calm', sc] = str.split(/\s+/); return { spot, pose, face, scale: sc ? +sc : 1 }; }
@@ -47,6 +48,7 @@ function meets(cond, f = flags) {
 
 function startBook(id, sceneId) {
   loadBook(id);
+  lastBook = id;
   flags = {};
   trail = [];
   curPart = null;
@@ -95,7 +97,12 @@ async function playScene(id, opt, my) {
       continue;
     }
     if (it.whatif) { await playWhatif(it.whatif, id, i, pick, my); pick = undefined; continue; }
-    if (it.activity === 'breathe') { await breathe(); chk(my); if (hist.length) renderEntry(); continue; }
+    if (it.activity) {
+      const r = await (it.activity === 'breathe' ? breathe() : ACTS[it.activity](it)); chk(my);
+      if (r != null) { bookRec(BOOK.id).acts = Object.assign({}, bookRec(BOOK.id).acts, { [`${id}:${i}`]: r }); store(); }
+      if (hist.length) renderEntry();
+      continue;
+    }
     await showAndWait(it, my);
   }
   if (sc.choices) {
@@ -140,7 +147,7 @@ async function playCompose(sc, id, preset, my) {
     await showAndWait({
       shot: pc.shot || 'two', on: pc.on || [spec.who, spec.to], pre: pc.pre,
       faces: { [spec.who]: pc.face || 'shy' }, poses: pc.pose ? { [spec.who]: pc.pose } : undefined,
-      lines: [{ who: spec.who, say: pc.text }],
+      lines: [{ who: spec.who, [spec.write ? 'think' : 'say']: pc.text }], // write: 수첩에 적는 줄은 생각 말풍선으로
     }, my);
   }
 }
@@ -167,6 +174,7 @@ async function endingMenu(end, my) {
   const act = await endingCard(end);
   chk(my);
   if (act === 'review') return reviewMenu(my);
+  if (act === 'talk') { await talkCard(); chk(my); return endingMenu(end, my); }
   if (act === 'retry') return replayFrom(trail.length - 1, undefined); // 마지막 갈림길(또는 말 고르기)로
   if (act === 'restart') return startBook(BOOK.id);
   toShelf();

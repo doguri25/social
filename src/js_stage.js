@@ -171,7 +171,7 @@ const BUILD = {
     box(3.4, 0.08, 0.55, W, 0, 1.7, -0.75, g);
     [-1.65, 1.65].forEach(x => box(0.1, 1.75, 0.55, W, x, 0.87, -0.75, g));
     box(3.4, 1.75, 0.05, '#d9b48a', 0, 0.87, -1.0, g);
-    const titles = [[STORIES.book1.title, '#ffcf3f'], ['2권 준비 중', '#6fbfee'], ['3권 준비 중', '#f497b6'], ['4권 준비 중', '#78c78a'], ['5권 준비 중', '#b48ad8']];
+    const titles = SPINES.map((col, i) => { const B = STORIES[bookIds()[i]]; return [B ? B.title : `${i + 1}권 준비 중`, col]; });
     s.books = titles.map(([title, col], i) => {
       const x = -1.08 + i * 0.54;
       ink(box(0.34, 0.86, 0.44, col, x, 1.22, -0.72, g), 0.006);
@@ -444,10 +444,12 @@ const BUILD = {
     const [yx, , yz] = s.def.spots.k_y;
     model('chair', { h: 0.7, x: yx, z: yz - 0.06, color: { wood: '#f2b5c8' }, ink: 0.004, parent: g });
     model('chair', { h: 0.7, x: 0, z: 0.41, ry: 180, color: { wood: '#e8c18e' }, ink: 0.004, parent: g }); // 엄마 자리 (식탁 앞쪽)
-    cyl(0.12, 0.1, 0.02, '#ffffff', yx, TABLE_H + 0.01, yz + 0.32, g, 20);
-    for (let i = 0; i < 5; i++) { const e = box(0.05, 0.045, 0.06, '#ffd45a', yx - 0.08 + i * 0.04, TABLE_H + 0.04, yz + 0.32, g); e.rotation.y = 0.1; }
-    cyl(0.06, 0.05, 0.06, '#f8f4ea', yx + 0.2, TABLE_H + 0.03, yz + 0.25, g, 14);
-    cyl(0.005, 0.005, 0.2, '#3b302b', yx - 0.17, TABLE_H + 0.008, yz + 0.3, g, 6).rotation.x = Math.PI / 2;
+    const meal = node('meal', g); // 유나네 저녁(달걀말이): set.meal 일 때만
+    cyl(0.12, 0.1, 0.02, '#ffffff', yx, TABLE_H + 0.01, yz + 0.32, meal, 20);
+    for (let i = 0; i < 5; i++) { const e = box(0.05, 0.045, 0.06, '#ffd45a', yx - 0.08 + i * 0.04, TABLE_H + 0.04, yz + 0.32, meal); e.rotation.y = 0.1; }
+    cyl(0.06, 0.05, 0.06, '#f8f4ea', yx + 0.2, TABLE_H + 0.03, yz + 0.25, meal, 14);
+    cyl(0.005, 0.005, 0.2, '#3b302b', yx - 0.17, TABLE_H + 0.008, yz + 0.3, meal, 6).rotation.x = Math.PI / 2;
+    s.apply = set => meal.setEnabled(!!set.meal);
     const lampAt = s.def.lamp;
     cyl(0.005, 0.005, 2.5 - lampAt[1], '#3b302b', lampAt[0], (2.5 + lampAt[1]) / 2, lampAt[2], g, 6);
     cyl(0.06, 0.2, 0.14, '#f6d77a', lampAt[0], lampAt[1] + 0.05, lampAt[2], g, 20);

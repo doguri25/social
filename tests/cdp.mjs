@@ -15,12 +15,15 @@ export async function openPage({ url, shots, prefix = '', phone = false, size = 
   const PORT = 9300 + Math.floor(Math.random() * 500);
   const profile = mkdtempSync(join(tmpdir(), 'maum-'));
   const chrome = spawn(CHROME, [
-    '--headless=new', '--mute-audio', `--remote-debugging-port=${PORT}`, // 시험 중에는 효과음이 컴퓨터 스피커로 나오지 않게 `--user-data-dir=${profile}`,
+    // --mute-audio: 시험 중에는 효과음이 컴퓨터 스피커로 나오지 않게. --user-data-dir: 시험마다 새 프로필 (쓰는 사람의 크롬 프로필과 섞이지 않게)
+    '--headless=new', '--mute-audio', `--remote-debugging-port=${PORT}`, `--user-data-dir=${profile}`,
     '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist',
     `--window-size=${size[0]},${size[1]}`, '--no-first-run', '--no-default-browser-check', '--autoplay-policy=no-user-gesture-required', 'about:blank',
   ], { stdio: 'ignore' });
   const quit = code => { try { chrome.kill(); } catch {} setTimeout(() => { try { rmSync(profile, { recursive: true, force: true }); } catch {} process.exit(code); }, 300); };
   process.on('unhandledRejection', e => { console.log('✗ ' + (e && e.message)); quit(1); });
+  process.on('uncaughtException', e => { console.log('✗ ' + (e && e.stack)); quit(1); }); // 어떤 오류로 멈춰도 크롬은 닫는다
+  process.on('exit', () => { try { chrome.kill(); } catch {} });
   setTimeout(() => { console.log(`✗ 시간 초과 (${limit / 60000}분)`); quit(1); }, limit).unref();
 
   let targets = null;
@@ -29,7 +32,7 @@ export async function openPage({ url, shots, prefix = '', phone = false, size = 
     try { targets = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json(); } catch {}
   }
   const tab = targets && targets.find(t => t.type === 'page');
-  if (!tab) { console.log('✗ 크롬을 띄우지 못함'); quit(1); }
+  if (!tab) { console.log('✗ 크롬을 띄우지 못함'); quit(1); return new Promise(() => {}); }
   const ws = new WebSocket(tab.webSocketDebuggerUrl);
   await new Promise(r => ws.addEventListener('open', r));
   const CACHE = new URL('./.cache/', import.meta.url);

@@ -182,6 +182,30 @@ button:disabled { cursor: default; }
 .bdots { display: flex; gap: 10px; }
 .bdot { width: 16px; height: 16px; border-radius: 50%; border: 2.5px solid var(--ink); background: #fff; }
 .bdot.on { background: var(--hot); }
+/* 몸 신호 찾기 */
+.bodywrap { flex: 1; display: grid; justify-items: center; align-content: center; gap: 6px; min-height: 200px; }
+svg.body { width: min(100%, 260px); max-height: 100%; }
+svg.body [data-part] { fill: #fff; stroke: var(--ink); stroke-width: 2.5; cursor: pointer; }
+svg.body [data-part].on { fill: var(--hot); }
+svg.body [data-part].real { stroke: var(--green); stroke-width: 4.5; }
+svg.body [data-part].real.on { fill: #9fe0c2; }
+.bodychips { display: flex; flex-wrap: wrap; gap: 6px; }
+.bodychip { font-size: calc(15px * var(--fs)); padding: 5px 11px; background: #fff; border: 1.5px solid var(--line); border-radius: 999px; }
+.bodychip[aria-pressed="true"] { background: #fff1b3; border-color: var(--ink); }
+.bodychip.real { box-shadow: 0 0 0 3px var(--green); opacity: 1; }
+.bodychip:disabled { cursor: default; }
+/* 마음과 행동 바구니 */
+.baskets { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; min-height: 180px; }
+.basket { display: flex; flex-direction: column; gap: 6px; padding: 10px; border: 2px dashed var(--line); border-radius: 14px; background: var(--card); }
+.basket.feel { border-color: var(--pink-line); background: #fff7f4; }
+.basket.act { border-color: #9cc8e6; background: var(--sky-bg); }
+.basket > b { font-weight: 400; font-size: calc(17px * var(--fs)); text-align: center; }
+.scard { padding: 6px 9px; background: #fff; border: 1.5px solid var(--ink); border-radius: 10px; font-size: calc(15px * var(--fs)); line-height: 1.35; }
+.scard.moved { border-style: dashed; }
+.scard small { display: block; font-size: 11px; color: var(--ink-2); }
+#ask p.scur { color: var(--ink); font-size: calc(19px * var(--fs)); margin: 4px 0; }
+/* 생각 나누기 */
+.talk { margin: 6px 0 0; padding-left: 1.4em; display: grid; gap: 10px; font-size: calc(17px * var(--fs)); line-height: 1.45; }
 /* 결말과 내가 고른 길 (옆 칸 위) */
 .endcard h3 { margin: 0 0 4px; font-weight: 400; font-size: calc(28px * var(--fs)); color: var(--title); text-wrap: balance; }
 .endcard .countline { margin: 0 0 10px; color: var(--ink-2); font-variant-numeric: tabular-nums; }

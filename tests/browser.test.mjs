@@ -1,26 +1,21 @@
 // 브라우저 시험: 크롬을 화면 없이 띄워 1권을 처음부터 결말까지 자동으로 넘겨 본다.
-//   node tests/browser.test.mjs [palm|pass|finger|start|thu] [phone] [every] [사진 폴더]
+//   node tests/browser.test.mjs [book=1~4] [결말 id] [phone] [every] [사진 폴더]   (결말마다 고르는 방법은 tests/plans.mjs)
 // 교실 첫 장면에서는 둘러보기 점 누르기, 무대 돌리기(카메라 쪽 벽이 걷히는지), 이전 컷 보기도 확인한다.
 // 콘솔 오류가 하나라도 나거나 결말에 닿지 못하면 실패. 고비마다 화면을 찍어 둔다.
 import { resolve } from 'node:path';
 import { openPage, sleep } from './cdp.mjs';
+import { PLANS } from './plans.mjs';
 
-const want = ['palm', 'pass', 'finger', 'start', 'thu'].find(a => process.argv.includes(a)) || 'palm';
+const bookN = (process.argv.find(a => /^book=\d$/.test(a)) || 'book=1').slice(5);
+const plans = PLANS['book' + bookN];
+if (!plans) { console.log(`tests/plans.mjs 에 book${bookN} 계획이 없음`); process.exit(1); }
+const want = Object.keys(plans).find(a => process.argv.includes(a)) || Object.keys(plans)[0];
 const phone = process.argv.includes('phone');
 const every = process.argv.includes('every'); // 컷마다 사진
 const shots = resolve(process.argv.slice(2).find(a => a.startsWith('/')) || 'dist/shots');
-const { send, run, snap, quit, badErrors } = await openPage({ url: 'file://' + resolve('index.html') + '?book=1', shots, phone, prefix: phone ? 'phone-' : '', limit: 720000 });
+const { send, run, snap, quit, badErrors } = await openPage({ url: 'file://' + resolve('index.html') + '?book=' + bookN, shots, phone, prefix: phone ? 'phone-' : '', limit: 720000 });
 const state = async () => JSON.parse(await run('JSON.stringify(window.__maum ? window.__maum.state() : null)') || 'null');
-
-// 결말마다 고르는 방법: 장면별 갈림길 번호(없으면 0), 말 조각 고르기
-const BOOK = { s02: 1, s05: 1, s08: 1 }; // 원작 길: 「나한테 줘」, 「너 때문에」, 「나중에」
-const PLAN = {
-  palm: { choice: { ...BOOK, s12: 0, s16: 0 }, pieces: t => !/근데|됐지/.test(t) },
-  pass: { choice: { ...BOOK, s12: 1, s16: 1 }, pieces: t => /애들 앞에서/.test(t) },
-  finger: { choice: { ...BOOK, s12: 2, s16: 2 }, pieces: t => /됐지|근데/.test(t) },
-  start: { choice: { s02: 0, s05: 0, s06e: 1 }, pieces: () => true },
-  thu: { choice: { s02: 1, s05: 1, s08: 0 }, pieces: () => true },
-}[want];
+const PLAN = plans[want];
 
 // 화면에 보이는 것 하나를 눌러 한 걸음 나아간다
 const STEP = `(() => {
@@ -36,6 +31,9 @@ const STEP = `(() => {
     if (!ask.querySelector('.piece[aria-pressed="true"]')) pcs[0].click();
     return 'compose';
   }
+  if (kind === 'signals' && !ask.querySelector('.bodychip[aria-pressed="true"]') && !ask.querySelector('.reveal')) { ask.querySelectorAll('.bodychip')[1].click(); return 'signals'; }
+  if (kind === 'sort' && ask.querySelector('.sortbtn')) { ask.querySelector('.sortbtn').click(); return 'sort'; }
+  if (kind === 'role' && !ask.querySelector('.reveal')) { ask.querySelector('.rolebtn').click(); return 'role'; }
   if (kind === 'choice' || kind === 'whatif') {
     const opts = ask.querySelectorAll('.opt');
     const i = (__CHOICE__)[window.__maum.state().scene] || 0;
@@ -59,7 +57,7 @@ async function drag(dx) {
 }
 const checks = { pop: false, walls: false, back: false };
 async function classroomChecks() {
-  await run(`document.querySelector('.hs')?.click()`);
+  await run(`(document.querySelector('.hs') || document.querySelector('#cast button'))?.click()`);
   await sleep(500);
   checks.pop = !!(await run(`(() => { const p = document.querySelector('#pop'); return p.hidden ? '' : p.textContent; })()`));
   await snap('c1-pop');
@@ -79,9 +77,9 @@ for (let i = 0; i < 600; i++) {
   await sleep(i < 3 ? 2000 : 450);
   const st = await state();
   if (!st) continue;
-  const key = ['intro', 'choice', 'whatif', 'feel', 'compose', 'breathe', 'ending'].includes(st.kind) ? `${st.kind}-${st.scene}` : null;
+  const key = ['intro', 'choice', 'whatif', 'feel', 'compose', 'breathe', 'signals', 'sort', 'role', 'ending'].includes(st.kind) ? `${st.kind}-${st.scene}` : null;
   if (key && !marks.has(key) && marks.size < 40) { marks.add(key); await sleep(300); await snap(String(marks.size).padStart(2, '0') + '-' + key); }
-  if (st.kind === 'intro' && st.stage === 'classroom' && !checks.pop) await classroomChecks();
+  if (st.kind === 'intro' && st.walls.length && !checks.pop) await classroomChecks(); // 벽이 있는 방 무대에서 한 번
   if (!checks.back && st.kind !== 'intro' && st.cuts >= 3 && st.at === st.cuts - 1 && st.next) {
     await run(`document.querySelector('#btnPrev').click()`);
     await sleep(500);
@@ -103,15 +101,25 @@ await snap('90-ending');
 const s = await state();
 console.log('마지막 상태: ' + JSON.stringify(Object.assign({}, s, { flags: undefined, walls: undefined })));
 // 내가 고른 길 화면도 한 번 열어 본다
-await run(`document.querySelector('#ask .sbtn.primary')?.click()`);
+const press = label => run(`[...document.querySelectorAll('#ask .sbtn')].find(b => b.textContent.includes('${label}'))?.click()`);
+let talkN = -1; // 학습지 물음이 있는 책은 생각 나누기 화면도 열어 본다
+if (await run(`!![...document.querySelectorAll('#ask .sbtn')].find(b => b.textContent.includes('생각 나누기'))`)) {
+  await press('생각 나누기');
+  await sleep(700);
+  await snap('90b-talk');
+  talkN = await run(`document.querySelectorAll('#story .talk li').length`);
+  await press('결말로 돌아가기');
+  await sleep(700);
+}
+await press('내가 고른 길');
 await sleep(700);
 await snap('91-review');
 const reviewStops = await run(`document.querySelectorAll('#story .stop').length`);
 console.log(`걸음: ${JSON.stringify(counts)}`);
-console.log(`결말: ${s.ending} (원하는 결말 ${want}), 내가 고른 길 정류장 ${reviewStops}개, 화질 ${s.tier}`);
+console.log(`결말: ${s.ending} (원하는 결말 ${want}), 내가 고른 길 정류장 ${reviewStops}개, 생각 나누기 물음 ${talkN < 0 ? '없음' : talkN + '개'}, 화질 ${s.tier}`);
 console.log(`둘러보기 말: ${checks.pop ? '나옴' : '안 나옴'}, 벽 걷힘: ${checks.walls ? '됨' : '안 됨'}, 이전 컷: ${checks.back ? '됨' : '안 됨'}`);
 const bad = badErrors();
 bad.forEach(e => console.log('✗ 콘솔 오류: ' + e));
-const ok = !bad.length && s.ending === want && reviewStops >= (['start', 'thu'].includes(want) ? 4 : 6) && checks.pop && checks.walls && checks.back;
+const ok = !bad.length && s.ending === want && reviewStops >= PLAN.stops && talkN !== 0 && checks.pop && checks.walls && checks.back;
 console.log(ok ? `통과 · 사진: ${shots}` : '실패');
 quit(ok ? 0 : 1);

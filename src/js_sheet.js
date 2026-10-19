@@ -136,9 +136,9 @@ function askCompose(spec, pieces) {
   return waitFor(done => {
     const picked = new Set();
     const order = pieces.slice().sort(() => Math.random() - 0.5);
-    const arm = () => setNext(picked.size >= (spec.min || 1) ? () => { sfx('pick'); done(pieces.filter(pc => picked.has(pc))); } : null, '이렇게 말하기');
+    const arm = () => setNext(picked.size >= (spec.min || 1) ? () => { sfx('pick'); done(pieces.filter(pc => picked.has(pc))); } : null, spec.write ? '이렇게 적기' : '이렇게 말하기');
     setAsk('compose', () => {
-      const out = [h('div', 'eyebrow', '하고 싶은 말 고르기'), heading(spec.q)];
+      const out = [h('div', 'eyebrow', spec.write ? '수첩에 적을 줄 고르기' : '하고 싶은 말 고르기'), heading(spec.q)];
       const tb = teachBox(spec.ask);
       if (tb) out.push(tb);
       const list = h('div', 'pieces');
@@ -172,7 +172,8 @@ function breathe() {
     ring.setAttribute('aria-label', '누르고 있으면 숨 들이쉬기, 떼면 내쉬기');
     const wrap = h('div', 'breathe');
     wrap.append(h('div', 'eyebrow', '숨 고르기'), ring, msg, dotsEl);
-    storyEl.replaceChildren(wrap);
+    actView = () => storyEl.replaceChildren(wrap);
+    actView();
     let n = 0, holding = false, phase = 'idle', t0 = 0, raf = 0, scale = 1;
     const setScale = s => { scale = s; ring.style.transform = `scale(${s})`; };
     const grow = () => { if (!holding) return; setScale(1 + 0.6 * Math.min(1, (performance.now() - t0) / 3000)); raf = requestAnimationFrame(grow); };
@@ -210,7 +211,7 @@ function breathe() {
     setAsk('breathe', () => {
       const row = h('div', 'btnrow');
       row.appendChild(btn('건너뛰기', 'sbtn skip', () => done()));
-      return [heading('유나와 함께 숨을 쉬어 봐요'), h('p', '', '얼굴이 뜨겁고 가슴이 쿵쿵할 때 해 보는 숨 고르기예요.'), row];
+      return [heading(`${withP(narrator().name)} 함께 숨을 쉬어 봐요`), h('p', '', '얼굴이 뜨겁고 가슴이 쿵쿵할 때 해 보는 숨 고르기예요.'), row];
     });
     setNext(null);
     ring.addEventListener('pointerdown', down);
@@ -219,13 +220,194 @@ function breathe() {
     ring.addEventListener('keydown', kd);
     ring.addEventListener('keyup', ku);
     setTimeout(() => ring.focus({ preventScroll: true }), 60);
-    speak('유나와 함께 숨을 쉬어 봐요. 동그라미를 꾹 누르고 있으면 숨을 들이쉬어요.');
+    speak(`${withP(narrator().name)} 함께 숨을 쉬어 봐요. 동그라미를 꾹 누르고 있으면 숨을 들이쉬어요.`);
     return () => {
       cancelAnimationFrame(raf);
       removeEventListener('pointerup', up);
       removeEventListener('pointercancel', up);
+      actView = null;
       doneAsk();
     };
+  });
+}
+
+// ---- 권마다 하나씩 더한 활동: 몸 신호 찾기(signals), 마음·행동 바구니(sort), 작전판 역할 고르기(role) ----
+// 몸 그림: 고른 부분마다 data-part. innerHTML 에는 이 고정된 그림만 넣는다
+const BODY = { ears: '귀', face: '얼굴', lips: '입술', throat: '목', heart: '가슴', belly: '배 속', shoulder: '어깨', palms: '손바닥', fingers: '손끝', legs: '다리', feet: '발' };
+const BODY_SVG = `<g class="figure" fill="#ffe2cc" stroke="#3b302b" stroke-width="2.5">
+<path d="M70 140 Q100 128 130 140 L136 205 Q100 214 64 205 Z" fill="#c7b2e6"/>
+<path d="M70 146 Q52 170 50 204" fill="none" stroke-width="12" stroke="#c7b2e6"/><path d="M130 146 Q148 170 150 204" fill="none" stroke-width="12" stroke="#c7b2e6"/>
+<circle cx="100" cy="72" r="56"/><path d="M45 74 Q40 14 100 15 Q160 14 155 74 Q150 46 128 40 Q100 52 66 42 Q50 50 45 74Z" fill="#4a3326"/></g>
+<g data-part="ears"><circle cx="43" cy="78" r="11"/><circle cx="157" cy="78" r="11"/></g>
+<g data-part="face"><circle cx="72" cy="88" r="10"/><circle cx="128" cy="88" r="10"/></g>
+<g data-part="lips"><ellipse cx="100" cy="104" rx="12" ry="6"/></g>
+<g data-part="throat"><rect x="89" y="126" width="22" height="12" rx="4"/></g>
+<g data-part="shoulder"><circle cx="70" cy="144" r="9"/><circle cx="130" cy="144" r="9"/></g>
+<g data-part="heart"><path d="M112 160 c-6-8-18-4-14 6 l14 12 l14-12 c4-10-8-14-14-6z"/></g>
+<g data-part="belly"><ellipse cx="100" cy="190" rx="18" ry="9"/></g>
+<g data-part="palms"><circle cx="50" cy="210" r="10"/><circle cx="150" cy="210" r="10"/></g>
+<g data-part="fingers"><circle cx="46" cy="226" r="6"/><circle cx="154" cy="226" r="6"/></g>
+<g data-part="legs"><rect x="80" y="210" width="15" height="36" rx="6"/><rect x="105" y="210" width="15" height="36" rx="6"/></g>
+<g data-part="feet"><ellipse cx="86" cy="252" rx="11" ry="6"/><ellipse cx="114" cy="252" rx="11" ry="6"/></g>`;
+// spec: { who, q, parts: 이야기 속 신호가 난 곳, reveal, ask }. 그림이나 낱말 단추로 고르고 「다 찾았어요」를 누르면 이야기 속 신호를 보여 준다
+function askSignals(spec) {
+  const who = BOOK.castById[spec.who];
+  return waitFor(done => {
+    const picked = new Set();
+    let shown = false;
+    const fig = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    fig.setAttribute('viewBox', '0 0 200 262');
+    fig.setAttribute('class', 'body');
+    fig.setAttribute('role', 'img');
+    fig.setAttribute('aria-label', `${who.name} 몸 그림`);
+    fig.innerHTML = BODY_SVG;
+    const wrap = h('div', 'bodywrap');
+    wrap.append(h('div', 'eyebrow', `${who.name} 몸이 보낸 신호`), fig);
+    actView = () => storyEl.replaceChildren(wrap); // 「이전」으로 컷을 보고 돌아와도 몸 그림이 다시 나오게
+    actView();
+    rise();
+    const update = () => {
+      fig.querySelectorAll('[data-part]').forEach(g => {
+        g.classList.toggle('on', picked.has(g.dataset.part));
+        g.classList.toggle('real', shown && spec.parts.includes(g.dataset.part));
+      });
+      renderAsk();
+      if (shown) setNext(() => done([...picked]), '계속');
+      else setNext(picked.size ? () => { shown = true; sfx('pick'); update(); speak(spec.reveal); } : null, '다 찾았어요');
+    };
+    const toggle = k => {
+      if (shown) return;
+      const at = [...askEl.querySelectorAll('.bodychip')].indexOf(document.activeElement); // 다시 그려도 누르던 단추에 머물게
+      if (picked.has(k)) picked.delete(k); else picked.add(k);
+      sfx('tap');
+      update();
+      if (at >= 0) askEl.querySelectorAll('.bodychip')[at].focus({ preventScroll: true });
+    };
+    fig.querySelectorAll('[data-part]').forEach(g => g.addEventListener('click', () => toggle(g.dataset.part)));
+    setAsk('signals', () => {
+      const out = [h('div', 'eyebrow', '몸 신호 찾기'), heading(spec.q, 'heart')];
+      const tb = teachBox(spec.ask);
+      if (tb) out.push(tb);
+      const chips = h('div', 'bodychips');
+      Object.entries(BODY).forEach(([k, name]) => {
+        const b = btn(name, 'bodychip', () => toggle(k));
+        b.setAttribute('aria-pressed', picked.has(k));
+        if (shown) { b.disabled = true; b.classList.toggle('real', spec.parts.includes(k)); }
+        chips.appendChild(b);
+      });
+      out.push(chips);
+      if (shown) {
+        const box = h('div', 'reveal');
+        box.append(h('p', '', `${who.name} 몸은 이렇게 신호를 보냈대요: ${spec.parts.map(k => BODY[k]).join(', ')}.`), h('p', 'say', spec.reveal));
+        out.push(box);
+      }
+      return out;
+    });
+    update();
+    focusFirst('.bodychip');
+    speak(spec.q);
+    return () => { actView = null; doneAsk(); };
+  });
+}
+// spec: { q, items: [{ text, is: 'feel' | 'act' }], reveal, ask }. 한 장씩 바구니에 넣고, 다 넣으면 이야기 속 바구니로 다시 보여 준다
+const BASKET = { feel: '마음 (감정)', act: '한 일 (행동)' };
+const basketName = k => BASKET[k].replace(/ \(.*\)$/, '');
+function askSort(spec) {
+  return waitFor(done => {
+    const put = [];
+    const draw = () => {
+      const wrap = h('div', 'baskets');
+      ['feel', 'act'].forEach(k => {
+        const col = h('div', 'basket ' + k);
+        col.appendChild(h('b', '', BASKET[k]));
+        const done2 = put.length === spec.items.length;
+        put.forEach((p, i) => {
+          const it = spec.items[i];
+          if ((done2 ? it.is : p) !== k) return;
+          const card = h('div', 'scard' + (done2 && p !== it.is ? ' moved' : ''), it.text);
+          if (done2 && p !== it.is) card.appendChild(h('small', '', `처음엔 ${basketName(p)}에 넣었어요`));
+          col.appendChild(card);
+        });
+        wrap.appendChild(col);
+      });
+      storyEl.replaceChildren(h('div', 'eyebrow', '마음과 행동 나누기'), wrap);
+    };
+    actView = draw;
+    draw();
+    rise();
+    setAsk('sort', () => {
+      const out = [h('div', 'eyebrow', '두 바구니에 나눠 담기'), heading(spec.q)];
+      const tb = teachBox(spec.ask);
+      if (tb) out.push(tb);
+      if (put.length < spec.items.length) {
+        out.push(h('p', 'scur', `「${spec.items[put.length].text}」`));
+        const row = h('div', 'btnrow');
+        ['feel', 'act'].forEach(k => row.appendChild(btn(BASKET[k], 'sbtn sortbtn', () => { put.push(k); sfx('tap'); draw(); renderAsk(); if (put.length === spec.items.length) { setNext(() => done(put.slice()), '계속'); speak(spec.reveal); } else focusFirst('.sortbtn'); })));
+        out.push(row, h('p', '', `${put.length + 1} / ${spec.items.length}`));
+      } else {
+        const box = h('div', 'reveal');
+        box.append(h('p', '', '이야기 속 바구니로 다시 담아 보았어요.'), h('p', 'say', spec.reveal));
+        out.push(box);
+      }
+      return out;
+    });
+    setNext(null);
+    focusFirst('.sortbtn');
+    speak(spec.q);
+    return () => { actView = null; doneAsk(); };
+  });
+}
+// spec: { q, roles: [[id, 하는 일, 잘하는 것]], reveal, ask }. 고른 역할은 기록에 남고 수첩 그림(planme)에 들어간다
+function askRole(spec) {
+  return waitFor(done => {
+    let pick = null;
+    setAsk('role', () => {
+      const out = [h('div', 'eyebrow', '작전판에 내 이름 넣기'), heading(spec.q)];
+      const tb = teachBox(spec.ask);
+      if (tb) out.push(tb);
+      const list = h('div', 'opts');
+      spec.roles.forEach(([id, text, good], i) => {
+        const b = btn('', 'opt rolebtn ' + ['', 'pink', 'sky'][i % 3], () => {
+          pick = id;
+          bookRec(BOOK.id).role = text;
+          store();
+          sfx('pick');
+          renderAsk();
+          setNext(() => done(id), '계속');
+          speak(spec.reveal);
+        });
+        b.append(h('span', 'ico', String(i + 1)), h('span', '', `${text} · ${good}`));
+        b.disabled = !!pick && pick !== id;
+        list.appendChild(b);
+      });
+      out.push(list);
+      if (pick) { const box = h('div', 'reveal'); box.append(h('p', '', `작전판에 「나 · ${spec.roles.find(r => r[0] === pick)[1]}」가 들어갔어요.`), h('p', 'say', spec.reveal)); out.push(box); }
+      return out;
+    });
+    setNext(null);
+    focusFirst('.rolebtn');
+    speak(spec.q);
+    return doneAsk;
+  });
+}
+const ACTS = { signals: askSignals, sort: askSort, role: askRole };
+// ---- 생각 나누기: 결말 뒤에 이 책의 학습지 물음 ----
+function talkCard() {
+  return waitFor(done => {
+    const card = h('div', 'endcard');
+    const ol = h('ol', 'talk');
+    BOOK.talk.forEach(q => ol.appendChild(h('li', '', q)));
+    card.append(h('div', 'eyebrow', '생각 나누기'), h('h3', '', BOOK.title), ol);
+    storyEl.replaceChildren(card);
+    rise();
+    setAsk('talk', () => {
+      const row = h('div', 'btnrow');
+      row.append(btn('결말로 돌아가기', 'sbtn primary', () => done()));
+      return [heading('생각 나누기', 'spark'), h('p', '', '짝이나 모둠과 함께 이야기해 보세요. 정답은 없어요.'), row];
+    });
+    setNext(() => done(), '결말로');
+    speak(BOOK.talk[0]);
+    return doneAsk;
   });
 }
 
@@ -250,10 +432,11 @@ function endingCard(end) {
       const row = h('div', 'btnrow');
       row.append(
         btn('내가 고른 길 보기', 'sbtn primary', () => { sfx('tap'); done('review'); }),
-        btn(trail.length && trail[trail.length - 1].type === 'compose' ? '다른 말도 해 보기' : '마지막 갈림길로 돌아가기', 'sbtn', () => { sfx('tap'); done('retry'); }),
+        btn(trail.length && trail[trail.length - 1].type === 'compose' ? (BOOK.scenes[trail[trail.length - 1].scene].compose.write ? '다른 줄도 적어 보기' : '다른 말도 해 보기') : '마지막 갈림길로 돌아가기', 'sbtn', () => { sfx('tap'); done('retry'); }),
         btn('처음부터', 'sbtn', () => { sfx('tap'); done('restart'); }),
         btn('책장으로', 'sbtn', () => { sfx('tap'); done('shelf'); }),
       );
+      if (BOOK.talk) row.prepend(btn('생각 나누기', 'sbtn primary', () => { sfx('tap'); done('talk'); }));
       return [heading('이야기를 다 읽었어요', 'heart'), h('p', '', '내가 고른 길을 돌아보거나, 다른 말을 골라 다른 결말을 만나 보세요.'), row];
     });
     setNext(() => done('review'), '내가 고른 길');
@@ -268,7 +451,7 @@ function reviewCard() {
     trail.forEach((t, i) => {
       const sc = BOOK.scenes[t.scene];
       const stop = h('div', 'stop');
-      const kind = t.type === 'whatif' ? '만약에' : t.type === 'compose' ? '하고 싶은 말' : '갈림길';
+      const kind = t.type === 'whatif' ? '만약에' : t.type === 'compose' ? (sc.compose.write ? '수첩에 적은 줄' : '하고 싶은 말') : '갈림길';
       stop.append(h('div', 'kind', `${sc.place} · ${kind}`), h('p', 'sq', t.q));
       if (t.type === 'compose') {
         t.opts.forEach(o => stop.appendChild(h('div', 'alt mine', o)));

@@ -6,8 +6,8 @@
   "fx": ["focus", "gloom", "heat", "sparkle"],
   "tones": ["memory", "whatif", "note", "next"],
   "sizes": ["wide", "tall"],
-  "activities": ["breathe"],
-  "notes": ["tips", "record", "record2", "plan", "plan0", "boss"],
+  "activities": ["breathe", "signals", "sort", "role"],
+  "notes": ["tips", "record", "record2", "plan", "plan0", "boss", "recordF", "recordA", "plan3", "plan3b", "later", "feels", "planme"],
   "stages": {
     "shelf": {
       "light": "day",
@@ -104,7 +104,8 @@
         "h_j": [-1.69, 0, 0.2, 60],
         "h_m": [-0.73, 0, -0.15, -20],
         "h_s": [-1.27, 0, -0.15, 20],
-        "h_t": [0.3, 0, 2.3, -150]
+        "h_t": [0.3, 0, 2.3, -150],
+        "st_j2": [-1.25, 0.36, -3.15, 0]
       },
       "items": {
         "court": {"t": [0, 0, 0], "c": [0.4, 7.6, 3.4], "fov": 50},
@@ -289,7 +290,14 @@
     "cafeteria": {
       "light": "day",
       "wide": {"pos": [2.2, 3.9, 4.6], "target": [0, 0.5, -0.1], "fov": 42},
-      "spots": {"l_y": [0, 0, 1.312, 180], "l_m": [0.35, 0, -1.312, 0], "l_j": [-0.35, 0, -1.312, 0], "ys": [1.8, 0, -0.9, -90], "l_s": [-1.2, 0, 0.288, 0]},
+      "spots": {
+        "l_y": [0, 0, 1.312, 180],
+        "l_m": [0.35, 0, -1.312, 0],
+        "l_j": [-0.35, 0, -1.312, 0],
+        "ys": [1.8, 0, -0.9, -90],
+        "l_s": [-1.2, 0, 0.288, 0],
+        "l_s2": [1.05, 0, -1.312, 0]
+      },
       "items": {"tray": {"t": [0.35, 0.6, -0.95], "c": [0.4, 1.15, -0.2], "fov": 40}},
       "crowds": {
         "lunch": [
@@ -303,11 +311,12 @@
       }
     },
     "kitchen": {
-      "light": "night",
+      "light": "day",
       "lamp": [0, 1.5, -0.2],
       "wide": {"pos": [1.6, 2.4, 3.6], "target": [0, 0.6, -0.4], "fov": 42},
       "spots": {"k_y": [0, 0, -0.75, 0], "k_m": [0.85, 0, -0.3, -100]},
       "items": {"egg": {"t": [0, 0.6, -0.43], "c": [0.15, 1.05, 0.05], "fov": 36}}
     }
-  }
+  },
+  "bodyParts": ["ears", "face", "lips", "throat", "heart", "belly", "shoulder", "palms", "fingers", "legs", "feet"]
 }

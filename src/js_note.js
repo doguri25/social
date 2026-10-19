@@ -21,12 +21,12 @@ function notePage(g, title) {
   return g;
 }
 // 연필 글씨 (왼쪽 맞춤 또는 가운데)
-function hand(g, text, x, y, size, color = '#3b302b', left = false) {
+function hand(g, text, x, y, size, color = '#3b302b', left = false, maxW) {
   g.font = `${size}px Jua, "Apple SD Gothic Neo", sans-serif`;
   g.fillStyle = color;
   g.textAlign = left ? 'left' : 'center';
   g.textBaseline = 'middle';
-  g.fillText(text, x, y);
+  g.fillText(text, x, y, maxW);
 }
 // 작은 코트 그림: 왼쪽 반이 우리 반. names 는 [이름, x, y] (코트 안 좌표 0~1)
 function noteCourt(g, x0, y0, w, hh, names, arrow) {
@@ -61,10 +61,11 @@ const NOTE_PAGES = {
     [['1반은 공 받기를 잘한대!', '#3b302b'], ['세게만 던지면 잡힐 수 있음', '#3b302b'], ['→ 밖에 있는 친구에게 패스하기', '#e8505b'], ['→ 공 받을 사람 이름 크게 부르기', '#e8505b']].forEach(([t, c], i) => hand(g, t, 110, 128 + i * 52, 36, c, true));
   },
   // 13면: 월요일 경기 기록. 유나 줄은 세 줄
-  record(g, finger) {
+  // extra: 4권에서 서아가 한 줄 더 적은 기록 (유나 손가락 / 지우가 팔 벌린 까닭)
+  record(g, finger, extra) {
     notePage(g, '월요일 1반 경기 (밖에서 본 것)');
-    const rows = ['민준 · 춤추다 맞음', '유나 · 던진 공 잡힘 → 1반 1명 다시 들어옴', '유나 · 던진 공 잡힘 → 1반 1명 다시 들어옴', '유나 · 던진 공 잡힘 → 1반 1명 다시 들어옴', '지우 · 끝까지 피함 · 마지막 공 받으려고 함'];
-    rows.forEach((t, i) => hand(g, t, 110, 128 + i * 52, 33, '#3b302b', true));
+    const rows = ['민준 · 춤추다 맞음', '유나 · 던진 공 잡힘 → 1반 1명 다시 들어옴', '유나 · 던진 공 잡힘 → 1반 1명 다시 들어옴', '유나 · 던진 공 잡힘 → 1반 1명 다시 들어옴', extra || '지우 · 끝까지 피함 · 마지막 공 받으려고 함'];
+    rows.forEach((t, i) => hand(g, t, 110, 128 + i * 52, 33, extra && i === 4 ? '#3b5b8c' : '#3b302b', true));
     hand(g, '끝까지 남은 사람: 지우.', 420, 440, 44, '#e8505b');
     g.strokeStyle = '#e8505b'; g.lineWidth = 4; g.beginPath(); g.moveTo(205, 470); g.lineTo(635, 470); g.stroke();
     if (finger) { // 유나 줄 세 개 위에 올린 손가락 (두 줄도 다 못 가린다)
@@ -74,11 +75,43 @@ const NOTE_PAGES = {
     }
   },
   record2(g) { NOTE_PAGES.record(g, true); },
+  recordF(g) { NOTE_PAGES.record(g, false, '유나 · 지우를 손가락으로 가리킴'); },
+  recordA(g) { NOTE_PAGES.record(g, false, '지우 · 두 팔을 벌림 (밖의 친구를 부르려고)'); },
+  // 4권: 서아가 월요일 아침에 적어 둔 작전 세 줄 (and: 수요일 밤에 더한 한 줄)
+  plan3(g, and) {
+    notePage(g, '작전 세 줄');
+    ['1. 공은 혼자 들고 있지 말고 서로 보내기', '2. 잘 던지는 친구와 잘 피하는 친구가 섞여 서기', '3. 공을 받으면 밖에 있는 친구 부르기'].forEach((t, i) => hand(g, t, 110, 128 + i * 52, 34, '#3b302b', true));
+    hand(g, '(1반은 공을 서로 잘 돌린대)', 110, 284, 26, '#7d6f64', true);
+    if (and) hand(g, and, 110, 388, 38, '#e8505b', true);
+  },
+  plan3b(g) { NOTE_PAGES.plan3(g, '다음에는 끝까지 말하기.'); },
+  // 4권: 수첩 맨 뒷장
+  later(g) {
+    notePage(g, '');
+    hand(g, '나중에', 420, 270, 70, '#7d6f64');
+  },
+  // 2권: 지우의 마음 이름표 (몸 신호 → 감정 낱말)
+  feels(g) {
+    notePage(g, '지우의 마음 이름표');
+    [['귀가 뜨거워요', '서운해요 · 당황했어요'], ['목에 뭔가 걸렸어요', '하고 싶은 말이 있어요'], ['손바닥에 땀이 나요', '화가 나요'], ['다리가 후들거려요', '무서워요']].forEach(([a, b], i) => {
+      hand(g, a, 110, 128 + i * 64, 34, '#3b302b', true);
+      hand(g, '→ ' + b, 470, 128 + i * 64, 34, '#e8505b', true);
+    });
+  },
   // 16·17면: 우리 반 작전판. 스물두 명 이름과 지우가 그린 화살표
   plan(g, arrow = true, title = '우리 반 작전판') {
     notePage(g, title);
     noteCourt(g, 70, 100, 700, 300, allNames(), arrow && ['지우', '유나']);
     hand(g, '공은 서로 보내 주기 · 이름 크게 부르기(민준) · 또 받아 보기(지우)', 420, 455, 28, '#3b5b8c');
+  },
+  // 4권: 작전판에 「나」의 역할을 더한 것 (작전판 역할 고르기에서 고른 것)
+  planme(g) {
+    NOTE_PAGES.plan(g);
+    const role = BOOK && bookRec(BOOK.id).role;
+    if (!role) return;
+    g.fillStyle = '#fff1b3'; g.strokeStyle = '#3b302b'; g.lineWidth = 3;
+    g.beginPath(); g.roundRect(430, 290, 260, 70, 14); g.fill(); g.stroke(); // 상대 코트 빈자리에
+    hand(g, '나 · ' + role, 560, 325, 30, '#3b302b', false, 240);
   },
   // 다른 길에서 일찍 함께 짠 작전 (화살표 없이)
   plan0(g) { NOTE_PAGES.plan(g, false, '다 같이 짠 작전'); },
@@ -93,6 +126,7 @@ const NOTE_PAGES = {
   },
 };
 function noteImg(kind) {
+  if (kind === 'planme') delete noteCache[kind]; // 고른 역할에 따라 다시 그린다
   if (noteCache[kind]) return noteCache[kind];
   const c = document.createElement('canvas');
   c.width = NOTE_W;

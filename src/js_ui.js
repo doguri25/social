@@ -104,7 +104,7 @@ function updateCast() {
     const d = BOOK.castById[id];
     const b = btn('', '', () => { sfx('tap'); pickChar(id); });
     b.dataset.id = id;
-    b.setAttribute('aria-pressed', id === 'yuna');
+    b.setAttribute('aria-pressed', id === narrator().id);
     b.setAttribute('aria-label', `${d.name} 살펴보기`);
     const img = new Image();
     img.alt = '';
@@ -118,6 +118,8 @@ function updateCast() {
 }
 
 // ---- 책장: 처음 화면 ----
+const SPINES = ['#ffcf3f', '#6fbfee', '#f497b6', '#78c78a', '#b48ad8'];
+const bookIds = () => Object.keys(STORIES).sort(); // book1, book2 …
 function showShelf() {
   runId++;
   cancelFlow();
@@ -126,17 +128,17 @@ function showShelf() {
   applySet('shelf', { cast: { yuna: 'shelf_l wave joy', seoa: 'shelf_r stand joy' } }, false);
   setHeader(null);
   resetHist();
-  const rec = bookRec('book1');
-  const title = STORIES.book1.title;
+  const ids = bookIds();
   const books = h('div', 'books');
-  [[title, '#ffcf3f'], ['2권', '#6fbfee'], ['3권', '#f497b6'], ['4권', '#78c78a'], ['5권', '#b48ad8']].forEach(([t, col], i) => {
-    const row = btn('', 'bookrow' + (i ? '' : ' ready'), () => (i ? toast('아직 준비 중인 책이에요.') : openBook('book1')));
+  SPINES.forEach((col, i) => {
+    const id = ids[i], B = id && STORIES[id];
+    const row = btn('', 'bookrow' + (B ? ' ready' : ''), () => (B ? openBook(id) : toast('아직 준비 중인 책이에요.')));
     const sp = h('i', 'spine');
     sp.style.setProperty('--c', col);
     const txt = h('span', '');
-    txt.append(h('b', '', i ? `${t} · 준비 중` : `1권 · ${t}`), h('small', '', i ? '곧 만나요' : `${STORIES.book1.sub} · 본 결말 ${seenEnds(rec, STORIES.book1)} / ${STORIES.book1.endings.length}`));
+    txt.append(h('b', '', B ? `${i + 1}권 · ${B.title}` : `${i + 1}권 · 준비 중`), h('small', '', B ? `${B.sub} · 본 결말 ${seenEnds(bookRec(id), B)} / ${B.endings.length}` : '곧 만나요'));
     row.append(sp, txt);
-    if (i) row.disabled = true;
+    if (!B) row.disabled = true;
     books.appendChild(row);
   });
   const head = h('div', 'endcard');
@@ -144,8 +146,9 @@ function showShelf() {
   storyEl.replaceChildren(head, books);
   rise();
   setAsk('shelf', () => [heading('그림책을 펼쳐요'), h('p', '', '3D 무대와 웹툰으로 읽고, 갈림길에서 직접 골라 보는 이야기예요. 무대의 노란 책을 눌러도 돼요.')]);
-  setNext(() => openBook('book1'), '1권 읽기');
-  buildHot(stageNow.books.map(b => ({ pos: b.pos, book: b.i, cls: 'book' + (b.i ? '' : ' ready'), label: b.i ? `${b.i + 1}권 준비 중` : `1권 · ${title}` })), it => (it.book ? toast('아직 준비 중인 책이에요.') : openBook('book1')));
+  const next = lastBook || ids[0];
+  setNext(() => openBook(next), `${ids.indexOf(next) + 1}권 읽기`);
+  buildHot(stageNow.books.map(b => { const id = ids[b.i]; return { pos: b.pos, book: id, cls: 'book' + (id ? ' ready' : ''), label: id ? `${b.i + 1}권 · ${STORIES[id].title}` : `${b.i + 1}권 준비 중` }; }), it => (it.book ? openBook(it.book) : toast('아직 준비 중인 책이에요.')));
 }
 function openBook(id) {
   sfx('pick');
@@ -178,7 +181,7 @@ function openSettings() {
   const link = h('div', 'linkbox', '');
   link.hidden = true;
   const copy = btn('수업 링크 복사', 'sbtn', () => {
-    const url = `${location.origin}${location.pathname}?book=1${save.set.cls ? '&mode=class' : ''}`;
+    const url = `${location.origin}${location.pathname}?book=${(lastBook || 'book1').slice(4)}${save.set.cls ? '&mode=class' : ''}`;
     link.textContent = url;
     link.hidden = false;
     try { navigator.clipboard.writeText(url).then(() => toast('수업 링크를 복사했어요.'), () => toast('아래 주소를 길게 눌러 복사해 주세요.')); } catch (e) { toast('아래 주소를 길게 눌러 복사해 주세요.'); }
@@ -200,7 +203,7 @@ function openSettings() {
     row('화질', '높음: 그늘과 빛 번짐까지 / 느리면 「낮음」', seg([['auto', '자동'], ['low', '낮음'], ['high', '높음']], save.set.q, v => { save.set.q = v; slowDevice = false; store(); applyTier(); })),
     row('효과음', '', onOff('sound')),
     row('함께 보기', '전자칠판용: 고를 때 선생님 질문, 생각 시간, 손든 사람 수', onOff('cls')),
-    row('수업 링크', '이 설정 그대로 1권을 바로 여는 주소 (GitHub Pages 주소에서 쓰세요)', copy),
+    row('수업 링크', '이 설정 그대로 마지막에 연 책을 바로 여는 주소 (GitHub Pages 주소에서 쓰세요)', copy),
     link,
     row('기록', '본 결말과 감정 카드 답은 이 기기에만 저장돼요', wipe),
     h('small', 'ver', `마음 극장 v${VERSION}`),
@@ -238,6 +241,8 @@ async function boot() {
   loadBook('book1');
   showShelf();
   $('#loading').hidden = true;
-  if (ARGS.get('book') === '1') startBook('book1', ARGS.get('scene'));
+  const want = 'book' + ARGS.get('book');
+  if (STORIES[want]) startBook(want, ARGS.get('scene'));
+  ARGS.delete('scene'); // 장면 바로 열기는 처음 한 번만 (책장에서 다른 책을 열 때는 처음부터)
 }
 boot();

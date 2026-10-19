@@ -1,0 +1,1537 @@
+{
+  "id": "book4",
+  "title": "수첩을 닫은 서아는",
+  "sub": "서아가 들려주는 이야기",
+  "pages": 17,
+  "narrator": "seoa",
+  "standard": [],
+  "cast": [
+    {
+      "id": "seoa",
+      "name": "서아",
+      "top": "#9fd6b5",
+      "pants": "#6f86a8",
+      "shorts": true,
+      "hair": "long",
+      "hairColor": "#4a3226",
+      "card": "#f6ead7",
+      "intro": "서아. 이 이야기 속 ‘나’예요. 말하기 전에 먼저 수첩에 적어요."
+    },
+    {
+      "id": "yuna",
+      "name": "유나",
+      "top": "#f28b74",
+      "pants": "#5b6b8c",
+      "shorts": true,
+      "hair": "bob",
+      "hairColor": "#4a3326",
+      "card": "#d3f0e1",
+      "intro": "유나. 우리 반에서 공을 제일 세게 던져요."
+    },
+    {
+      "id": "jiwoo",
+      "name": "지우",
+      "top": "#c7b2e6",
+      "pants": "#6b5b8c",
+      "shorts": true,
+      "hair": "bun",
+      "hairColor": "#3b2b25",
+      "tie": "#a77fd6",
+      "card": "#ece2f8",
+      "intro": "지우. 누구하고나 잘 어울려서, 지우 옆은 늘 북적거려요."
+    },
+    {
+      "id": "minjun",
+      "name": "민준",
+      "top": "#f2c45a",
+      "pants": "#4a5168",
+      "shorts": true,
+      "hair": "curly",
+      "hairColor": "#3a2a22",
+      "card": "#fde3cf",
+      "intro": "민준이. 웃기는 걸 제일 잘해요."
+    },
+    {
+      "id": "teacher",
+      "name": "선생님",
+      "top": "#4fb6b0",
+      "pants": "#3f5560",
+      "hair": "short",
+      "hairColor": "#2d2a2a",
+      "glasses": true,
+      "tall": true,
+      "card": "#dff1ef",
+      "intro": "선생님. 3학년 2반 담임 선생님이에요."
+    }
+  ],
+  "start": "s01",
+  "scenes": {
+    "s01": {
+      "stage": "classroom",
+      "part": "기 · 늦게 도착하는 말",
+      "page": "1면",
+      "place": "월요일 아침 · 교실",
+      "set": {
+        "cast": {"seoa": "seat_nw sit calm", "jiwoo": "seat_ne sit joy", "yuna": "stand_w stand joy", "minjun": "seat_e sit laugh"},
+        "crowd": "morning",
+        "ball": "yuna",
+        "note": "seoa"
+      },
+      "explore": [{"on": "seoa", "text": "서아. 이 이야기 속 ‘나’예요. 말하기 전에 먼저 수첩에 적어요."}, {"on": "board", "text": "칠판에 피구 대회 날짜가 적혀 있어요."}],
+      "panels": [
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "calm"}, "poses": {"seoa": "show"}, "cap": "나는 서아예요. 말하기 전에 먼저 적는 아이예요."},
+        {"shot": "close", "on": "seoa", "angle": -20, "faces": {"seoa": "calm"}, "cap": "말이 입에서 나오기 전에, 수첩 위에서 먼저 줄을 서거든요."},
+        {"shot": "wide", "cap": "그래서 내 말은 늘 조금 늦게 도착해요. 친구들이 다른 이야기로 넘어간 뒤에야 \"아, 나는……\" 하고 시작하는 날이 많아요."},
+        {"shot": "item", "on": "board", "cap": "이번 주에는 3학년 피구 대회가 열려요. 월요일에는 1반과, 금요일에는 3반과 겨뤄요."},
+        {"note": "plan3", "pre": "월요일 아침, 수첩에 작전을 세 줄 적어 두었어요.", "cap": "공은 혼자 들고 있지 말고 서로 보내기. 잘 던지는 친구와 잘 피하는 친구가 섞여 서기. 공을 받으면 밖에 있는 친구 부르기."},
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "joy"}, "cap": "1반이 서로 공을 잘 돌린다는 말을 들었거든요."}
+      ],
+      "go": "s02"
+    },
+    "s02": {
+      "stage": "classroom",
+      "page": "2면",
+      "place": "월요일 · 체육 시간 전",
+      "set": {
+        "cast": {"seoa": "seat_nw sit calm", "jiwoo": "seat_ne sit joy", "yuna": "seat_w sit joy", "minjun": "seat_e sit laugh"},
+        "crowd": "class",
+        "ball": "yuna",
+        "note": "seoa"
+      },
+      "explore": [
+        {"on": "yuna", "text": "유나. 우리 반에서 공을 제일 세게 던져요."},
+        {"on": "jiwoo", "text": "지우. 누구하고나 잘 어울려요."},
+        {"on": "minjun", "text": "민준이. 웃기는 걸 제일 잘해요."}
+      ],
+      "panels": [
+        {
+          "shot": "close",
+          "on": "seoa",
+          "faces": {"seoa": "calm"},
+          "poses": {"seoa": "show"},
+          "lines": [{"who": "seoa", "say": "작전은 어떻게 짤까?"}],
+          "cap": "나는 수첩을 펴며 물었어요."
+        },
+        {
+          "shot": "close",
+          "on": "yuna",
+          "faces": {"yuna": "laugh"},
+          "poses": {"yuna": "show"},
+          "lines": [{"who": "yuna", "say": "간단해. 공을 잡으면 무조건 나한테 줘!"}]
+        },
+        {"set": {"cast": {"yuna": "door_in walk joy"}}},
+        {"shot": "wide", "faces": {"seoa": "surprised"}, "cap": "입을 열었는데, 유나는 벌써 공을 들고 운동장으로 달려가고 있었어요."},
+        {
+          "feel": {
+            "who": "seoa",
+            "q": "입을 열었는데, 유나는 벌써 달려가 버렸어요. 서아는 어떤 마음일까요?",
+            "is": ["sad", "hurt"],
+            "reveal": "수첩에 꼼꼼히 적어 둔 작전을 친구들에게 꼭 말해 보고 싶었어요. 그런데 말이 또 늦게 도착해서 속상했어요.",
+            "ask": "서아가 잘하는 것과, 서아가 해 보고 싶었던 것은 무엇일까요?"
+          }
+        }
+      ],
+      "choices": {
+        "q": "유나는 벌써 운동장으로 달려가요. 서아는 어떻게 할까요?",
+        "ask": "내 생각을 들어 줄 사람이 없는 것 같을 때, 누구에게 먼저 말해 볼 수 있을까요?",
+        "opts": [
+          {"text": "옆에 있는 지우와 민준이에게 세 줄을 보여 준다", "go": "r1a", "add": {"shown": 1}},
+          {"text": "수첩을 닫고 코트로 걸어간다", "go": "s02b"},
+          {"text": "「유나야, 잠깐!」 하고 더 크게 부른다", "go": "s02c", "add": {"call": 1}}
+        ]
+      }
+    },
+    "s02b": {
+      "stage": "classroom",
+      "page": "2면",
+      "place": "월요일 · 체육 시간 전",
+      "set": {"cast": {"seoa": "seat_nw sit calm", "jiwoo": "seat_ne sit joy", "minjun": "seat_e sit laugh"}, "crowd": "class", "note": "seoa"},
+      "panels": [
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "sad"}, "cap": "세 줄은 아무도 보지 못했어요."},
+        {
+          "shot": "close",
+          "on": "seoa",
+          "angle": -20,
+          "faces": {"seoa": "sad"},
+          "poses": {"seoa": "down"},
+          "cap": "나는 수첩을 닫고 코트로 걸어갔어요. 수첩이 주머니 속에서 무거웠어요."
+        }
+      ],
+      "go": "s03"
+    },
+    "s02c": {
+      "stage": "classroom",
+      "page": "2면",
+      "place": "월요일 · 체육 시간 전",
+      "set": {"cast": {"seoa": "seat_nw sit calm", "jiwoo": "seat_ne sit joy", "minjun": "seat_e sit laugh"}, "crowd": "class", "note": "seoa"},
+      "panels": [
+        {
+          "shot": "close",
+          "on": "seoa",
+          "faces": {"seoa": "surprised"},
+          "poses": {"seoa": "call"},
+          "pre": "나는 수첩을 든 채 더 크게 불렀어요.",
+          "lines": [{"who": "seoa", "shout": "유나야, 잠깐!"}]
+        },
+        {"shot": "wide", "cap": "내 목소리는 운동장으로 달려가는 발소리에 묻혀 버렸어요. 유나는 한 번도 돌아보지 않았어요."},
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "sad"}, "cap": "세 줄은 아무도 보지 못했어요."},
+        {
+          "shot": "close",
+          "on": "seoa",
+          "angle": -20,
+          "faces": {"seoa": "sad"},
+          "poses": {"seoa": "down"},
+          "cap": "나는 수첩을 닫고 코트로 걸어갔어요. 수첩이 주머니 속에서 무거웠어요."
+        }
+      ],
+      "go": "s03"
+    },
+    "r1a": {
+      "stage": "classroom",
+      "page": "2면",
+      "place": "월요일 · 체육 시간 전",
+      "set": {"cast": {"seoa": "seat_nw sit calm", "jiwoo": "seat_ne sit joy", "minjun": "seat_e sit laugh"}, "crowd": "class", "note": "seoa"},
+      "panels": [
+        {
+          "shot": "close",
+          "on": "seoa",
+          "faces": {"seoa": "shy"},
+          "poses": {"seoa": "show"},
+          "pre": "나는 수첩을 닫는 대신, 옆으로 돌렸어요.",
+          "lines": [{"who": "seoa", "say": "지우야, 민준아. 이거 볼래?"}]
+        },
+        {"note": "plan3", "cap": "지우와 민준이가 수첩 위로 고개를 숙였어요."},
+        {"shot": "close", "on": "jiwoo", "faces": {"jiwoo": "calm"}, "lines": [{"who": "jiwoo", "say": "공을 받으면 밖에 있는 친구 부르기… 이거 좋다."}]},
+        {"shot": "close", "on": "minjun", "faces": {"minjun": "laugh"}, "lines": [{"who": "minjun", "say": "부르는 거? 그건 내가 잘하지!"}]},
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "joy"}, "cap": "세 줄이 처음으로 수첩 밖으로 나갔어요."},
+        {"shot": "close", "on": "seoa", "angle": -20, "faces": {"seoa": "calm"}, "cap": "유나한테는 끝내 보여 주지 못했지만, 수첩이 아주 조금 가벼워졌어요."}
+      ],
+      "go": "r1b"
+    },
+    "r1b": {
+      "stage": "court",
+      "page": "3면",
+      "place": "월요일 · 1반과 경기",
+      "set": {
+        "cast": {"yuna": "y_in stand joy", "jiwoo": "j_in stand calm", "minjun": "m_in stand laugh", "seoa": "s_in stand calm"},
+        "crowd": "match",
+        "ball": "yuna"
+      },
+      "explore": [{"on": "court", "text": "피구 코트. 가운데 선 왼쪽이 우리 반, 오른쪽이 1반이에요."}, {"on": "jiwoo", "text": "지우. 아침에 세 줄을 읽었어요."}],
+      "panels": [
+        {"shot": "wide", "sfx": "삐익!", "cap": "경기가 시작됐어요."},
+        {"set": {"ball": "at_m"}},
+        {
+          "shot": "close",
+          "on": "minjun",
+          "faces": {"minjun": "surprised"},
+          "poses": {"minjun": "dance"},
+          "sfx": "톡",
+          "cap": "민준이가 엉덩이춤을 추다 맞고 나갔어요. 세 줄을 읽고도 엉덩이는 못 참았나 봐요."
+        },
+        {"set": {"cast": {"minjun": "m_out stand sad", "seoa": "s_out stand calm"}, "note": "seoa", "ball": "none"}},
+        {
+          "shot": "close",
+          "on": "seoa",
+          "faces": {"seoa": "calm"},
+          "poses": {"seoa": "show"},
+          "cap": "민준이 다음으로 나도 금방 밖으로 나갔어요. 밖에서 수첩을 다시 꺼내 적었어요. 유나 공이 잡힌 건 세 번."
+        },
+        {
+          "set": {
+            "crowd": "lone",
+            "cast": {"yuna": "y_out stand worried", "jiwoo": "j_alone stand worried", "minjun": "m_out stand worried", "seoa": "s_out stand worried"},
+            "ball": "air_j"
+          }
+        },
+        {
+          "shot": "close",
+          "on": "jiwoo",
+          "faces": {"jiwoo": "worried"},
+          "poses": {"jiwoo": "open"},
+          "cap": "마지막 공은 지우한테 갔어요. 지우가 두 팔을 벌렸어요. 세 번째 줄이었어요. 공을 받으면 밖에 있는 친구 부르기."
+        },
+        {"set": {"ball": "drop_j"}},
+        {"shot": "item", "on": "ball", "poses": {"jiwoo": "open"}, "sfx": "툭", "cap": "하지만 공은 손끝에 맞고 툭 떨어졌어요."},
+        {"note": "record", "pre": "나는 적었어요.", "cap": "'끝까지 남은 사람: 지우.'"}
+      ],
+      "go": "r1c"
+    },
+    "r1c": {
+      "stage": "court",
+      "page": "4면",
+      "place": "월요일 · 경기가 끝나고",
+      "set": {
+        "cast": {"yuna": "g_y stand angry", "jiwoo": "g_j stand hurt", "minjun": "g_m stand sad", "seoa": "g_s stand worried"},
+        "crowd": "lost",
+        "ball": "floor_j",
+        "note": "seoa"
+      },
+      "panels": [
+        {"shot": "wide", "sfx": "삐이익", "cap": "삐이익. 우리가 졌어요."},
+        {
+          "shot": "two",
+          "on": ["yuna", "jiwoo"],
+          "faces": {"yuna": "angry", "jiwoo": "worried"},
+          "poses": {"yuna": "point", "jiwoo": "open"},
+          "lines": [{"who": "yuna", "shout": "너 때문에 졌잖아! 피하기만 하면 되는데 왜 받으려고 했어!"}]
+        },
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "worried"}, "cap": "지우는 피하기만 하려던 게 아니었어요. 아침에 같이 읽은 세 번째 줄대로 했을 뿐이었어요."},
+        {
+          "shot": "wide",
+          "faces": {"jiwoo": "angry", "minjun": "angry"},
+          "poses": {"jiwoo": "point", "minjun": "point"},
+          "cap": "지우는 민준이를, 민준이는 유나를 가리켰어요. 손가락이 한 바퀴 돌았어요."
+        },
+        {"set": {"cast": {"teacher": "g_t stand calm"}}},
+        {
+          "shot": "close",
+          "on": "teacher",
+          "faces": {"teacher": "calm"},
+          "lines": [{"who": "teacher", "say": "속상해도 서로 손가락질하며 탓하는 말은 멈추자. 어떻게 할지는 너희가 이야기해 보렴."}]
+        },
+        {"set": {"cast": {"teacher": "hide"}}},
+        {
+          "shot": "close",
+          "on": "jiwoo",
+          "faces": {"jiwoo": "hurt"},
+          "poses": {"jiwoo": "down"},
+          "cap": "선생님이 다녀가신 뒤, 아무도 말하지 않았어요. 지우가 내 수첩을 힐끗 보았어요."
+        },
+        {
+          "shot": "close",
+          "on": "seoa",
+          "faces": {"seoa": "worried"},
+          "poses": {"seoa": "show"},
+          "cap": "세 줄을 아는 사람이 나 말고 둘이나 더 있었어요. 그런데 셋 다 입을 열지 못했어요."
+        }
+      ],
+      "go": "r1d"
+    },
+    "r1d": {
+      "stage": "court",
+      "part": "승 · 나중에",
+      "page": "6면",
+      "place": "화요일 · 운동장",
+      "set": {
+        "cast": {"yuna": "g_y stand calm", "jiwoo": "g_j stand calm", "minjun": "g_m stand calm", "seoa": "g_s stand calm"},
+        "crowd": "tue",
+        "ball": "yuna",
+        "note": "seoa"
+      },
+      "explore": [{"on": "yuna", "text": "유나. 금요일 작전을 혼자 정하려고 해요."}, {"on": "minjun", "text": "민준이. 월요일 아침에 세 줄을 읽었어요."}],
+      "panels": [
+        {
+          "shot": "close",
+          "on": "yuna",
+          "faces": {"yuna": "angry"},
+          "poses": {"yuna": "show"},
+          "pre": "화요일, 유나가 금요일에는 잘하는 애들만 앞에 서라고 했어요.",
+          "lines": [{"who": "yuna", "say": "금요일에는 잘하는 애들만 앞에 서. 나머지는 뒤에서 피하기만 해."}]
+        },
+        {"shot": "close", "on": "jiwoo", "faces": {"jiwoo": "surprised"}, "lines": [{"who": "jiwoo", "say": "나머지? 우리가 나머지야?"}]},
+        {"shot": "close", "on": "minjun", "faces": {"minjun": "angry"}, "lines": [{"who": "minjun", "shout": "그럼 너희끼리 해. 우린 안 해!"}]},
+        {
+          "set": {
+            "cast": {"yuna": "y_pr stand calm", "jiwoo": "st_j sit sad", "minjun": "st_m sit calm", "seoa": "st_s sit worried"},
+            "crowd": "split",
+            "ball": "yuna:hug",
+            "note": "seoa"
+          }
+        },
+        {"shot": "wide", "cap": "반이 두 반처럼 갈라졌어요. 여덟 명과 열네 명. 나는 열네 명 쪽에 섰어요."},
+        {"shot": "item", "on": "stands", "pre": "연습 시간, 스탠드에서 누가 말했어요.", "lines": [{"whisper": "어차피 유나가 시키는 대로만 해야 하잖아."}]},
+        {"set": {"cast": {"seoa": "s_pr stand worried"}}},
+        {
+          "shot": "two",
+          "on": ["seoa", "yuna"],
+          "poses": {"seoa": "show", "yuna": "hold"},
+          "pre": "나는 수첩을 들고 유나에게 갔어요.",
+          "lines": [{"who": "seoa", "say": "저기, 같이 해 볼 방법이…."}, {"who": "yuna", "say": "나중에. 지금 연습해야 해."}]
+        },
+        {"set": {"cast": {"seoa": "st_s sit sad"}}},
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "sad"}, "poses": {"seoa": "down"}, "cap": "수첩을 닫는 손이 떨렸어요. 스탠드로 돌아오자, 민준이와 지우가 나를 보았어요."},
+        {"shot": "close", "on": "minjun", "faces": {"minjun": "calm"}, "lines": [{"who": "minjun", "whisper": "그 세 줄 말하려던 거지?"}]},
+        {"shot": "close", "on": "jiwoo", "faces": {"jiwoo": "sad"}, "lines": [{"who": "jiwoo", "whisper": "월요일에 나, 세 번째 줄 하려고 했어."}]}
+      ],
+      "choices": {
+        "q": "지우와 민준이가 세 줄을 기억하고 있었어요. 서아는 어떻게 할까요?",
+        "ask": "혼자 말하기 어려운 생각이 있을 때, 친구에게 어떻게 도움을 청할 수 있을까요?",
+        "opts": [
+          {"text": "「그 세 줄, 너희도 같이 기억해 줄래?」 하고 부탁한다", "go": "r1e", "add": {"ally": 1}},
+          {"text": "「괜찮아. 어차피 내 말은 늘 나중이야.」 하고 수첩을 넣는다", "go": "r1f", "add": {"hide": 1, "alone": 1}}
+        ]
+      }
+    },
+    "r1e": {
+      "stage": "court",
+      "page": "7면",
+      "place": "화요일 · 스탠드",
+      "set": {
+        "cast": {"yuna": "y_pr stand calm", "jiwoo": "st_j sit calm", "minjun": "st_m sit calm", "seoa": "st_s sit calm"},
+        "crowd": "split",
+        "ball": "yuna:hug",
+        "note": "seoa"
+      },
+      "panels": [
+        {
+          "shot": "close",
+          "on": "seoa",
+          "faces": {"seoa": "shy"},
+          "poses": {"seoa": "show"},
+          "lines": [{"who": "seoa", "whisper": "그 세 줄, 너희도 같이 기억해 줄래?"}]
+        },
+        {"shot": "close", "on": "jiwoo", "faces": {"jiwoo": "calm"}, "lines": [{"who": "jiwoo", "say": "응. 세 번째 줄은 내가 맡을게."}]},
+        {"shot": "close", "on": "minjun", "faces": {"minjun": "joy"}, "lines": [{"who": "minjun", "say": "부르는 건 내가 할게. 제일 크게!"}]},
+        {"shot": "close", "on": "seoa", "angle": -20, "faces": {"seoa": "joy"}, "cap": "유나에게는 '나중에'였지만, 지우와 민준이에게는 '지금'이었어요."}
+      ],
+      "go": "s08"
+    },
+    "r1f": {
+      "stage": "court",
+      "page": "7면",
+      "place": "화요일 · 스탠드",
+      "set": {
+        "cast": {"yuna": "y_pr stand calm", "jiwoo": "st_j sit sad", "minjun": "st_m sit calm", "seoa": "st_s sit sad"},
+        "crowd": "split",
+        "ball": "yuna:hug",
+        "note": "seoa"
+      },
+      "panels": [
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "sad"}, "lines": [{"who": "seoa", "whisper": "괜찮아. 어차피 내 말은 늘 나중이야."}]},
+        {"shot": "close", "on": "jiwoo", "faces": {"jiwoo": "worried"}, "cap": "지우가 뭐라고 하려다 입을 다물었어요."},
+        {"set": {"note": "none"}},
+        {
+          "shot": "close",
+          "on": "seoa",
+          "faces": {"seoa": "sad"},
+          "poses": {"seoa": "down"},
+          "cap": "나는 수첩을 주머니 깊숙이 넣었어요. 세 줄을 아는 친구가 둘이나 옆에 있었는데, 또 혼자 들고 있기로 했어요."
+        }
+      ],
+      "go": "s08"
+    },
+    "s03": {
+      "stage": "court",
+      "page": "3면",
+      "place": "월요일 · 1반과 경기",
+      "set": {
+        "cast": {"yuna": "y_in stand joy", "jiwoo": "j_in stand calm", "minjun": "m_in stand laugh", "seoa": "s_in stand calm"},
+        "crowd": "match",
+        "ball": "yuna"
+      },
+      "explore": [{"on": "court", "text": "피구 코트. 가운데 선 왼쪽이 우리 반, 오른쪽이 1반이에요."}, {"on": "seoa", "text": "서아. 수첩은 주머니에 넣어 두었어요."}],
+      "panels": [
+        {"shot": "wide", "sfx": "삐익!", "cap": "경기가 시작됐어요."},
+        {"set": {"ball": "at_m"}},
+        {"shot": "close", "on": "minjun", "faces": {"minjun": "surprised"}, "poses": {"minjun": "dance"}, "sfx": "톡", "cap": "민준이가 엉덩이춤을 추다 맞고 나갔어요."},
+        {"set": {"cast": {"minjun": "m_out stand sad"}, "ball": "none"}},
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "surprised"}, "poses": {"seoa": "dodge"}, "cap": "민준이 다음으로 나도 금방 밖으로 나갔어요. 피하는 건 잘 못하거든요."},
+        {"set": {"cast": {"seoa": "s_out stand calm"}, "note": "seoa", "ball": "yuna"}},
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "calm"}, "poses": {"seoa": "show"}, "cap": "밖에서 나는 수첩을 다시 꺼냈어요. 누가 공을 피하고, 잡고, 놓쳤는지 적었어요."},
+        {
+          "shot": "close",
+          "on": "yuna",
+          "faces": {"yuna": "angry"},
+          "poses": {"yuna": "throw"},
+          "fx": "focus",
+          "cap": "민준이는 춤추다 한 번. 유나 공이 잡힌 건 세 번. 그때마다 1반 친구가 한 명씩 다시 들어왔어요."
+        },
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "calm"}, "cap": "적는 동안에는 마음이 조금 가라앉았어요."},
+        {
+          "shot": "close",
+          "on": "seoa",
+          "angle": -20,
+          "faces": {"seoa": "calm"},
+          "poses": {"seoa": "show"},
+          "cap": "수첩은 내 마음을 담는 그릇 같아요. 넘칠 것 같은 마음을 글자로 바꾸면 조금 작아져요."
+        }
+      ],
+      "go": "s04"
+    },
+    "s04": {
+      "stage": "court",
+      "page": "4면",
+      "place": "월요일 · 1반과 경기",
+      "set": {
+        "cast": {"yuna": "y_out stand worried", "seoa": "s_out stand calm", "minjun": "m_out stand worried", "jiwoo": "j_alone stand worried"},
+        "crowd": "lone",
+        "ball": "air_j",
+        "note": "seoa"
+      },
+      "panels": [
+        {"shot": "wide", "cap": "마지막 공은 지우한테 갔어요."},
+        {"shot": "close", "on": "jiwoo", "faces": {"jiwoo": "worried"}, "poses": {"jiwoo": "open"}, "cap": "지우가 두 팔을 벌리는 게 보였어요."},
+        {"set": {"ball": "drop_j"}},
+        {"shot": "item", "on": "ball", "poses": {"jiwoo": "open"}, "sfx": "툭", "cap": "공은 손끝에 맞고 툭 떨어졌어요."},
+        {"note": "record", "pre": "나는 적었어요.", "cap": "'끝까지 남은 사람: 지우.'"},
+        {
+          "set": {
+            "cast": {"yuna": "g_y stand angry", "jiwoo": "g_j stand hurt", "minjun": "g_m stand sad", "seoa": "g_s stand worried"},
+            "crowd": "lost",
+            "ball": "floor_j",
+            "note": "seoa"
+          }
+        },
+        {"shot": "wide", "sfx": "삐이익", "cap": "삐이익. 우리가 졌어요."},
+        {
+          "shot": "two",
+          "on": ["yuna", "jiwoo"],
+          "faces": {"yuna": "angry", "jiwoo": "worried"},
+          "poses": {"yuna": "point", "jiwoo": "open"},
+          "lines": [{"who": "yuna", "shout": "너 때문에 졌잖아! 피하기만 하면 되는데 왜 받으려고 했어!"}]
+        },
+        {"shot": "close", "on": "yuna", "faces": {"yuna": "angry"}, "poses": {"yuna": "point"}, "fx": "focus", "cap": "그다음에 유나의 손가락을 보았어요."}
+      ],
+      "choices": {
+        "q": "유나의 손가락이 지우를 가리켜요. 서아는 수첩에 무엇을 적을까요?",
+        "ask": "속상한 장면을 기록할 때, 무엇을 적으면 친구에게 도움이 될까요?",
+        "opts": [
+          {"text": "손가락은 적지 않는다", "go": "s04a"},
+          {"text": "유나의 손가락도 적는다", "go": "s04b", "add": {"finger": 1}},
+          {"text": "지우가 두 팔을 벌린 모습을 적는다", "go": "s04c", "add": {"arms": 1}}
+        ]
+      }
+    },
+    "s04a": {
+      "stage": "court",
+      "page": "4면",
+      "place": "월요일 · 경기가 끝나고",
+      "set": {
+        "cast": {"yuna": "g_y stand angry", "jiwoo": "g_j stand hurt", "minjun": "g_m stand sad", "seoa": "g_s stand worried"},
+        "crowd": "lost",
+        "ball": "floor_j",
+        "note": "seoa"
+      },
+      "panels": [{"shot": "close", "on": "seoa", "faces": {"seoa": "worried"}, "cap": "그건 적지 않았어요. 적으면 진짜가 될 것 같았어요."}],
+      "go": "s05"
+    },
+    "s04b": {
+      "stage": "court",
+      "page": "4면",
+      "place": "월요일 · 경기가 끝나고",
+      "set": {
+        "cast": {"yuna": "g_y stand angry", "jiwoo": "g_j stand hurt", "minjun": "g_m stand sad", "seoa": "g_s stand worried"},
+        "crowd": "lost",
+        "ball": "floor_j",
+        "note": "seoa"
+      },
+      "panels": [
+        {"note": "recordF", "pre": "나는 연필을 꾹 눌러 한 줄을 더 적었어요.", "cap": "'유나 · 지우를 손가락으로 가리킴.'"},
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "worried"}, "cap": "적고 나니, 수첩 속에서도 손가락이 지우를 가리키는 것 같았어요. 적으면 진짜가 될 것 같았는데, 정말 그랬어요."}
+      ],
+      "go": "s05"
+    },
+    "s04c": {
+      "stage": "court",
+      "page": "4면",
+      "place": "월요일 · 경기가 끝나고",
+      "set": {
+        "cast": {"yuna": "g_y stand angry", "jiwoo": "g_j stand hurt", "minjun": "g_m stand sad", "seoa": "g_s stand worried"},
+        "crowd": "lost",
+        "ball": "floor_j",
+        "note": "seoa"
+      },
+      "panels": [
+        {"note": "recordA", "pre": "나는 손가락 대신, 지우의 두 팔을 적었어요.", "cap": "'지우 · 두 팔을 벌림 (밖의 친구를 부르려고).'"},
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "calm"}, "cap": "지우는 피하는 대신 받으려고 했어요. 받으면 밖에 있는 친구가 다시 들어올 수 있으니까요. 내 세 줄의 마지막 줄과 같았어요."}
+      ],
+      "go": "s05"
+    },
+    "s05": {
+      "stage": "court",
+      "page": "5면",
+      "place": "월요일 · 경기가 끝나고",
+      "set": {
+        "cast": {"yuna": "g_y stand angry", "jiwoo": "g_j stand hurt", "minjun": "g_m stand angry", "seoa": "g_s stand worried"},
+        "crowd": "lost",
+        "ball": "floor_j",
+        "note": "seoa"
+      },
+      "explore": [{"on": "minjun", "text": "민준이. 지우가 자기를 가리켜서 화가 났어요."}],
+      "panels": [
+        {
+          "shot": "close",
+          "on": "jiwoo",
+          "faces": {"jiwoo": "angry"},
+          "poses": {"jiwoo": "point"},
+          "pre": "지우가 민준이를 가리켰어요.",
+          "lines": [{"who": "jiwoo", "shout": "민준이 네가 춤추다 맨 먼저 나갔잖아. 너 때문이야!"}]
+        },
+        {
+          "shot": "close",
+          "on": "minjun",
+          "faces": {"minjun": "angry"},
+          "poses": {"minjun": "point"},
+          "pre": "민준이는 유나를 가리켰어요.",
+          "lines": [{"who": "minjun", "shout": "유나 네가 혼자만 던졌잖아. 너 때문이지!"}]
+        },
+        {"set": {"cast": {"teacher": "g_t stand calm"}}},
+        {
+          "shot": "close",
+          "on": "teacher",
+          "faces": {"teacher": "calm"},
+          "lines": [{"who": "teacher", "say": "속상해도 서로 손가락질하며 탓하는 말은 멈추자. 어떻게 할지는 너희가 이야기해 보렴."}]
+        },
+        {"shot": "two", "on": ["teacher", "jiwoo"], "poses": {"teacher": "reach"}, "cap": "선생님은 지우의 어깨를 한 번 토닥이고 일어나셨어요."},
+        {"set": {"cast": {"teacher": "hide"}}},
+        {"shot": "wide", "cap": "손가락이 한 바퀴 돌고 선생님이 다녀가신 뒤, 아무도 말하지 않았어요."},
+        {
+          "shot": "close",
+          "on": "seoa",
+          "faces": {"seoa": "worried"},
+          "poses": {"seoa": "show"},
+          "lines": [{"who": "seoa", "think": "지금 보여 주면 어떨까."}],
+          "cap": "나는 수첩을 꽉 쥐고 있었어요. 세 줄이 있는 쪽을요."
+        },
+        {"shot": "wide", "faces": {"yuna": "angry", "jiwoo": "hurt", "minjun": "angry"}, "fx": "heat", "cap": "그런데 모두 얼굴이 빨갰어요."},
+        {
+          "whatif": {
+            "q": "만약에 서아가 지금 수첩을 펼쳤다면 어땠을까요?",
+            "ask": "모두 속상해서 아무도 말하지 않을 때, 내 생각을 꺼내 보면 어떤 일이 생길 수 있을까요?",
+            "opts": [
+              {
+                "text": "지금 수첩을 펼쳐 세 줄을 보여 준다",
+                "panels": [
+                  {
+                    "shot": "close",
+                    "on": "seoa",
+                    "faces": {"seoa": "worried"},
+                    "poses": {"seoa": "show"},
+                    "pre": "내가 수첩을 펼쳤다면,",
+                    "lines": [{"who": "seoa", "say": "얘들아, 나 월요일 아침에 적어 둔 게 있어."}]
+                  },
+                  {"note": "plan3", "cap": "세 줄을 본 지우가 고개를 들었을지도 몰라요. 세 번째 줄은 지우가 하려던 거였으니까요."},
+                  {
+                    "shot": "close",
+                    "on": "yuna",
+                    "faces": {"yuna": "shy"},
+                    "poses": {"yuna": "down"},
+                    "cap": "유나 얼굴은 더 빨개졌을지도 몰라요. 그래도 가리키던 손가락은 내려갔을 거예요."
+                  }
+                ]
+              },
+              {"text": "수첩을 꽉 쥐고 나중으로 미룬다", "story": true}
+            ],
+            "same": "이야기 속 서아도 그렇게 했어요. 수첩을 꽉 쥔 채, 펼치지 못했어요.",
+            "back": "하지만 이야기 속 서아는 수첩을 펼치지 못했어요."
+          }
+        },
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "sad"}, "poses": {"seoa": "down"}, "cap": "나는 또 나중으로 미뤘어요."}
+      ],
+      "go": "s06"
+    },
+    "s06": {
+      "stage": "court",
+      "part": "승 · 나중에",
+      "page": "6면",
+      "place": "화요일 · 운동장",
+      "set": {
+        "cast": {"yuna": "g_y stand calm", "jiwoo": "g_j stand calm", "minjun": "g_m stand calm", "seoa": "g_s stand calm"},
+        "crowd": "tue",
+        "ball": "yuna",
+        "note": "seoa"
+      },
+      "explore": [{"on": "yuna", "text": "유나. 금요일 작전을 혼자 정하려고 해요."}],
+      "panels": [
+        {
+          "shot": "close",
+          "on": "yuna",
+          "faces": {"yuna": "angry"},
+          "poses": {"yuna": "show"},
+          "pre": "화요일, 유나가 금요일에는 잘하는 애들만 앞에 서라고 했어요.",
+          "lines": [{"who": "yuna", "say": "금요일에는 잘하는 애들만 앞에 서. 나머지는 뒤에서 피하기만 해."}]
+        },
+        {"shot": "close", "on": "jiwoo", "faces": {"jiwoo": "surprised"}, "lines": [{"who": "jiwoo", "say": "나머지? 우리가 나머지야?"}]},
+        {"shot": "close", "on": "minjun", "faces": {"minjun": "angry"}, "lines": [{"who": "minjun", "shout": "그럼 너희끼리 해. 우린 안 해!"}]},
+        {"set": {"crowd": "leave", "cast": {"jiwoo": "g_j2 walk sad", "minjun": "g_m2 walk angry"}}},
+        {"shot": "wide", "cap": "반이 두 반처럼 갈라졌어요. 여덟 명과 열네 명."},
+        {
+          "shot": "close",
+          "on": "seoa",
+          "faces": {"seoa": "worried"},
+          "poses": {"seoa": "walk"},
+          "cap": "나는 열네 명 쪽에 섰어요. 아무도 나를 부르지 않았지만, 발이 저절로 그쪽으로 갔어요."
+        }
+      ],
+      "go": "s07"
+    },
+    "s07": {
+      "stage": "court",
+      "page": "7면",
+      "place": "화요일 · 연습 시간",
+      "set": {
+        "cast": {"yuna": "y_pr stand calm", "jiwoo": "st_j sit sad", "minjun": "st_m sit calm", "seoa": "st_s sit worried"},
+        "crowd": "split",
+        "ball": "yuna:hug",
+        "note": "seoa"
+      },
+      "explore": [{"on": "stands", "text": "스탠드. 연습에 빠진 열네 명이 앉아 있어요."}, {"on": "seoa", "text": "서아. 수첩 속 세 줄이 자꾸 말을 걸어요."}],
+      "panels": [
+        {"shot": "item", "on": "stands", "pre": "연습 시간, 스탠드에서 누가 말했어요.", "lines": [{"whisper": "어차피 유나가 시키는 대로만 해야 하잖아."}]},
+        {"note": "plan3", "lines": [{"who": "seoa", "think": "지금이야. 지금 말해."}], "cap": "수첩 속 세 줄이 자꾸 말을 걸었어요."},
+        {
+          "shot": "close",
+          "on": "seoa",
+          "faces": {"seoa": "worried"},
+          "poses": {"seoa": "walk"},
+          "cap": "나는 스탠드에서 내려가 수첩을 들고 유나에게 갔어요. 운동장을 가로지르는 동안 다리가 물속을 걷는 것처럼 느렸어요."
+        },
+        {"set": {"cast": {"seoa": "s_pr stand worried"}}},
+        {"shot": "two", "on": ["seoa", "yuna"], "poses": {"seoa": "show", "yuna": "hold"}, "lines": [{"who": "seoa", "say": "저기, 같이 해 볼 방법이…."}]},
+        {"shot": "close", "on": "yuna", "faces": {"yuna": "angry"}, "poses": {"yuna": "hold"}, "lines": [{"who": "yuna", "say": "나중에. 지금 연습해야 해."}]},
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "sad"}, "poses": {"seoa": "down"}, "cap": "수첩을 닫는 손이 떨렸어요."},
+        {"shot": "close", "on": "seoa", "angle": -20, "faces": {"seoa": "sad"}, "lines": [{"who": "seoa", "think": "내 말은 왜 늘 나중일까."}]},
+        {"set": {"cast": {"seoa": "st_s sit sad"}}},
+        {"shot": "item", "on": "stands", "cap": "스탠드로 돌아가는 길이 운동장 열 바퀴처럼 멀었어요."},
+        {"shot": "close", "on": "jiwoo", "faces": {"jiwoo": "calm"}, "cap": "지우가 나를 봤지만 아무것도 묻지 않았어요. 그게 고마웠어요."}
+      ],
+      "choices": {
+        "q": "스탠드로 돌아왔어요. 지우가 나를 봤지만 아무것도 묻지 않아요. 서아는 어떻게 할까요?",
+        "ask": "「나중에」라는 말을 듣고 속상할 때, 그 마음을 어떻게 할 수 있을까요?",
+        "opts": [
+          {"text": "지우에게 먼저 털어놓는다", "go": "r2a", "add": {"told": 1}},
+          {"text": "수첩 맨 뒷장에 「나중에」라고 적는다", "go": "s07b", "add": {"later": 1}},
+          {"text": "수첩을 가방에 넣어 버린다", "go": "s07c", "add": {"bag": 1, "hide": 1}}
+        ]
+      }
+    },
+    "s07b": {
+      "stage": "court",
+      "page": "7면",
+      "place": "화요일 · 스탠드",
+      "set": {
+        "cast": {"yuna": "y_pr stand calm", "jiwoo": "st_j sit sad", "minjun": "st_m sit calm", "seoa": "st_s sit sad"},
+        "crowd": "split",
+        "ball": "yuna:hug",
+        "note": "seoa"
+      },
+      "panels": [
+        {"note": "later", "pre": "나는 수첩 맨 뒷장에 '나중에'라고 적었어요."},
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "sad"}, "poses": {"seoa": "down"}, "cap": "올해 들은 '나중에'가 몇 번째인지 세어 보려다 그만두었어요."}
+      ],
+      "go": "s08"
+    },
+    "s07c": {
+      "stage": "court",
+      "page": "7면",
+      "place": "화요일 · 스탠드",
+      "set": {
+        "cast": {"yuna": "y_pr stand calm", "jiwoo": "st_j sit sad", "minjun": "st_m sit calm", "seoa": "st_s sit sad"},
+        "crowd": "split",
+        "ball": "yuna:hug",
+        "note": "seoa"
+      },
+      "panels": [
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "sad"}, "poses": {"seoa": "down"}, "cap": "나는 수첩을 가방 깊숙이 넣어 버렸어요. 지퍼도 끝까지 잠갔어요."},
+        {"set": {"note": "none"}},
+        {"shot": "close", "on": "seoa", "angle": -20, "faces": {"seoa": "worried"}, "cap": "수첩이 안 보이면 마음도 안 보일 줄 알았어요. 그런데 가방이 자꾸 무거웠어요."}
+      ],
+      "go": "s08"
+    },
+    "r2a": {
+      "stage": "court",
+      "page": "7면",
+      "place": "화요일 · 스탠드",
+      "set": {
+        "cast": {"yuna": "y_pr stand calm", "jiwoo": "st_j sit sad", "minjun": "st_m sit calm", "seoa": "st_s sit sad"},
+        "crowd": "split",
+        "ball": "yuna:hug",
+        "note": "seoa"
+      },
+      "panels": [
+        {
+          "shot": "close",
+          "on": "seoa",
+          "faces": {"seoa": "shy"},
+          "pre": "나는 지우 쪽으로 몸을 기울였어요.",
+          "lines": [{"who": "seoa", "whisper": "지우야. 나, 사실 월요일 아침에 작전을 세 줄 적어 뒀어."}]
+        },
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "sad"}, "lines": [{"who": "seoa", "whisper": "아무한테도 못 보여 줬어. 방금도 나중에래."}]},
+        {"note": "plan3", "cap": "지우가 수첩을 들여다봤어요."},
+        {"shot": "close", "on": "jiwoo", "faces": {"jiwoo": "surprised"}, "lines": [{"who": "jiwoo", "say": "…공을 받으면 밖에 있는 친구 부르기."}]},
+        {
+          "shot": "close",
+          "on": "jiwoo",
+          "faces": {"jiwoo": "hurt"},
+          "poses": {"jiwoo": "down"},
+          "lines": [{"who": "jiwoo", "say": "나, 월요일에 그거 하려고 했는데."}]
+        },
+        {
+          "shot": "close",
+          "on": "seoa",
+          "when": {"arms": 1},
+          "faces": {"seoa": "calm"},
+          "cap": "월요일에 내가 적어 둔 그대로였어요. 지우는 밖에 있는 친구를 부르려고 두 팔을 벌린 거였어요."
+        },
+        {"shot": "close", "on": "seoa", "when": {"arms": {"max": 0}}, "faces": {"seoa": "surprised"}, "cap": "지우가 두 팔을 벌린 까닭을, 나는 그제야 알았어요."}
+      ],
+      "choices": {
+        "q": "지우가 「나, 그거 하려고 했는데」 하고 작게 말해요. 서아는 어떻게 할까요?",
+        "ask": "내 생각과 같은 생각을 한 친구를 만나면, 무엇을 함께 해 볼 수 있을까요?",
+        "opts": [
+          {"text": "수첩을 지우 쪽으로 밀어 같이 본다", "go": "r2b", "add": {"open": 1}},
+          {"text": "「유나한테는 말하지 마.」 하고 수첩을 덮는다", "go": "r2c", "add": {"hide": 1, "secret": 1}}
+        ]
+      }
+    },
+    "r2b": {
+      "stage": "court",
+      "page": "7면",
+      "place": "화요일 · 스탠드",
+      "set": {
+        "cast": {"yuna": "y_pr stand calm", "jiwoo": "st_j sit calm", "minjun": "st_m sit calm", "seoa": "st_s sit calm"},
+        "crowd": "split",
+        "ball": "yuna:hug",
+        "note": "seoa"
+      },
+      "panels": [
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "shy"}, "poses": {"seoa": "show"}, "cap": "나는 수첩을 지우 쪽으로 밀었어요. 지우가 수첩 한쪽을 잡아 주었어요."},
+        {"shot": "close", "on": "jiwoo", "angle": -20, "faces": {"jiwoo": "calm"}, "lines": [{"who": "jiwoo", "say": "네 말, 나중 아니었어. 내가 지금 들었잖아."}]},
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "joy"}, "cap": "맨 뒷장에 '나중에'라고 적으려다 그만두었어요. 적을 까닭이 없어졌거든요."}
+      ],
+      "go": "s08"
+    },
+    "r2c": {
+      "stage": "court",
+      "page": "7면",
+      "place": "화요일 · 스탠드",
+      "set": {
+        "cast": {"yuna": "y_pr stand calm", "jiwoo": "st_j sit sad", "minjun": "st_m sit calm", "seoa": "st_s sit sad"},
+        "crowd": "split",
+        "ball": "yuna:hug",
+        "note": "seoa"
+      },
+      "panels": [
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "worried"}, "lines": [{"who": "seoa", "whisper": "유나한테는 말하지 마."}]},
+        {"shot": "close", "on": "jiwoo", "faces": {"jiwoo": "sad"}, "cap": "지우는 고개를 끄덕였지만, 조금 서운한 얼굴이었어요."},
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "sad"}, "poses": {"seoa": "down"}, "cap": "수첩을 덮었더니, 방금 나눈 말까지 같이 덮여 버린 것 같았어요."}
+      ],
+      "go": "s08"
+    },
+    "s08": {
+      "stage": "cafeteria",
+      "page": "8면",
+      "place": "수요일 · 급식실",
+      "set": {"cast": {"yuna": "l_y sit calm", "minjun": "l_m sit laugh", "jiwoo": "l_j sit calm", "seoa": "l_s2 sit calm"}, "crowd": "lunch"},
+      "explore": [{"on": "minjun", "text": "민준이. 숟가락으로 장난을 치려나 봐요."}, {"on": "yuna", "text": "유나. 저쪽 식탁에 여덟 명과 앉아 있어요."}],
+      "panels": [
+        {"shot": "wide", "cap": "수요일 급식 시간, 열네 명은 이쪽에, 여덟 명은 저쪽에 앉았어요."},
+        {"set": {"spoon": "minjun"}},
+        {"shot": "close", "on": "minjun", "faces": {"minjun": "laugh"}, "cap": "민준이가 숟가락을 코에 붙이고 저쪽 유나를 봤어요."},
+        {"shot": "close", "on": "yuna", "faces": {"yuna": "hurt"}, "poses": {"yuna": "down"}, "cap": "유나는 얼른 고개를 돌려 버렸어요."},
+        {"set": {"spoon": "none"}},
+        {"shot": "item", "on": "tray", "sfx": "달그락", "cap": "달그락, 숟가락이 식판에 떨어졌어요."}
+      ],
+      "choices": {
+        "q": "숟가락이 식판에 떨어졌어요. 서아는 어떻게 할까요?",
+        "ask": "적어도 작아지지 않을 것 같은 마음이 들 때, 어떻게 할 수 있을까요?",
+        "opts": [
+          {"text": "수첩을 꺼내지 않는다", "go": "s08a"},
+          {"text": "수첩을 꺼내 적는다", "go": "s08b", "add": {"jotted": 1}},
+          {"text": "민준이 숟가락 이야기를 지우와 나눈다", "go": "s08c", "add": {"share": 1}}
+        ]
+      }
+    },
+    "s08a": {
+      "stage": "cafeteria",
+      "page": "8면",
+      "place": "수요일 · 급식실",
+      "set": {"cast": {"yuna": "l_y sit calm", "minjun": "l_m sit laugh", "jiwoo": "l_j sit calm", "seoa": "l_s2 sit calm"}, "crowd": "lunch"},
+      "panels": [
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "calm"}, "cap": "나는 수첩을 꺼내지 않았어요. 이건 적고 싶지 않았어요."},
+        {"shot": "close", "on": "seoa", "angle": -20, "faces": {"seoa": "sad"}, "cap": "적어도 작아지지 않을 것 같은 마음이었어요."}
+      ],
+      "go": "s09"
+    },
+    "s08b": {
+      "stage": "cafeteria",
+      "page": "8면",
+      "place": "수요일 · 급식실",
+      "set": {"cast": {"yuna": "l_y sit calm", "minjun": "l_m sit laugh", "jiwoo": "l_j sit calm", "seoa": "l_s2 sit calm"}, "crowd": "lunch"},
+      "panels": [
+        {"set": {"note": "seoa"}},
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "worried"}, "poses": {"seoa": "show"}, "cap": "나는 수첩을 꺼내 적었어요. '민준이 숟가락. 유나 고개 돌림. 달그락.'"},
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "sad"}, "cap": "글자로 바꿨는데도 마음은 하나도 작아지지 않았어요. 어떤 마음은 적는 것만으로는 모자란가 봐요."}
+      ],
+      "go": "s09"
+    },
+    "s08c": {
+      "stage": "cafeteria",
+      "page": "8면",
+      "place": "수요일 · 급식실",
+      "set": {"cast": {"yuna": "l_y sit calm", "minjun": "l_m sit laugh", "jiwoo": "l_j sit calm", "seoa": "l_s2 sit calm"}, "crowd": "lunch"},
+      "panels": [
+        {
+          "shot": "close",
+          "on": "seoa",
+          "faces": {"seoa": "calm"},
+          "pre": "나는 민준이 너머로 지우에게 작게 말했어요.",
+          "lines": [{"who": "seoa", "whisper": "민준이, 유나 웃게 하려고 그런 거지?"}]
+        },
+        {"shot": "close", "on": "jiwoo", "faces": {"jiwoo": "sad"}, "lines": [{"who": "jiwoo", "whisper": "응. 근데 유나가 안 웃었어."}]},
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "calm"}, "cap": "말로 꺼내니까, 혼자 품고 있을 때보다 조금 가벼워졌어요. 지우도 같은 걸 보고 있었어요."}
+      ],
+      "go": "s09"
+    },
+    "s09": {
+      "stage": "kitchen",
+      "page": "9면",
+      "place": "수요일 밤 · 서아네 집",
+      "set": {"cast": {"seoa": "k_y sit calm"}, "note": "seoa"},
+      "explore": [{"on": "seoa", "text": "서아. 집에 와서 수첩을 펼쳤어요."}],
+      "panels": [
+        {"shot": "wide", "cap": "집에 와서 수첩을 펼쳤어요."},
+        {"note": "plan3", "cap": "세 줄을 다시 읽었어요."},
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "worried"}, "cap": "틀린 데가 있나 찾아봤어요. 없었어요."},
+        {"shot": "close", "on": "seoa", "angle": -20, "faces": {"seoa": "calm"}, "cap": "작전이 틀린 게 아니었어요. 말할 때를 놓친 거였어요."},
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "calm"}, "poses": {"seoa": "show"}, "cap": "나는 연필을 들었어요. 세 줄 아래에 한 줄을 더 적기로 했어요."}
+      ],
+      "compose": {
+        "q": "서아는 세 줄 아래에 한 줄을 더 적기로 했어요. 무엇을 적을까요? 적고 싶은 줄을 모두 골라 보세요.",
+        "ask": "말할 때를 놓쳤을 때, 다음에는 어떻게 해 보면 좋을까요? 숨는 말이나 탓하는 말을 적으면 어떻게 될까요?",
+        "who": "seoa",
+        "to": "yuna",
+        "min": 1,
+        "pieces": [
+          {"id": "speak", "text": "다음에는 끝까지 말하기.", "add": {"speak": 1, "voice": 1}, "face": "calm", "shot": "close", "on": "seoa"},
+          {"id": "show", "text": "말하기 전에 적어 둔 걸 먼저 보여 주기.", "add": {"voice": 1}, "face": "calm", "shot": "close", "on": "seoa"},
+          {"id": "ask", "text": "「나중에」라고 하면 「언제?」 하고 물어보기.", "add": {"voice": 1}, "face": "calm", "shot": "close", "on": "seoa"},
+          {"id": "near", "when": {"call": 1}, "text": "멀리서 부르지 말고, 가까이 가서 말하기.", "add": {"voice": 1}, "face": "calm", "shot": "close", "on": "seoa"},
+          {
+            "id": "friends",
+            "when": {"shown": 1},
+            "text": "세 줄을 아는 지우·민준이랑 같이 말하기.",
+            "add": {"voice": 1},
+            "face": "joy",
+            "shot": "close",
+            "on": "seoa"
+          },
+          {
+            "id": "tried",
+            "when": {"finger": 1},
+            "text": "누구 탓인지 말고, 누가 무엇을 하려 했는지 적기.",
+            "add": {"voice": 1},
+            "face": "calm",
+            "shot": "close",
+            "on": "seoa"
+          },
+          {"id": "arms", "when": {"arms": 1}, "text": "지우가 두 팔을 벌린 까닭도 같이 말하기.", "add": {"voice": 1}, "face": "calm", "shot": "close", "on": "seoa"},
+          {"id": "jiwoo", "when": {"told": 1}, "text": "지우한테 말한 것처럼, 유나한테도 말하기.", "add": {"voice": 1}, "face": "joy", "shot": "close", "on": "seoa"},
+          {
+            "id": "unbag",
+            "when": {"bag": 1},
+            "text": "가방 속 수첩을 다시 꺼내기.",
+            "add": {"voice": 1, "hide": -1},
+            "face": "calm",
+            "shot": "close",
+            "on": "seoa"
+          },
+          {"id": "aloud", "when": {"jotted": 1}, "text": "적어도 작아지지 않는 마음은 말로 하기.", "add": {"voice": 1}, "face": "calm", "shot": "close", "on": "seoa"},
+          {"id": "share", "when": {"share": 1}, "text": "같은 걸 본 친구한테 먼저 말 걸어 보기.", "add": {"voice": 1}, "face": "joy", "shot": "close", "on": "seoa"},
+          {"id": "noshow", "text": "다음에는 수첩을 아예 안 보여 주기.", "add": {"hide": 1, "noshow": 1}, "face": "sad", "shot": "close", "on": "seoa"},
+          {"id": "blame", "text": "유나는 원래 그래.", "add": {"blame": 1}, "face": "angry", "shot": "close", "on": "seoa"}
+        ],
+        "write": true
+      },
+      "go": "s09b"
+    },
+    "s09b": {
+      "stage": "kitchen",
+      "page": "9면",
+      "place": "수요일 밤 · 서아네 집",
+      "set": {"cast": {"seoa": "k_y sit calm"}, "note": "seoa"},
+      "panels": [
+        {"note": "plan3b", "when": {"speak": 1}, "cap": "나는 세 줄 아래에 한 줄을 더 적었어요. '다음에는 끝까지 말하기.'"},
+        {
+          "shot": "close",
+          "on": "seoa",
+          "when": {"speak": {"max": 0}, "noshow": {"max": 0}, "blame": {"max": 0}},
+          "faces": {"seoa": "calm"},
+          "cap": "새로 적은 줄을 소리 내지 않고 몇 번이나 읽었어요."
+        },
+        {"shot": "close", "on": "seoa", "when": {"noshow": 1}, "faces": {"seoa": "sad"}, "cap": "'수첩을 아예 안 보여 주기.' 그렇게 적었더니 수첩이 조금 더 무거워졌어요."},
+        {
+          "shot": "close",
+          "on": "seoa",
+          "when": {"blame": 1},
+          "faces": {"seoa": "angry"},
+          "cap": "'유나는 원래 그래.' 적고 나면 속이 시원할 줄 알았는데, 연필 끝이 자꾸 그 글자 위에서 멈췄어요."
+        },
+        {"shot": "close", "on": "seoa", "angle": -20, "faces": {"seoa": "calm"}, "cap": "나는 수첩을 덮었어요. 내일은 3반과 연습 경기가 있는 날이었어요."}
+      ],
+      "go": "s10"
+    },
+    "s10": {
+      "stage": "court",
+      "part": "전 · 한 번만 더",
+      "page": "10면",
+      "place": "목요일 · 3반과 연습 경기",
+      "set": {
+        "cast": {"jiwoo": "st_j sit worried", "minjun": "st_m sit calm", "seoa": "st_s sit worried", "yuna": "y_in stand angry"},
+        "crowd": "thu",
+        "ball": "none",
+        "note": "seoa"
+      },
+      "explore": [{"on": "court", "text": "코트. 우리 편은 여덟 명, 3반은 스물한 명이에요."}, {"on": "seoa", "text": "서아. 스탠드에서 경기를 적어요."}],
+      "panels": [
+        {"shot": "wide", "cap": "목요일, 3반과 하는 연습 경기를 보았어요. 여덟 명이 스물한 명과요."},
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "worried"}, "poses": {"seoa": "show"}, "cap": "나는 또 적었어요."},
+        {"set": {"ball": "air_in"}},
+        {"shot": "wide", "faces": {"yuna": "worried"}, "poses": {"yuna": "dodge"}, "cap": "3반은 공을 서로 보냈어요. 세 번, 네 번, 다섯 번."},
+        {"note": "plan3", "when": {"speak": {"max": 0}}, "cap": "내 세 줄의 첫 줄과 똑같았어요."},
+        {"note": "plan3b", "when": {"speak": 1}, "cap": "내 세 줄의 첫 줄과 똑같았어요."},
+        {"set": {"crowd": "thuAlone", "cast": {"yuna": "y_in stand worried"}, "ball": "none"}},
+        {"shot": "wide", "pre": "우리 편은 한 명씩 나갔고, 어느새 유나 혼자 남았어요.", "lines": [{"shout": "유나야, 여기!"}], "cap": "친구가 손을 흔드는데,"},
+        {"set": {"ball": "yuna"}},
+        {"shot": "close", "on": "yuna", "faces": {"yuna": "angry"}, "poses": {"yuna": "throw"}, "cap": "유나는 그 손을 보고도 혼자 던졌어요."},
+        {"set": {"ball": "air_back"}},
+        {"shot": "close", "on": "yuna", "faces": {"yuna": "surprised"}, "poses": {"yuna": "dodge"}, "fx": "focus", "sfx": "퍽."}
+      ],
+      "go": "s11"
+    },
+    "s11": {
+      "stage": "court",
+      "page": "11면",
+      "place": "목요일 · 운동장",
+      "set": {
+        "cast": {"yuna": "y_st stand angry", "jiwoo": "st_j sit sad", "minjun": "st_m sit calm", "seoa": "st_s sit worried"},
+        "crowd": "stare",
+        "ball": "floor",
+        "note": "seoa"
+      },
+      "explore": [{"on": "jiwoo", "text": "지우. 무릎만 내려다보고 있어요."}, {"on": "sink", "text": "수돗가. 찬물이 나와요."}],
+      "panels": [
+        {"shot": "close", "on": "yuna", "faces": {"yuna": "angry"}, "pre": "유나가 스탠드를 보며 말했어요.", "lines": [{"who": "yuna", "say": "봐, 너희가 안 해서…."}]},
+        {"shot": "item", "on": "stands", "cap": "스탠드에서는 아무도 웃지 않았어요. 지우는 무릎만 내려다보고 있었어요."},
+        {"set": {"cast": {"yuna": "sink_y stand calm"}, "ball": "none"}},
+        {"shot": "item", "on": "sink", "poses": {"yuna": "reach"}, "cap": "경기가 끝나고, 수돗가에 선 유나의 등을 보았어요. 혼자 남아 찬물에 손을 적시는 등이었어요."},
+        {"shot": "close", "on": "yuna", "faces": {"yuna": "calm"}, "cap": "월요일에 혼자 남았던 지우의 등과 똑같았어요. 유나가 천천히 숨을 내쉬는 게 보였어요."},
+        {"activity": "breathe"},
+        {"shot": "close", "on": "yuna", "angle": -20, "faces": {"yuna": "calm"}, "cap": "한 번, 두 번, 세 번."},
+        {
+          "shot": "close",
+          "on": "seoa",
+          "faces": {"seoa": "worried"},
+          "poses": {"seoa": "show"},
+          "sfx": "콩콩",
+          "cap": "수첩 모서리가 구겨질 만큼 꼭 쥐었어요. 심장이 콩콩 빠르게 뛰었어요."
+        },
+        {"shot": "close", "on": "seoa", "angle": -20, "faces": {"seoa": "calm"}, "cap": "그리고 한 번만 더 말해 보기로 했어요. 나중에가 아니라, 지금."},
+        {
+          "feel": {
+            "who": "seoa",
+            "q": "화요일에는 수첩을 닫았던 서아가, 오늘은 한 번 더 말해 보기로 했어요. 지금 서아는 어떤 마음일까요?",
+            "is": ["worried"],
+            "reveal": "심장이 콩콩 뛸 만큼 떨렸어요. 그래도 화요일처럼 들어 줄 때를 기다리지 않고, 「끝까지 들어 줄래?」 하고 먼저 물어보기로 했어요.",
+            "ask": "화요일의 서아와 목요일의 서아는 무엇이 달랐나요?"
+          }
+        }
+      ],
+      "choices": {
+        "q": "서아는 한 번만 더 말해 보기로 했어요. 어떻게 갈까요?",
+        "ask": "떨리는 말을 할 때, 바로 말하는 것과 적어 두었다가 말하는 것은 각각 무엇이 좋을까요?",
+        "opts": [{"text": "수첩에 먼저 적지 않고, 입으로 바로 말하러 간다", "go": "s12", "add": {"now": 1}}, {"text": "할 말을 수첩에 먼저 적고 간다", "go": "s11b", "add": {"wrote": 1}}]
+      }
+    },
+    "s11b": {
+      "stage": "court",
+      "page": "11면",
+      "place": "목요일 · 운동장",
+      "set": {
+        "cast": {"yuna": "sink_y stand calm", "jiwoo": "st_j sit sad", "minjun": "st_m sit calm", "seoa": "st_s sit worried"},
+        "crowd": "stare",
+        "note": "seoa"
+      },
+      "panels": [
+        {
+          "shot": "close",
+          "on": "seoa",
+          "faces": {"seoa": "worried"},
+          "poses": {"seoa": "show"},
+          "cap": "나는 수첩 귀퉁이에 할 말부터 적었어요. '유나야. 이번에는 끝까지 들어 줄래?'"
+        },
+        {"set": {"cast": {"yuna": "bench_y sit calm"}}},
+        {"shot": "wide", "cap": "다 적고 고개를 드니, 유나는 벌써 수돗가 옆 긴 의자에 앉아 있었어요."}
+      ],
+      "go": "s12"
+    },
+    "s12": {
+      "stage": "court",
+      "page": "12면",
+      "place": "목요일 · 수돗가",
+      "set": {"cast": {"yuna": "sink_y stand calm", "seoa": "s_come stand worried"}, "crowd": "stare", "note": "seoa"},
+      "panels": [
+        {
+          "shot": "close",
+          "on": "seoa",
+          "when": {"now": 1},
+          "faces": {"seoa": "worried"},
+          "poses": {"seoa": "show"},
+          "cap": "이번에는 수첩에 먼저 적지 않고, 입으로 바로 말하기로 했어요."
+        },
+        {"set": {"cast": {"yuna": "bench_y sit calm"}}, "when": {"wrote": 1}},
+        {"shot": "two", "on": ["seoa", "yuna"], "poses": {"seoa": "show"}, "lines": [{"who": "seoa", "say": "유나야."}]},
+        {"shot": "close", "on": "yuna", "when": {"now": 1}, "faces": {"yuna": "calm"}, "cap": "유나가 돌아섰어요."},
+        {"shot": "close", "on": "yuna", "when": {"wrote": 1}, "faces": {"yuna": "calm"}, "cap": "유나가 고개를 들었어요."},
+        {
+          "shot": "close",
+          "on": "seoa",
+          "faces": {"seoa": "worried"},
+          "poses": {"seoa": "show"},
+          "pre": "나는 수첩을 더 꼭 쥐었어요.",
+          "lines": [{"who": "seoa", "say": "이번에는 끝까지 들어 줄래?"}]
+        },
+        {"shot": "close", "on": "yuna", "faces": {"yuna": "calm"}, "poses": {"yuna": "down"}, "cap": "유나가 고개를 끄덕였어요."},
+        {"set": {"cast": {"yuna": "bench_y sit calm", "seoa": "bench_s sit calm"}}},
+        {
+          "shot": "two",
+          "on": ["seoa", "yuna"],
+          "poses": {"seoa": "show"},
+          "pre": "나는 수첩을 펼쳤어요.",
+          "lines": [{"who": "seoa", "say": "월요일 경기를 적어 뒀어. 일찍 나가서 밖에서 봤거든."}]
+        }
+      ],
+      "go": "s13"
+    },
+    "s13": {
+      "stage": "court",
+      "page": "12면",
+      "place": "목요일 · 수돗가 옆",
+      "set": {"cast": {"yuna": "bench_y sit worried", "seoa": "bench_s sit calm"}, "crowd": "stare", "note": "seoa"},
+      "panels": [
+        {"note": "record", "when": {"finger": {"max": 0}, "arms": {"max": 0}}, "cap": "유나가 수첩을 들여다봤어요. 민준이는 춤추다 한 번. 유나 공이 잡힌 건 세 번. 끝까지 남은 사람, 지우."},
+        {"note": "recordF", "when": {"finger": 1}, "cap": "유나가 수첩을 들여다봤어요. 민준이는 춤추다 한 번. 유나 공이 잡힌 건 세 번. 끝까지 남은 사람, 지우."},
+        {"note": "recordA", "when": {"arms": 1}, "cap": "유나가 수첩을 들여다봤어요. 민준이는 춤추다 한 번. 유나 공이 잡힌 건 세 번. 끝까지 남은 사람, 지우."},
+        {"shot": "close", "on": "seoa", "when": {"finger": 1}, "faces": {"seoa": "worried"}, "cap": "월요일에 적은 손가락 줄도 거기 있었어요. 감추고 싶었지만, 수첩을 덮지 않았어요."},
+        {"note": "record2", "cap": "유나가 자기 이름이 적힌 곳에 손가락을 올렸어요. 손가락 하나로는 다 가려지지 않았어요."},
+        {
+          "shot": "close",
+          "on": "yuna",
+          "faces": {"yuna": "shy"},
+          "pre": "한참 뒤에 유나가 말했어요.",
+          "lines": [{"who": "yuna", "say": "서아야. 연습 때도, 작전 짤 때도 네 말 안 들어서 미안해."}]
+        },
+        {
+          "shot": "close",
+          "on": "seoa",
+          "faces": {"seoa": "calm"},
+          "pre": "나는 구겨진 수첩 모서리를 손톱으로 폈어요.",
+          "lines": [{"who": "seoa", "say": "나도 같이 하고 싶었어."}]
+        },
+        {"shot": "close", "on": "seoa", "when": {"now": 1}, "faces": {"seoa": "joy"}, "fx": "sparkle", "cap": "내 말이 처음으로 늦지 않고 도착했어요."},
+        {"shot": "close", "on": "seoa", "when": {"wrote": 1}, "faces": {"seoa": "calm"}, "cap": "적어 둔 말을 꺼내느라 조금 늦었지만, 이번에는 끝까지 도착했어요."}
+      ],
+      "go": "s14"
+    },
+    "s14": {
+      "stage": "classroom",
+      "part": "결 · 우리 반 작전판",
+      "page": "13면",
+      "place": "금요일 · 점심시간",
+      "set": {
+        "cast": {"minjun": "seat_e sit calm", "jiwoo": "stand_sw stand calm", "yuna": "seat_w sit calm", "seoa": "seat_nw sit calm"},
+        "crowd": "morning",
+        "ball": "yuna",
+        "note": "seoa"
+      },
+      "explore": [{"on": "seoa", "text": "서아. 수첩을 들고 있어요."}, {"on": "jiwoo", "text": "지우. 유나에게 오늘 경기를 물어보러 왔어요."}],
+      "panels": [
+        {
+          "shot": "close",
+          "on": "jiwoo",
+          "faces": {"jiwoo": "calm"},
+          "pre": "점심을 먹고, 지우가 유나 책상으로 왔어요.",
+          "lines": [{"who": "jiwoo", "say": "오늘 경기는 어떻게 할 거야?"}]
+        },
+        {"shot": "close", "on": "yuna", "faces": {"yuna": "calm"}, "lines": [{"who": "yuna", "say": "이번에는 친구들 얘기부터 들어 보려고."}]},
+        {
+          "set": {
+            "cast": {
+              "yuna": "ring_5 sit calm",
+              "seoa": "ring_4 sit calm",
+              "jiwoo": "ring_6 sit calm",
+              "minjun": "ring_7 sit joy",
+              "teacher": "teacher_win stand calm"
+            },
+            "circle": true,
+            "crowd": "circle",
+            "note": "seoa",
+            "ball": "yuna"
+          }
+        },
+        {"shot": "wide", "cap": "금요일 점심, 우리는 의자를 둥글게 놓고 앉았어요."},
+        {
+          "shot": "close",
+          "on": "yuna",
+          "faces": {"yuna": "shy"},
+          "pre": "유나가 친구들을 둘러보며 말했어요.",
+          "lines": [{"who": "yuna", "say": "나머지라고 한 것도 미안해. 자꾸 나 혼자 정했어."}]
+        },
+        {
+          "shot": "close",
+          "on": "seoa",
+          "faces": {"seoa": "joy"},
+          "poses": {"seoa": "show"},
+          "pre": "나는 수첩을 들었어요.",
+          "lines": [{"who": "seoa", "say": "그럼 이번에는 같이 정할까?"}]
+        },
+        {"set": {"ball": "feet"}},
+        {"shot": "two", "on": ["yuna", "seoa"], "faces": {"yuna": "calm", "seoa": "joy"}, "cap": "유나가 공을 발밑에 내려놓고 내 쪽으로 의자를 돌렸어요."},
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "calm"}, "poses": {"seoa": "show"}, "cap": "나는 수첩을 펼쳤어요. 이번에는 아무도 \"나중에\"라고 하지 않았어요."}
+      ],
+      "go": "s15"
+    },
+    "s15": {
+      "stage": "classroom",
+      "page": "14면",
+      "place": "금요일 · 점심시간",
+      "set": {
+        "cast": {
+          "yuna": "ring_5 sit calm",
+          "seoa": "ring_4 sit calm",
+          "jiwoo": "ring_6 sit calm",
+          "minjun": "ring_7 sit joy",
+          "teacher": "teacher_win stand calm"
+        },
+        "circle": true,
+        "crowd": "circle",
+        "note": "seoa",
+        "ball": "feet"
+      },
+      "explore": [{"on": "seoa", "text": "서아. 수첩에 작은 코트를 그려요."}],
+      "panels": [
+        {
+          "shot": "close",
+          "on": "seoa",
+          "poses": {"seoa": "show"},
+          "pre": "수첩에 작은 코트를 그렸어요.",
+          "lines": [{"who": "seoa", "say": "공을 혼자 갖고 있지 말고, 서로 보내 주면 어때?"}]
+        },
+        {
+          "shot": "close",
+          "on": "minjun",
+          "faces": {"minjun": "laugh"},
+          "lines": [{"who": "minjun", "say": "이름을 크게 부르면 되겠다. 그건 내가 잘해!"}],
+          "cap": "민준이가 말했어요."
+        },
+        {"shot": "close", "on": "jiwoo", "faces": {"jiwoo": "shy"}, "pre": "지우가 작은 목소리로 물었어요.", "lines": [{"who": "jiwoo", "say": "나, 또 받아 봐도 돼?"}]},
+        {
+          "shot": "close",
+          "on": "seoa",
+          "when": {"shown": 1, "ally": 1},
+          "faces": {"seoa": "joy"},
+          "cap": "화요일 스탠드에서 둘이 맡겠다고 한 줄이었어요. 세 줄이 내 입보다 먼저 와 있었어요."
+        },
+        {
+          "shot": "close",
+          "on": "seoa",
+          "when": {"told": 1, "open": 1},
+          "faces": {"seoa": "joy"},
+          "cap": "지우가 나를 보고 살짝 웃었어요. 화요일 스탠드에서 같이 본 세 번째 줄이었어요."
+        },
+        {
+          "activity": "role",
+          "q": "우리 반이 작전판을 만든다면, 나는 어떤 역할을 맡고 싶나요? 내가 잘하는 것과 이어서 골라 보세요.",
+          "roles": [
+            ["throw", "공 던지기", "힘이 세요"],
+            ["call", "이름 크게 부르기", "목소리가 커요"],
+            ["catch", "공 받아 보기", "겁이 나도 해 봐요"],
+            ["dodge", "끝까지 피하기", "몸이 빨라요"],
+            ["write", "작전 적기", "꼼꼼해요"],
+            ["cheer", "밖에서 응원하기", "친구 마음을 잘 알아요"]
+          ],
+          "reveal": "잘하는 것을 하나씩 보태면, 한 사람이 다 정하지 않아도 모두의 작전이 생겨요.",
+          "ask": "내가 잘하는 것은 우리 반 작전판의 어느 칸에 들어갈 수 있을까요?"
+        },
+        {"note": "planme", "cap": "작전판 한쪽에 「나」 칸도 생겼어요."}
+      ],
+      "end": true
+    }
+  },
+  "endings": [
+    {
+      "id": "first3",
+      "kind": "good",
+      "title": "먼저 도착한 세 줄",
+      "when": {"shown": 1, "ally": 1, "hide": {"max": 0}, "blame": {"max": 0}},
+      "panels": [
+        {
+          "stage": "court",
+          "set": {
+            "cast": {"yuna": "y_in stand joy", "jiwoo": "j_in stand calm", "minjun": "m_in stand joy", "seoa": "s_in stand calm"},
+            "crowd": "final",
+            "ball": "floor_j"
+          }
+        },
+        {"shot": "wide", "cap": "금요일 5교시, 우리 반 스물두 명이 모두 코트에 섰어요."},
+        {"set": {"cast": {"seoa": "s_out stand calm"}, "note": "seoa"}},
+        {
+          "shot": "close",
+          "on": "seoa",
+          "faces": {"seoa": "calm"},
+          "poses": {"seoa": "show"},
+          "cap": "나는 이번에도 금방 밖으로 나갔어요. 그래도 괜찮았어요. 세 줄은 코트 안에 남아 있었으니까요."
+        },
+        {"set": {"ball": "air_back"}},
+        {
+          "shot": "close",
+          "on": "minjun",
+          "faces": {"minjun": "joy"},
+          "poses": {"minjun": "call"},
+          "lines": [{"who": "minjun", "shout": "유나, 뒤!"}],
+          "cap": "민준이가 이름을 크게 불렀어요. 화요일에 스탠드에서 맡겠다고 한 일이었어요."
+        },
+        {
+          "set": {
+            "crowd": "final2",
+            "ball": "air_j",
+            "cast": {"yuna": "y_out stand calm", "jiwoo": "j_alone stand calm", "minjun": "m_out stand worried", "seoa": "s_out stand worried"}
+          }
+        },
+        {
+          "shot": "close",
+          "on": "jiwoo",
+          "faces": {"jiwoo": "calm"},
+          "poses": {"jiwoo": "open"},
+          "cap": "경기가 끝나기 직전, 코트에는 지우 혼자였어요. 공이 날아왔어요. 지우가 두 팔을 벌렸어요."
+        },
+        {"set": {"ball": "jiwoo:hug"}},
+        {
+          "shot": "close",
+          "on": "jiwoo",
+          "faces": {"jiwoo": "surprised"},
+          "poses": {"jiwoo": "hold"},
+          "sfx": "텁.",
+          "lines": [{"who": "jiwoo", "shout": "받았다!"}],
+          "cap": "공을 받으면 밖에 있는 친구 부르기. 세 번째 줄이 지우 품에 쏙 안겼어요."
+        },
+        {"shot": "wide", "sfx": "삐이익", "cap": "삐이익. 두 명 대 두 명. 결과는 무승부였어요."},
+        {
+          "set": {
+            "crowd": "cheer",
+            "ball": "none",
+            "note": "seoa",
+            "cast": {"yuna": "h_y stand joy", "jiwoo": "h_j stand joy", "minjun": "h_m stand joy", "seoa": "h_s stand joy"}
+          }
+        },
+        {"shot": "two", "on": ["jiwoo", "seoa"], "faces": {"jiwoo": "joy"}, "lines": [{"who": "jiwoo", "say": "월요일 아침에 네 수첩 먼저 봐서 다행이야."}]},
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "joy"}, "pre": "나는 수첩을 덮으며 말했어요.", "lines": [{"who": "seoa", "say": "내 말 들어 줘서 고마워."}]},
+        {
+          "shot": "group",
+          "on": ["yuna", "seoa", "jiwoo", "minjun"],
+          "poses": {"yuna": "reach", "seoa": "reach", "jiwoo": "reach", "minjun": "reach"},
+          "fx": "sparkle",
+          "sfx": "짝!",
+          "cap": "손바닥이 모였어요. 짝!"
+        },
+        {
+          "shot": "close",
+          "on": "seoa",
+          "angle": -20,
+          "faces": {"seoa": "calm"},
+          "cap": "내 말은 지금도 조금 늦게 도착해요. 그래도 이제 알아요. 먼저 보여 준 세 줄은, 내 말이 도착할 때까지 친구들 곁에서 기다려 준다는 걸요."
+        }
+      ]
+    },
+    {
+      "id": "notalone",
+      "kind": "good",
+      "title": "혼자가 아니었던 수첩",
+      "when": {"told": 1, "open": 1, "hide": {"max": 0}, "blame": {"max": 0}},
+      "panels": [
+        {
+          "stage": "court",
+          "set": {
+            "cast": {"yuna": "y_in stand joy", "jiwoo": "j_in stand calm", "minjun": "m_in stand joy", "seoa": "s_out stand calm"},
+            "crowd": "final",
+            "ball": "floor_j",
+            "note": "seoa"
+          }
+        },
+        {"shot": "wide", "cap": "금요일 5교시, 우리 반 스물두 명이 모두 코트에 섰어요."},
+        {
+          "shot": "close",
+          "on": "seoa",
+          "faces": {"seoa": "calm"},
+          "poses": {"seoa": "show"},
+          "cap": "나는 이번에도 일찍 밖으로 나갔어요. 대신 밖에서 수첩을 펴고, 우리 편을 하나하나 적었어요."
+        },
+        {
+          "set": {
+            "crowd": "final2",
+            "ball": "air_j",
+            "cast": {"yuna": "y_out stand calm", "jiwoo": "j_alone stand calm", "minjun": "m_out stand worried", "seoa": "s_out stand worried"}
+          }
+        },
+        {"shot": "close", "on": "jiwoo", "faces": {"jiwoo": "calm"}, "poses": {"jiwoo": "open"}, "cap": "경기가 끝나기 직전, 코트에는 지우 혼자였어요. 지우가 두 팔을 벌렸어요."},
+        {
+          "shot": "close",
+          "on": "seoa",
+          "faces": {"seoa": "worried"},
+          "poses": {"seoa": "clasp"},
+          "lines": [{"who": "seoa", "think": "지우야, 세 번째 줄."}],
+          "cap": "나는 수첩을 꼭 쥐었어요."
+        },
+        {"set": {"ball": "jiwoo:hug"}},
+        {
+          "shot": "close",
+          "on": "jiwoo",
+          "faces": {"jiwoo": "surprised"},
+          "poses": {"jiwoo": "hold"},
+          "sfx": "텁.",
+          "lines": [{"who": "jiwoo", "shout": "받았다!"}]
+        },
+        {"shot": "wide", "sfx": "삐이익", "cap": "삐이익. 두 명 대 두 명. 결과는 무승부였어요."},
+        {
+          "set": {
+            "crowd": "cheer",
+            "ball": "none",
+            "note": "seoa",
+            "cast": {"yuna": "h_y stand joy", "jiwoo": "h_j stand joy", "minjun": "h_m stand joy", "seoa": "h_s stand joy"}
+          }
+        },
+        {"shot": "two", "on": ["jiwoo", "seoa"], "faces": {"jiwoo": "joy"}, "lines": [{"who": "jiwoo", "say": "화요일에 네가 먼저 말해 줘서, 나도 혼자가 아니었어."}]},
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "joy"}, "pre": "나는 수첩을 덮으며 말했어요.", "lines": [{"who": "seoa", "say": "내 말 들어 줘서 고마워."}]},
+        {
+          "shot": "group",
+          "on": ["yuna", "seoa", "jiwoo", "minjun"],
+          "poses": {"yuna": "reach", "seoa": "reach", "jiwoo": "reach", "minjun": "reach"},
+          "fx": "sparkle",
+          "sfx": "짝!",
+          "cap": "손바닥이 모였어요. 짝!"
+        },
+        {
+          "shot": "close",
+          "on": "seoa",
+          "angle": -20,
+          "faces": {"seoa": "calm"},
+          "cap": "수첩 맨 뒷장은 아직 비어 있어요. 거기에 '나중에'를 적을 일이 없었거든요. 내 수첩은 화요일부터 혼자가 아니었어요."
+        }
+      ]
+    },
+    {
+      "id": "board",
+      "kind": "good",
+      "title": "우리 반 작전판",
+      "when": {"speak": 1, "now": 1, "hide": {"max": 0}, "blame": {"max": 0}},
+      "panels": [
+        {
+          "stage": "classroom",
+          "set": {
+            "cast": {
+              "yuna": "ring_5 sit calm",
+              "seoa": "ring_4 sit calm",
+              "jiwoo": "ring_6 sit calm",
+              "minjun": "ring_7 sit joy",
+              "teacher": "teacher_win stand calm"
+            },
+            "circle": true,
+            "crowd": "circle",
+            "note": "seoa",
+            "ball": "feet"
+          }
+        },
+        {"shot": "wide", "cap": "친구들이 저마다 말을 보탰어요."},
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "calm"}, "poses": {"seoa": "show"}, "cap": "나는 받아 적었어요."},
+        {"shot": "close", "on": "seoa", "angle": -20, "faces": {"seoa": "joy"}, "cap": "이번에는 내 말이 늦게 도착한 게 아니었어요."},
+        {"shot": "wide", "fx": "sparkle", "cap": "친구들 말이 내 수첩으로 도착하고 있었어요."},
+        {"note": "planme", "cap": "내 수첩이 우리 반 작전판이 되었어요."}
+      ]
+    },
+    {
+      "id": "late",
+      "kind": "okay",
+      "title": "조금 늦은 도착",
+      "when": {"voice": 1, "blame": {"max": 0}},
+      "panels": [
+        {
+          "stage": "classroom",
+          "set": {
+            "cast": {
+              "yuna": "ring_5 sit calm",
+              "seoa": "ring_4 sit calm",
+              "jiwoo": "ring_6 sit calm",
+              "minjun": "ring_7 sit joy",
+              "teacher": "teacher_win stand calm"
+            },
+            "circle": true,
+            "crowd": "circle",
+            "note": "seoa",
+            "ball": "feet"
+          }
+        },
+        {"shot": "wide", "cap": "친구들이 저마다 말을 보탰어요. 나는 받아 적었어요."},
+        {
+          "shot": "close",
+          "on": "seoa",
+          "faces": {"seoa": "worried"},
+          "cap": "그런데 남은 두 줄은 이번에도 말할 때를 놓쳤어요. 친구들이 다른 이야기로 넘어간 뒤에야 \"아, 나는……\" 하고 시작했어요."
+        },
+        {"shot": "close", "on": "yuna", "faces": {"yuna": "calm"}, "cap": "그래도 유나가 고개를 돌려 기다려 주었어요."},
+        {"shot": "close", "on": "seoa", "when": {"wrote": 1}, "faces": {"seoa": "calm"}, "cap": "수돗가에서도 그랬어요. 수첩에 먼저 적고 가느라, 내 말은 조금 늦게 도착했지요."},
+        {"shot": "close", "on": "seoa", "when": {"noshow": 1}, "faces": {"seoa": "shy"}, "cap": "수요일 밤에 적은 '수첩을 아예 안 보여 주기'는 지우개로 살살 지웠어요."},
+        {"shot": "close", "on": "seoa", "when": {"bag": 1}, "faces": {"seoa": "shy"}, "cap": "가방 속에 넣어 두었던 수첩이, 오늘은 내 무릎 위에 펼쳐져 있었어요."},
+        {
+          "shot": "close",
+          "on": "seoa",
+          "when": {"alone": 1},
+          "faces": {"seoa": "shy"},
+          "pre": "점심이 끝나 갈 때쯤, 지우와 민준이에게 겨우 말했어요.",
+          "lines": [{"who": "seoa", "say": "화요일에 괜찮다고 한 거, 사실은 안 괜찮았어."}]
+        },
+        {
+          "shot": "close",
+          "on": "seoa",
+          "when": {"secret": 1},
+          "faces": {"seoa": "shy"},
+          "pre": "점심이 끝나 갈 때쯤, 지우에게 작게 말했어요.",
+          "lines": [{"who": "seoa", "say": "지우야, 말하지 말라고 한 거 미안해."}]
+        },
+        {"note": "planme", "cap": "작전판에는 스물두 명의 이름이 들어갔어요. 내 두 줄은 맨 끝에, 조금 늦게 적혔어요."},
+        {"shot": "close", "on": "seoa", "angle": -20, "faces": {"seoa": "joy"}, "cap": "늦게 출발한 말도 끝까지 가면 도착해요. 다음에는 조금 더 일찍 출발해 볼래요."},
+        {"text": "서아의 세 줄 가운데 우리 반 피구에도 쓸 수 있는 줄은 무엇일까요? 왜 그럴까요?", "tone": "note"}
+      ]
+    },
+    {
+      "id": "later",
+      "kind": "sorry",
+      "title": "뒷장의 나중에",
+      "panels": [
+        {
+          "stage": "classroom",
+          "set": {
+            "cast": {
+              "yuna": "ring_5 sit calm",
+              "seoa": "ring_4 sit calm",
+              "jiwoo": "ring_6 sit calm",
+              "minjun": "ring_7 sit joy",
+              "teacher": "teacher_win stand calm"
+            },
+            "circle": true,
+            "crowd": "circle",
+            "note": "seoa",
+            "ball": "feet"
+          }
+        },
+        {"shot": "wide", "cap": "친구들이 저마다 말을 보탰어요. 나는 받아 적기만 했어요."},
+        {"shot": "close", "on": "seoa", "faces": {"seoa": "worried"}, "cap": "공을 서로 보내자는 말은 했지만, 나머지 두 줄은 수첩 속에 그대로 두었어요."},
+        {
+          "shot": "close",
+          "on": "seoa",
+          "when": {"blame": 1},
+          "faces": {"seoa": "sad"},
+          "cap": "유나가 미안하다고 했는데도, 수요일 밤에 적은 '유나는 원래 그래'가 자꾸 떠올랐어요. 그 줄은 아직 지우지 못했어요."
+        },
+        {"shot": "close", "on": "seoa", "when": {"noshow": 1}, "faces": {"seoa": "sad"}, "cap": "'수첩을 아예 안 보여 주기.' 그렇게 적은 줄이 무릎 위에서 무거웠어요."},
+        {"note": "plan", "cap": "작전판에는 스물두 명의 이름이 들어갔어요. 내가 하고 싶었던 말은 그 안에 다 들어가지 못했어요."},
+        {"stage": "kitchen", "set": {"cast": {"seoa": "k_y sit sad"}, "note": "seoa"}},
+        {"note": "later", "when": {"later": 1}, "cap": "그날 밤, 수첩 맨 뒷장을 펼쳤어요. 화요일에 적은 '나중에'가 그대로 있었어요."},
+        {"note": "later", "when": {"later": {"max": 0}}, "cap": "그날 밤, 나는 수첩 맨 뒷장에 '나중에'라고 적었어요. 하고 싶은 말이 아직 거기 남아 있었거든요."},
+        {"shot": "close", "on": "seoa", "angle": -20, "faces": {"seoa": "sad"}, "cap": "작전판은 우리 반 것이 되었는데, 내 말은 아직 뒷장에 있었어요."},
+        {"text": "서아가 '나중에' 대신 꺼낼 수 있는 첫마디는 무엇일까요?", "tone": "note"}
+      ]
+    }
+  ],
+  "talk": ["서아가 잘하는 것과, 서아가 해 보고 싶었던 것을 각각 써 보세요.", "서아는 \"나중에\"라는 말을 듣고도 목요일에 한 번 더 말했어요. 화요일의 서아와 목요일의 서아는 무엇이 달랐나요?", "서아의 세 줄 작전 가운데 우리 반 피구에도 쓸 수 있는 것을 하나 고르고, 그 이유를 써 보세요.", "우리 반이 작전판(모두의 작전을 적는 수첩)을 만든다면 나는 어떤 역할을 맡고 싶나요? 내가 잘하는 것과 연결해 써 보세요."]
+}

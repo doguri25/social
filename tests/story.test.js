@@ -86,28 +86,48 @@ for (const file of files) {
     (f.is || []).forEach(k => { if (!has('emotions', k)) err(at, `감정 "${k}"가 감정 카드 8개에 없음`); });
   }
   // 컷 목록을 차례로 보며 무대가 바뀌는 것을 따라간다. 끝난 뒤의 무대를 돌려준다.
-  function checkPanels(list, stage, at) {
+  // cutsOnly: 결말과 만약에 컷 목록은 컷과 무대 바꾸기만 보여 준다 (활동·감정 카드·만약에는 돌지 않음)
+  function checkPanels(list, stage, at, cutsOnly) {
     list.forEach((p, i) => {
       const here = `${at}#${i}`;
+      if (cutsOnly && (p.activity || p.feel || p.whatif)) return err(here, '결말·만약에 안에서는 활동, 감정 카드, 만약에를 쓸 수 없음');
       if (p.stage) {
         if (!DEFS.stages[p.stage]) return err(here, `무대 "${p.stage}"가 없음`);
         stage = p.stage;
       }
       if (p.stage || p.set) return checkSet(Object.assign({ _merged: !p.stage }, p.set), stage, here);
       if (p.feel) return checkFeel(p.feel, here);
-      if (p.activity) { if (!has('activities', p.activity)) err(here, `활동 "${p.activity}"가 목록에 없음`); return; }
+      if (p.activity) {
+        if (!has('activities', p.activity)) return err(here, `활동 "${p.activity}"가 목록에 없음`);
+        if (p.activity !== 'breathe' && (!p.q || !p.reveal)) err(here, `${p.activity}에 q와 reveal이 필요함`);
+        if (p.activity === 'signals') {
+          if (!cast.has(p.who)) err(here, `몸 신호 인물 "${p.who}"가 cast에 없음`);
+          if (!(p.parts || []).length) err(here, '몸 신호에 parts가 필요함');
+          (p.parts || []).forEach(k => { if (!DEFS.bodyParts.includes(k)) err(here, `몸 부분 "${k}"가 bodyParts에 없음`); });
+        }
+        if (p.activity === 'sort') {
+          if ((p.items || []).length < 4) err(here, '바구니 카드는 4장 이상');
+          (p.items || []).forEach((it, k) => { if (!it.text || !['feel', 'act'].includes(it.is)) err(`${here} 카드${k}`, 'text와 is(feel/act)가 필요함'); });
+        }
+        if (p.activity === 'role' && (!(p.roles || []).length || p.roles.some(r => r.length !== 3))) err(here, 'roles는 [id, 하는 일, 잘하는 것] 3개짜리 목록');
+        return;
+      }
       if (p.whatif) {
         const w = p.whatif;
         if ((w.opts || []).length < 2) err(here, '만약에 선택지는 2개 이상');
         if ((w.opts || []).filter(o => o.story).length !== 1) err(here, '만약에 선택지 가운데 원작(story: true)이 꼭 하나');
         if (!w.q || !w.same || !w.back) err(here, '만약에에 q, same, back이 필요함');
-        (w.opts || []).forEach((o, k) => { if (!o.story) checkPanels(o.panels || [], stage, `${here} 만약에${k}`); });
+        (w.opts || []).forEach((o, k) => { if (!o.story) checkPanels(o.panels || [], stage, `${here} 만약에${k}`, true); });
         return;
       }
       checkPanel(p, stage, here);
     });
     return stage;
   }
+
+  // ---- 책 ----
+  if (B.narrator && !cast.has(B.narrator)) err('narrator', `들려주는 인물 "${B.narrator}"가 cast에 없음`);
+  if (B.talk && (!Array.isArray(B.talk) || B.talk.some(q => typeof q !== 'string' || !q))) err('talk', '생각 나누기는 글 목록');
 
   // ---- 장면 ----
   const ids = Object.keys(B.scenes || {});
@@ -146,7 +166,7 @@ for (const file of files) {
   if (new Set(E.map(e => e.id)).size !== E.length) err('endings', '결말 id가 겹침');
   E.forEach(e => {
     if (!(e.panels || [])[0] || !e.panels[0].stage) err(`결말 ${e.id}`, '결말 첫 컷은 무대(stage)를 정해야 함');
-    checkPanels(e.panels || [], 'shelf', `결말 ${e.id}`);
+    checkPanels(e.panels || [], 'shelf', `결말 ${e.id}`, true);
   });
 
   // ---- 모든 길 따라가기 ----

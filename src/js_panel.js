@@ -3,6 +3,7 @@ const storyEl = $('#story');
 const asList = v => (v == null ? [] : [].concat(v));
 const readText = p => [p.pre, ...asList(p.lines).map(l => l.say || l.think || l.shout || l.whisper), p.cap, p.text].flat().filter(Boolean).join(' ');
 let hist = [], hi = -1; // 지금 장면에서 본 컷 (「이전」으로 다시 보기)
+let actView = null; // 활동(숨 고르기·몸 신호·바구니)이 옆 칸 위를 쓰는 동안 그 화면을 다시 그리는 함수
 let nextFn = null, nextLabel = '다음';
 function resetHist() { hist = []; hi = -1; renderFoot(); }
 function setNext(fn, label = '다음') { nextFn = fn; nextLabel = label; renderFoot(); }
@@ -53,7 +54,8 @@ function renderEntry() {
   const e = hist[hi];
   if (e.key !== stageKey()) applySet(e.stage, e.set, false); // 다른 무대에서 찍은 컷을 다시 볼 때는 그 무대로
   applyCut(e.p);
-  storyEl.replaceChildren(...panelNodes(e, hi < hist.length - 1));
+  if (actView && hi === hist.length - 1) actView(); // 지난 컷을 보고 돌아오면 하던 활동 화면으로
+  else storyEl.replaceChildren(...panelNodes(e, hi < hist.length - 1));
   rise();
   renderAsk();
   renderFoot();

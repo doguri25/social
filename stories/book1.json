@@ -726,7 +726,7 @@
           "sfx": "달그락",
           "cap": "나는 얼른 고개를 돌렸어요. 숟가락이 식판에 달그락 떨어지는 소리가 났어요."
         },
-        {"stage": "kitchen", "set": {"cast": {"yuna": "k_y sit sad", "mom": "k_m stand worried"}}},
+        {"stage": "kitchen", "set": {"cast": {"yuna": "k_y sit sad", "mom": "k_m stand worried"}, "meal": true}},
         {"shot": "wide", "cap": "집에 와서도 속이 답답했어요."},
         {
           "shot": "two",
