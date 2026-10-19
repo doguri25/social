@@ -3,3 +3,5 @@ dist/shots/
 tests/.cache/
 dist/shots-babylon/
 .vercel
+node_modules/
+.data/

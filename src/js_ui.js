@@ -130,29 +130,102 @@ function showShelf() {
   resetHist();
   const ids = bookIds();
   const books = h('div', 'books');
-  SPINES.forEach((col, i) => {
-    const id = ids[i], B = id && STORIES[id];
-    const row = btn('', 'bookrow' + (B ? ' ready' : ''), () => (B ? openBook(id) : toast('아직 준비 중인 책이에요.')));
+  const row = (i, title, note, ready, onClick) => {
+    const r = btn('', 'bookrow' + (ready ? ' ready' : ''), onClick);
     const sp = h('i', 'spine');
-    sp.style.setProperty('--c', col);
+    sp.style.setProperty('--c', SPINES[i]);
     const txt = h('span', '');
-    txt.append(h('b', '', B ? `${i + 1}권 · ${B.title}` : `${i + 1}권 · 준비 중`), h('small', '', B ? `${B.sub} · 본 결말 ${seenEnds(bookRec(id), B)} / ${B.endings.length}` : '곧 만나요'));
-    row.append(sp, txt);
-    if (!B) row.disabled = true;
-    books.appendChild(row);
+    txt.append(h('b', '', title), h('small', '', note));
+    r.append(sp, txt);
+    books.appendChild(r);
+  };
+  ids.slice(0, 4).forEach((id, i) => {
+    const B = STORIES[id], res = save.resume[id];
+    row(i, `${i + 1}권 · ${B.title}`, `${B.sub} · 본 결말 ${seenEnds(bookRec(id), B)} / ${B.endings.length}${res ? ` · 이어 보기: ${res.place.split(' · ').pop()}` : ''}`, true, () => openBook(id));
   });
+  // 다섯째 칸: 1~4권에서 결말을 하나씩 보면 열리는 「이후의 이야기」
+  const read = ids.slice(0, 4).filter(id => (bookRec(id).endings || []).length).length;
+  row(4, '이후의 이야기 쓰기', unlockedAfter() ? (afterText() ? '쓴 글이 있어요 · 고쳐 쓸 수 있어요' : '네 권을 다 읽었어요. 이제 쓸 수 있어요') : `${read} / 4권 읽음 · 네 권에서 결말을 하나씩 보면 열려요`, unlockedAfter(), openAfter);
   const head = h('div', 'endcard');
-  head.append(h('div', 'eyebrow', '마음 극장 책장'), h('h3', '', '읽을 책을 골라요'));
+  const who = h('p', 'whoami');
+  if (NET.mode === 'student') who.append(`${NET.me.alias}(${NET.me.no}번)으로 들어왔어요 · 기록은 학급 서버에 `, btn('나가기', 'chip', async () => { await logout(); showShelf(); showGate(); }));
+  else who.append('로그인 없이 하는 중 · 기록은 이 기기에만 ', NET.server ? btn('학급 접속하기', 'chip', showGate) : '');
+  head.append(h('div', 'eyebrow', '마음 극장 책장'), h('h3', '', '읽을 책을 골라요'), who);
   storyEl.replaceChildren(head, books);
   rise();
   setAsk('shelf', () => [heading('그림책을 펼쳐요'), h('p', '', '3D 무대와 웹툰으로 읽고, 갈림길에서 직접 골라 보는 이야기예요. 무대의 노란 책을 눌러도 돼요.')]);
   const next = lastBook || ids[0];
   setNext(() => openBook(next), `${ids.indexOf(next) + 1}권 읽기`);
-  buildHot(stageNow.books.map(b => { const id = ids[b.i]; return { pos: b.pos, book: id, cls: 'book' + (id ? ' ready' : ''), label: id ? `${b.i + 1}권 · ${STORIES[id].title}` : `${b.i + 1}권 준비 중` }; }), it => (it.book ? openBook(it.book) : toast('아직 준비 중인 책이에요.')));
+  buildHot(stageNow.books.map(b => { const id = b.i < 4 && ids[b.i]; return { pos: b.pos, book: id, cls: 'book' + (id || unlockedAfter() ? ' ready' : ''), label: id ? `${b.i + 1}권` : '이후' }; }), it => (it.book ? openBook(it.book) : openAfter())); // 책등 점 글은 짧게 (다섯 개가 겹치지 않게)
 }
-function openBook(id) {
+// 이어 볼 자리가 있으면 먼저 묻는다
+async function openBook(id) {
   sfx('pick');
+  const res = save.resume[id];
+  if (res && !ARGS.get('scene')) {
+    const pick = await waitFor(done => {
+      setAsk('resume', () => {
+        const r = h('div', 'btnrow');
+        r.append(btn(`이어 보기 · ${res.place}`, 'sbtn primary', () => done('resume')), btn('처음부터', 'sbtn', () => done('start')), btn('책장으로', 'sbtn', () => done('cancel')));
+        return [heading(`${STORIES[id].title}`), h('p', '', '지난번에 읽던 곳이 있어요. 이어서 볼까요?'), r];
+      });
+      setNext(() => done('resume'), '이어 보기');
+      focusFirst('.sbtn');
+      return doneAsk;
+    }).catch(() => 'cancel');
+    if (pick === 'cancel') return showShelf();
+    if (pick === 'resume') return startBook(id, null, res);
+  }
   startBook(id, ARGS.get('scene'));
+}
+// ---- 이후의 이야기: 1~4권에서 결말을 하나씩 본 뒤에 열린다. 학생은 학급 서버로 내고, 로그인 없이 쓰면 이 기기에만 ----
+const AFTER_PROMPT = '1권부터 4권까지, 같은 한 주를 유나·지우·민준·서아의 눈으로 읽었어요. 그다음 주에 우리 반에는 어떤 일이 있었을까요? 네 친구 가운데 한 명이 되어 「이후의 이야기」를 써 보세요.';
+const afterText = () => (NET.mode === 'student' ? NET.me.story && NET.me.story.text : save.after && save.after.text) || '';
+const draftKey = () => `social-draft-${NET.mode === 'student' ? NET.me.no : 'guest'}`;
+function openAfter() {
+  if (!unlockedAfter()) return toast('1~4권에서 결말을 하나씩 보면 열려요.');
+  sfx('pick');
+  runId++;
+  cancelFlow();
+  buildHot([], () => {});
+  const student = NET.mode === 'student';
+  const min = student ? NET.me.minChars : 200;
+  const ta = h('textarea', 'afterta');
+  let draft = '';
+  try { draft = localStorage.getItem(draftKey()) || ''; } catch (e) { /* 없음 */ }
+  ta.value = draft || afterText();
+  ta.placeholder = '여기에 써요. 누가, 언제, 어디서, 무슨 일이 있었는지, 그때 마음은 어땠는지 써 보세요.';
+  ta.setAttribute('aria-label', '이후의 이야기');
+  const count = h('div', 'aftercount');
+  const submit = async () => {
+    const text = ta.value.trim();
+    try {
+      if (student) { await api('story', { text }); NET.me.story = { text, at: Date.now() }; }
+      else { save.after = { text, at: Date.now() }; store(); }
+      try { localStorage.removeItem(draftKey()); } catch (e) { /* 없음 */ }
+      sfx('end');
+      toast(student ? '냈어요! 선생님이 읽어 볼 거예요. 다시 고쳐 낼 수도 있어요.' : '이 기기에 저장했어요.');
+    } catch (e) { toast(e.message); }
+  };
+  const upd = () => {
+    const n = [...ta.value.replace(/\s/g, '')].length;
+    count.textContent = `${n} / ${min}자 (띄어쓰기 빼고)`;
+    count.classList.toggle('ok', n >= min);
+    setNext(n >= min ? submit : null, student ? '선생님께 내기' : '이 기기에 저장');
+    try { localStorage.setItem(draftKey(), ta.value); } catch (e) { /* 저장 못 해도 쓰기는 계속 */ }
+  };
+  ta.addEventListener('input', upd);
+  const card = h('div', 'endcard after');
+  card.append(h('div', 'eyebrow', '이후의 이야기'), h('h3', '', '그다음 이야기를 써요'), h('p', 'aprompt', student ? NET.me.prompt : AFTER_PROMPT), ta, count);
+  storyEl.replaceChildren(card);
+  rise();
+  setAsk('after', () => {
+    const r = h('div', 'btnrow');
+    r.append(btn('책장으로', 'sbtn', showShelf));
+    return [heading('이후의 이야기', 'spark'), h('p', '', student ? `${min}자 넘게 쓰면 선생님께 낼 수 있어요. 낸 뒤에도 고쳐서 다시 낼 수 있어요.` : `로그인 없이 쓰는 글은 이 기기에만 저장되고 선생님께 가지 않아요. ${min}자 넘게 써 보세요.`), r];
+  });
+  upd();
+  setTimeout(() => ta.focus({ preventScroll: true }), 80);
 }
 function toShelf() {
   loadBook('book1');
@@ -199,6 +272,7 @@ function openSettings() {
   card.append(
     h('h2', '', '설정'),
     row('읽어 주기', koVoice ? '글과 말풍선을 소리 내어 읽어요' : '이 기기에는 한국어 목소리가 없어요', read),
+    row('언어', '다른 언어는 번역을 넣으면 고를 수 있어요. 책을 새로 열 때부터 바뀌어요', (() => { const sg = seg(LANGS.map(([c, n]) => [c, n]), LANG, v => { LANG = save.set.lang = v; store(); findVoice(); }); sg.querySelectorAll('button').forEach((b, i) => { b.disabled = !langReady(LANGS[i][0]); }); return sg; })()),
     row('글자 크기', '', seg([[0.9, '작게'], [1, '보통'], [1.2, '크게']], save.set.fs, v => { save.set.fs = v; store(); document.documentElement.style.setProperty('--fs', v); fitSide(); })),
     row('화질', '높음: 그늘과 빛 번짐까지 / 느리면 「낮음」', seg([['auto', '자동'], ['low', '낮음'], ['high', '높음']], save.set.q, v => { save.set.q = v; slowDevice = false; store(); applyTier(); })),
     row('효과음', '', onOff('sound')),
@@ -221,7 +295,8 @@ function setPaused(on) {
 $('#btnSet').addEventListener('click', openSettings);
 $('#btnPause').addEventListener('click', () => setPaused(true));
 $('#btnResume').addEventListener('click', () => setPaused(false));
-$('#btnHome').addEventListener('click', () => { sfx('tap'); toShelf(); });
+// 처음 화면으로: 지금 장면을 이어 보기 자리로 저장하고(장면을 시작할 때 이미 적어 둠) 책장으로
+$('#btnHome').addEventListener('click', () => { sfx('tap'); flush(true); toast(`지금까지 ${NET.mode === 'student' ? '학급 서버' : '이 기기'}에 저장했어요. 다음에 이 장면부터 이어 볼 수 있어요.`); toShelf(); });
 addEventListener('keydown', e => {
   if (e.key === 'Escape') { if (!$('#settings').hidden) $('#settings').hidden = true; else if (paused) setPaused(false); return; }
   if (!$('#settings').hidden || paused) return;
@@ -241,8 +316,48 @@ async function boot() {
   loadBook('book1');
   showShelf();
   $('#loading').hidden = true;
+  const logged = await netBoot(); // 학급 서버가 있으면: QR(?c=)·쿠키로 학생 로그인
   const want = 'book' + ARGS.get('book');
-  if (STORIES[want]) startBook(want, ARGS.get('scene'));
+  if (STORIES[want]) startBook(want, ARGS.get('scene')); // 수업 링크는 첫 화면을 건너뛴다
+  else { showShelf(); if (!logged) showGate(); }
   ARGS.delete('scene'); // 장면 바로 열기는 처음 한 번만 (책장에서 다른 책을 열 때는 처음부터)
+}
+// ---- 첫 화면: 언어 고르기, 접속 코드, 로그인 없이 하기, 저장하는 것 안내 ----
+function showGate() {
+  const ov = $('#gate');
+  const card = h('div', 'card gatecard');
+  card.setAttribute('role', 'dialog');
+  card.setAttribute('aria-label', t('gateTitle'));
+  const langs = h('div', 'langs');
+  LANGS.forEach(([code, name]) => {
+    const ready = langReady(code);
+    const b = btn(ready ? name : `${name} · ${t('soon')}`, 'chip', () => { LANG = save.set.lang = code; store(); findVoice(); showGate(); });
+    b.setAttribute('aria-pressed', code === LANG);
+    b.disabled = !ready;
+    langs.appendChild(b);
+  });
+  card.append(langs, h('h2', '', t('gateTitle')), h('p', 'soft', t('gateSub')));
+  const close = () => { ov.hidden = true; showShelf(); };
+  if (NET.server) {
+    const inp = h('input', 'codein');
+    Object.assign(inp, { maxLength: 6, autocomplete: 'off', placeholder: 'ABC234', spellcheck: false });
+    inp.setAttribute('autocapitalize', 'characters');
+    inp.setAttribute('aria-label', t('code'));
+    const err = h('p', 'err', '');
+    const go = async () => { try { await loginCode(inp.value.trim()); sfx('pick'); close(); } catch (e) { err.textContent = e.message; } };
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+    const r = h('div', 'coderow');
+    r.append(inp, btn(t('enter'), 'btn go', go));
+    card.append(h('label', 'lab', t('code')), r, h('p', 'soft', t('codeHint')), err);
+  } else if (!/vercel\.app$/.test(location.hostname)) {
+    const a = h('a', '', APP_URL);
+    a.href = APP_URL;
+    card.append(h('p', 'soft', t('noServer')), a);
+  } else card.append(h('p', 'soft', '학급 서버가 아직 준비되지 않아 지금은 「로그인 없이 하기」만 할 수 있어요.'));
+  card.append(btn(t('guest'), 'btn ghost wide', () => { enterGuest(); close(); }), h('p', 'soft small', t('guestNote')), h('p', 'soft small', t('privacy')));
+  if (NET.server) { const a = h('a', 'small', t('teacher')); a.href = 'teacher.html'; card.appendChild(a); }
+  ov.replaceChildren(card);
+  ov.hidden = false;
+  setTimeout(() => (card.querySelector('.codein') || card.querySelector('button.wide')).focus({ preventScroll: true }), 60);
 }
 boot();

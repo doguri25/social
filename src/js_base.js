@@ -1,5 +1,5 @@
 // ===== 기본 도구: 저장, 주소, 소리, 읽어 주기, 기다리기 =====
-const VERSION = '0.6.0'; // 올릴 때 CHANGELOG.md 와 함께 바꾼다
+const VERSION = '0.7.0'; // 올릴 때 CHANGELOG.md 와 함께 바꾼다
 const $ = (s, r = document) => r.querySelector(s);
 const h = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -14,7 +14,7 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const withP = name => { const c = name.charCodeAt(name.length - 1) - 0xac00; return name + (c >= 0 && c < 11172 && c % 28 ? '과' : '와'); }; // 지우와, 민준과
 const topic = name => { const c = name.charCodeAt(name.length - 1) - 0xac00; return c >= 0 && c < 11172 && c % 28 ? '은' : '는'; };
 
-// ---- 저장: 이 기기에만 남고 어디로도 보내지 않는다 ----
+// ---- 저장: 「로그인 없이 하기」는 이 기기에만. 학급 접속(학생)이면 설정만 이 기기에, 진행·답은 서버로 (js_net) ----
 const SAVE_KEY = 'social-v1';
 const save = (() => {
   try {
@@ -23,8 +23,11 @@ const save = (() => {
   } catch (e) { /* 저장소를 못 쓰는 기기: 새로 시작 */ }
   return { v: 1, books: {}, set: {} };
 })();
-save.set = Object.assign({ read: false, fs: 1, q: 'auto', sound: true, cls: false }, save.set);
-function store() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* 저장 실패해도 놀이는 계속 */ } }
+save.set = Object.assign({ read: false, fs: 1, q: 'auto', sound: true, cls: false, lang: 'ko' }, save.set);
+function store() {
+  if (NET.mode === 'student') return netStore();
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* 저장 실패해도 놀이는 계속 */ }
+}
 function bookRec(id) { return save.books[id] || (save.books[id] = { endings: [], feels: {} }); }
 // 본 결말 수: 지금 책에 있는 결말만 센다 (책을 바꾸기 전에 본 결말은 빼고)
 const seenEnds = (rec, book) => book.endings.filter(e => rec.endings.includes(e.id)).length;
@@ -68,10 +71,11 @@ function sfx(kind) {
   } catch (e) { /* 소리를 못 내는 기기 */ }
 }
 
-// ---- 읽어 주기: 브라우저 음성 합성, 한국어 목소리가 있을 때만 ----
+// ---- 읽어 주기: 브라우저 음성 합성, 고른 언어의 목소리가 있을 때만 (나중에 녹음 파일로 바꿀 자리) ----
 let koVoice = null;
 function findVoice() {
-  try { koVoice = speechSynthesis.getVoices().find(v => /^ko/i.test(v.lang)) || null; } catch (e) { koVoice = null; }
+  const want = new RegExp('^' + (save.set.lang || 'ko'), 'i');
+  try { koVoice = speechSynthesis.getVoices().find(v => want.test(v.lang)) || null; } catch (e) { koVoice = null; }
   const b = $('#btnRead');
   if (b) b.hidden = !koVoice;
 }

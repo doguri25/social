@@ -171,7 +171,7 @@ const BUILD = {
     box(3.4, 0.08, 0.55, W, 0, 1.7, -0.75, g);
     [-1.65, 1.65].forEach(x => box(0.1, 1.75, 0.55, W, x, 0.87, -0.75, g));
     box(3.4, 1.75, 0.05, '#d9b48a', 0, 0.87, -1.0, g);
-    const titles = SPINES.map((col, i) => { const B = STORIES[bookIds()[i]]; return [B ? B.title : `${i + 1}권 준비 중`, col]; });
+    const titles = SPINES.map((col, i) => { const B = STORIES[bookIds()[i]]; return [B && i < 4 ? B.title : '이후의 이야기', col]; });
     s.books = titles.map(([title, col], i) => {
       const x = -1.08 + i * 0.54;
       ink(box(0.34, 0.86, 0.44, col, x, 1.22, -0.72, g), 0.006);

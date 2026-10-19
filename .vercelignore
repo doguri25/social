@@ -1,3 +1,9 @@
-# 버셀에는 완성 파일 index.html 만 올린다 (소스, 시험 캐시, 문서 제외)
+# 버셀에 올리는 것: 완성 페이지 두 개, 서버리스 함수와 공용 코드, 패키지 목록. 소스·시험·도구·이 컴퓨터 저장소(.data)는 올리지 않는다
 /*
 !index.html
+!teacher.html
+!api/
+!server/
+!package.json
+!package-lock.json
+!vercel.json

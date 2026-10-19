@@ -1,0 +1,14 @@
+{
+  "name": "maum-theater",
+  "version": "0.7.0",
+  "private": true,
+  "description": "마음 극장: 3D 무대와 웹툰으로 읽는 사회정서 그림책 놀이 (정적 페이지 + 버셀 서버리스 함수)",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "node tools/dev.mjs",
+    "test": "node tests/story.test.js && node tests/server.test.mjs"
+  },
+  "dependencies": {
+    "mongodb": "^6.21.0"
+  }
+}

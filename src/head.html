@@ -265,6 +265,41 @@ svg.body [data-part].real.on { fill: #9fe0c2; }
 #toast { position: fixed; left: 50%; bottom: 84px; z-index: 50; transform: translateX(-50%); max-width: calc(100% - 32px); background: var(--ink); color: #fff; border-radius: 999px; padding: 8px 18px; font-size: 17px; }
 
 /* ---- 좁은 화면 (휴대전화): 무대 위, 컷과 할 일 아래. 화면 밖으로 넘치지 않게 무대와 컷 그림이 줄어든다 ---- */
+/* 첫 화면 (언어, 접속 코드, 로그인 없이 하기) */
+#gate { z-index: 45; background: rgba(243, 234, 217, .94); }
+.gatecard { grid-template-columns: minmax(0, 1fr); } /* 좁은 화면에서 코드 칸 기본 너비가 카드를 밀어내지 않게 */
+.coderow .btn { flex: none; }
+.gatecard h2 { font-size: 34px !important; }
+.gatecard .soft { margin: 0; color: var(--ink-2); font-size: 15px; line-height: 1.45; }
+.gatecard .small { font-size: 13px; }
+.gatecard .err { margin: 0; color: #c0503c; min-height: 1.2em; }
+.gatecard a { color: var(--green); font-size: 15px; word-break: break-all; }
+.langs { display: flex; flex-wrap: wrap; gap: 6px; }
+.langs .chip { min-height: 36px; font-size: 14px; }
+.langs .chip[aria-pressed="true"] { background: var(--mint); border-color: var(--green); }
+.langs .chip:disabled { opacity: .5; }
+.lab { font-size: 15px; color: var(--ink-2); }
+.coderow { display: flex; gap: 8px; }
+.codein { flex: 1; min-width: 0; width: 100%; font: inherit; font-size: 26px; letter-spacing: .25em; text-transform: uppercase; text-align: center; padding: 8px 10px; border: 2px solid var(--ink); border-radius: 14px; background: #fff; color: var(--ink); }
+.btn.wide { width: 100%; justify-content: center; min-height: 52px; }
+.whoami { margin: 6px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 14px; color: var(--ink-2); }
+/* 이후의 이야기 */
+.endcard.after { display: flex; flex-direction: column; gap: 8px; min-height: 100%; }
+.aprompt { margin: 0; font-size: calc(17px * var(--fs)); line-height: 1.5; }
+.afterta { flex: 1; min-height: 180px; font: inherit; font-size: calc(18px * var(--fs)); line-height: 1.6; padding: 12px; border: 2px solid var(--line); border-radius: 12px; background: #fff; color: var(--ink); resize: vertical; }
+.afterta:focus { border-color: var(--green); outline: none; }
+.aftercount { text-align: right; font-size: 14px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.aftercount.ok { color: var(--green); }
+/* 손가락으로 누르는 기기(태블릿·휴대전화): 누르는 곳을 44px 이상으로, 글자는 조금 크게 */
+@media (pointer: coarse) {
+  .sbtn, .chip, .bodychip { min-height: 44px; padding-left: 14px; padding-right: 14px; }
+  .opt { min-height: 52px; }
+  .piece, .emo, .bookrow { min-height: 48px; }
+  .ibtn { width: 48px; height: 48px; }
+  .btn { min-height: 48px; }
+  .hs { width: 38px; height: 38px; }
+  #ask p, .cap { font-size: calc(18px * var(--fs)); }
+}
 @media (max-width: 760px) {
   #app { padding: 0; }
   .frame { border-radius: 0; border: 0; padding: calc(env(safe-area-inset-top, 0px) + 8px) 16px calc(env(safe-area-inset-bottom, 0px) + 10px); gap: 8px; }
@@ -298,7 +333,7 @@ svg.body [data-part].real.on { fill: #9fe0c2; }
       <span class="sub" id="bookSub">사회정서 그림책 놀이</span>
       <span class="grow"></span>
       <span class="count" id="count" hidden></span>
-      <button class="ibtn" id="btnHome" aria-label="책장으로" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 5h4v14H4zM10 5h4v14h-4zM16.5 6l3.6-.9 3 13.6-3.6.9z"/></svg></button>
+      <button class="ibtn" id="btnHome" aria-label="처음 화면으로 (지금까지 저장)" title="처음 화면으로 (지금까지 저장)" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M3.5 11 12 4l8.5 7M6 9.5V20h4.5v-5.5h3V20H18V9.5"/></svg></button>
       <button class="ibtn" id="btnPause" aria-label="잠깐 멈추기"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1.5" fill="currentColor"/><rect x="14" y="5" width="4" height="14" rx="1.5" fill="currentColor"/></svg></button>
       <button class="ibtn bare" id="btnSet" aria-label="설정"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3h-4l-.4 2.9a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.4 7.4 0 0 0 1.7 1L11 21h4l.4-2.9a7.4 7.4 0 0 0 1.7-1l2.5 1 2-3.5zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" transform="translate(-1 0)"/></svg></button>
     </header>
@@ -324,6 +359,7 @@ svg.body [data-part].real.on { fill: #9fe0c2; }
 </div>
 <div class="veil" id="pause" hidden><div class="card" role="dialog" aria-label="잠깐 멈춤"><h2>잠깐 쉬어요</h2><p style="margin:0;font-size:18px;color:var(--ink-2)">준비되면 이어서 봐요.</p><button class="btn go" id="btnResume" style="justify-self:start">이어서 보기 ›</button></div></div>
 <div class="veil" id="settings" hidden></div>
+<div class="veil" id="gate" hidden></div>
 <div class="veil" id="loading">그림책을 펼치는 중…</div>
 <div id="toast" hidden></div>
 <script src="https://cdn.jsdelivr.net/npm/babylonjs@9.27.1/babylon.js" integrity="sha384-8x8m4syfyP7drrokbLqiNmxplPvCDlFVCwmHqEzFa3R+JeHZ7hyclRVkrV9FsF2z" crossorigin="anonymous"></script>
