@@ -244,7 +244,8 @@ function updateWalls(instant) {
   stageNow.walls.forEach(w => {
     const want = (w.n[0] * dx + w.n[1] * dz) / L > 0.05 ? 0 : 1;
     if (Math.abs(w.vis - want) < 0.001) return;
-    w.vis = instant || w.vis < 0 ? want : w.vis + clamp(want - w.vis, -0.1, 0.1);
+    // 끝에 닿으면 정확히 want 로 (0.1씩 더하면 0.9999…에서 멈춰 벽 묶음이 반투명으로 그려지고 문짝이 지워졌다)
+    w.vis = instant || w.vis < 0 || Math.abs(want - w.vis) <= 0.1 ? want : w.vis + clamp(want - w.vis, -0.1, 0.1);
     wallMeshes(w).forEach(m => { m.visibility = w.vis; });
     w.node.setEnabled(w.vis > 0.01);
     moving = true;
