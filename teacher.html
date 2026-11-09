@@ -96,7 +96,7 @@ const safe = fn => async (...a) => { try { await fn(...a); } catch (e) { if (!e.
 let flash = '';
 const takeFlash = () => { const f = flash; flash = ''; return f; };
 // 명단 한 줄: 「번호 가명」 (api/teacher.js 의 ROSTER_LINE 과 같은 규칙)
-const ROSTER_LINE = /^\s*(\d{1,3})(?!\d)(?!\s*(?:학년|반|모둠|월|일|교시|차시|층|조)(?:\s|$|[0-9]))(?:번(?=[\s.,):-]|$))?[\s.,):-]*(\S.*?)\s*$/;
+const ROSTER_LINE = /^\s*(\d{1,3})(?!\d)(?!(?:학년|반|모둠|월|일|교시|차시|층|조)(?:\s|$|[0-9]))(?:번(?=[\s.,):-]|$))?[\s.,):-]*(\S.*?)\s*$/;
 const halfDigits = line => line.replace(/[０-９]/g, d => String.fromCharCode(d.charCodeAt(0) - 0xfee0));
 const lineNo = l => { const m = ROSTER_LINE.exec(halfDigits(l)); return m ? Number(m[1]) : null; };
 const drafts = {}; // 아직 저장하지 않은 선생님 채점 (AI 채점 뒤 목록을 다시 그려도 남게)
@@ -124,7 +124,7 @@ async function load() {
   tabs.hidden = false;
   const list = [['roster', '명단·QR'], ['lesson', '수업 흐름'], ['records', '학생 기록'], ['stories', '이후의 이야기'], ['settings', '설정']];
   tabs.replaceChildren(...list.map(([k, t]) => h('button', { 'aria-pressed': String(tab === k), on: { click: safe(() => { tab = k; return load(); }) } }, t)));
-  ({ roster, lesson, records, stories, settings })[tab]();
+  await ({ roster, lesson, records, stories, settings })[tab](); // 못 그리면 부른 곳(safe)이 알린다
 }
 
 // ---- 명단·코드·QR ----
@@ -208,7 +208,8 @@ async function stories() {
   const sec = h('section', { class: 'card' }, h('div', { class: 'row' }, h('h2', { class: 'grow' }, `이후의 이야기 (${list.length}편)`), msg,
     h('button', { class: 'sub', disabled: aiRun.all, on: { click: async e => {
       e.currentTarget.disabled = true; aiRun.all = true; setAllMsg('AI 가 채점하는 중…');
-      const skip = [], fails = [];
+      document.querySelectorAll('button.ai-one').forEach(b => { b.disabled = true; }); // 모두 채점하는 동안 한 편 채점은 막는다
+      const skip = [...aiRun.nos], fails = []; // 지금 한 편씩 채점 중인 글은 넘긴다
       let n = 0;
       try { let r; do { r = await api('aiGrade', { all: true, skip }); n += r.done; (r.failed || []).forEach(f => { skip.push(f.no); fails.push(`${f.no}번(${f.error})`); }); setAllMsg(`AI 채점 ${n}편 끝${r.left ? `, ${r.left}편 남음` : ''}${fails.length ? ` · 못 한 글: ${fails.join(', ')}` : ''}`); } while (r.left && (r.done || (r.failed || []).length)); } catch (e) { if (!e.relogin) setAllMsg(e.message); } finally { aiRun.all = false; if (tab === 'stories') await stories(); }
     } } }, '아직 안 된 글 모두 AI 채점')),
@@ -218,7 +219,7 @@ async function stories() {
   main.replaceChildren(sec);
   list.forEach(y => {
     const s = data.students.find(x => x.no === y.no) || { no: y.no, alias: '(명단에 없음)' };
-    const dk = `${y.no}:${y.at}:${(y.teacher && y.teacher.at) || 0}`; // 글이나 저장된 채점이 바뀌면 옛 초안을 쓰지 않는다
+    let dk = `${y.no}:${y.at}:${(y.teacher && y.teacher.at) || 0}`; // 글이나 저장된 채점이 바뀌면 옛 초안을 쓰지 않는다
     const dr = drafts[dk] || (drafts[dk] = { pick: { ...((y.teacher && y.teacher.scores) || {}) }, comment: (y.teacher && y.teacher.comment) || '' });
     const pick = dr.pick;
     const form = h('div', { class: 'rub' }, rub.map(r => h('fieldset', {}, h('legend', {}, r.name), r.levels.map((lv, i) => {
@@ -231,8 +232,8 @@ async function stories() {
     main.append(h('section', { class: 'card' }, h('div', { class: 'row' }, h('h2', { class: 'grow' }, `${s.no} ${nameOf(s)}`), h('span', { class: 'soft' }, `${[...y.text.replace(/\s/g, '')].length}자 · ${when(y.at)}${y.versions > 1 ? ` · ${y.versions - 1}번 고쳐 냄` : ''}`)),
       starterOf(y.starter) ? starterBox(starterOf(y.starter)) : '', h('div', { class: 'story' }, y.text), h('h2', { style: 'margin-top:12px' }, '선생님 채점'), form, comment,
       h('div', { class: 'row', style: 'margin-top:8px' }, note, h('span', { class: 'grow' }),
-        h('button', { class: 'sub', disabled: aiRun.all || aiRun.nos.has(y.no), on: { click: async e => { e.currentTarget.disabled = true; aiRun.nos.add(y.no); note.textContent = aiRun.notes[y.no] = 'AI 채점 중…'; try { await api('aiGrade', { no: y.no }); aiRun.notes[y.no] = ''; } catch (e) { aiRun.notes[y.no] = e.relogin ? '' : e.message; } finally { aiRun.nos.delete(y.no); if (tab === 'stories') await stories(); } } } }, 'AI 채점'),
-        h('button', { class: 'btn', on: { click: async () => { try { await api('grade', { no: y.no, scores: pick, comment: comment.value }); delete drafts[dk]; note.textContent = '저장했어요.'; } catch (e) { if (!e.relogin) note.textContent = e.message; } } } }, '선생님 채점 저장')), ai));
+        h('button', { class: 'sub ai-one', disabled: aiRun.all || aiRun.nos.has(y.no), on: { click: async e => { e.currentTarget.disabled = true; aiRun.nos.add(y.no); note.textContent = aiRun.notes[y.no] = 'AI 채점 중…'; try { await api('aiGrade', { no: y.no }); aiRun.notes[y.no] = ''; } catch (e) { aiRun.notes[y.no] = e.relogin ? '' : e.message; } finally { aiRun.nos.delete(y.no); if (tab === 'stories') await stories(); } } } }, 'AI 채점'),
+        h('button', { class: 'btn', on: { click: async () => { try { const r = await api('grade', { no: y.no, scores: pick, comment: comment.value }); delete drafts[dk]; dk = `${y.no}:${y.at}:${r.at}`; drafts[dk] = dr; note.textContent = '저장했어요.'; } catch (e) { if (!e.relogin) note.textContent = e.message; } } } }, '선생님 채점 저장')), ai));
   });
 }
 
@@ -265,7 +266,7 @@ function settings() {
     h('div', { class: 'row', style: 'margin-top:8px' }, pinMsg, h('span', { class: 'grow' }), h('button', { class: 'btn', on: { click: async () => { try { await api('changePin', { current: cur.value.trim(), next: nx.value.trim() }); pinMsg.className = 'soft'; pinMsg.textContent = '바꿨어요. 다음부터 새 비밀번호로 들어와요.'; cur.value = nx.value = ''; data.pinSet = true; } catch (e) { pinMsg.className = 'err'; pinMsg.textContent = e.message; } } } }, '비밀번호 바꾸기')));
   $('#main').replaceChildren(
     pinCard,
-    h('section', { class: 'card' }, h('h2', {}, 'AI 채점 연결'), h('p', { class: 'soft' }, '쓸 AI 를 고르고 키를 넣어요. 키는 서버에 암호화해서 저장하고, 화면에는 가린 모양만 보여 줘요. AI 에는 학생 글만 보내요.'), st.testAI ? h('p', { class: 'soft' }, `업스테이지를 고르고 키를 넣지 않으면 ${st.testAI.until}까지 시험용 업스테이지로 채점해요(쌤비서와 함께 쓰는 중계, 하루 횟수 제한). 키는 중계에만 있고, 보내는 글은 중계에 저장하지 않아요.`) : '', provBox),
+    h('section', { class: 'card' }, h('h2', {}, 'AI 채점 연결'), h('p', { class: 'soft' }, '쓸 AI 를 고르고 키를 넣어요. 키는 서버에 암호화해서 저장하고, 화면에는 가린 모양만 보여 줘요. AI 에는 학생 글만 보내요.'), st.testAI ? h('p', { class: 'soft' }, `업스테이지를 고르고 키를 넣지 않으면 ${st.testAI.until}까지 시험용 업스테이지로 채점해요(쌤비서와 함께 쓰는 중계, 하루 횟수 제한). 키는 중계에만 있고, 보내는 글은 중계에 저장하지 않아요. Claude 를 골라도 Claude 가 채점을 사양한 글은 업스테이지 Solar 로 다시 채점해요(업스테이지 키가 없으면 이 시험용 중계로).`) : '', provBox),
     h('section', { class: 'card' }, h('h2', {}, '이후의 이야기'), h('p', { class: 'soft' }, '1~4권에서 결말을 하나씩 본 학생에게 열려요.'), h('label', {}, '글자 수 (띄어쓰기 빼고): 최소 · 최대'), h('div', { class: 'row' }, h('span', { class: 'grow' }, minChars), h('span', { class: 'grow' }, maxChars)), h('label', {}, '글감 (학생 화면에 보여요)'), prompt,
       h('h2', { style: 'margin-top:12px' }, '채점 기준 (1·2·3점 설명)'), h('div', { class: 'rub' }, rub.map(r => h('fieldset', {}, h('legend', {}, '기준 이름'), r.name, r.levels.map((l, i) => h('label', {}, `${i + 1}점`, l)))))),
     h('div', { class: 'row' }, msg, h('span', { class: 'grow' }), h('button', { class: 'btn', on: { click: async () => {

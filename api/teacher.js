@@ -19,8 +19,8 @@ async function auth(req) {
 // 한 학생의 진행·답·글을 지운다 (명단은 그대로). 지운 때를 남겨, 그 전에 열린 학생 화면이 옛 진행을 다시 올리지 못하게 한다 (api/student.js save)
 const wipe = no => Promise.all([db().del('progress', `s${no}`), db().delWhere('answers', { no }), db().del('stories', `s${no}`), db().set('meta', `wiped:s${no}`, { at: Date.now() })]);
 // 명단 한 줄: 「번호 가명」. 「1. 햇살」「1) 햇살」「1번 햇살」「1햇살」「１ 햇살」도 받는다 (teacher.html 도 같은 규칙)
-// 「3학년 2반 명단」「10월 5일」「1모둠 …」 같은 머리 줄은 학생으로 보지 않는다
-const ROSTER_LINE = /^\s*(\d{1,3})(?!\d)(?!\s*(?:학년|반|모둠|월|일|교시|차시|층|조)(?:\s|$|[0-9]))(?:번(?=[\s.,):-]|$))?[\s.,):-]*(\S.*?)\s*$/;
+// 「3학년 2반 명단」「10월 5일」「1모둠 …」처럼 숫자에 바로 붙은 머리 줄은 학생으로 보지 않는다 (「5 조 민수」처럼 띄어 쓴 성은 받는다)
+const ROSTER_LINE = /^\s*(\d{1,3})(?!\d)(?!(?:학년|반|모둠|월|일|교시|차시|층|조)(?:\s|$|[0-9]))(?:번(?=[\s.,):-]|$))?[\s.,):-]*(\S.*?)\s*$/;
 const halfDigits = line => line.replace(/[０-９]/g, d => String.fromCharCode(d.charCodeAt(0) - 0xfee0));
 const scoreSum = g => (g && g.scores ? Object.values(g.scores).reduce((a, b) => a + b, 0) : null);
 
@@ -121,8 +121,9 @@ const guarded = {
     const scores = {};
     s.rubric.forEach(r => { if (body.scores && body.scores[r.id] != null) scores[r.id] = int(body.scores[r.id], 1, 3); });
     const { id, ...doc } = y;
-    await db().set('stories', `s${no}`, { ...doc, teacher: { scores, comment: text(body.comment, 600), at: Date.now() } });
-    return { ok: true };
+    const at = Date.now();
+    await db().set('stories', `s${no}`, { ...doc, teacher: { scores, comment: text(body.comment, 600), at } });
+    return { ok: true, at };
   },
   // AI 채점: 한 명(no) 또는 아직 AI 채점이 없는 글 모두(all). 학생 글만 AI 로 간다
   aiGrade: async ({ body }) => {

@@ -79,7 +79,7 @@ async function callJSON(ai, system, user, schema, ms = 45000) { // ms: 이만큼
         headers: { 'content-type': 'application/json', 'x-api-key': ai.key, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({ model: ai.model, max_tokens: 16000, system, messages: [{ role: 'user', content: user }], output_config: { format: { type: 'json_schema', schema } } }),
       });
-      const j = await r.json();
+      const j = await r.json().catch(() => ({})); // JSON 이 아닌 오류 화면(504 등)이 와도 상태 번호로 알린다
       if (!r.ok) throw httpError(502, `AI 오류: ${(j.error && j.error.message) || r.status}`);
       if (j.stop_reason === 'max_tokens') throw Object.assign(httpError(502, 'AI 답이 중간에 끊겼어요. 다시 해 주세요.'), { perStory: true });
       if (j.stop_reason === 'refusal') throw Object.assign(httpError(502, 'AI 가 이 글의 채점을 사양했어요. 선생님 채점으로 해 주세요.'), { perStory: true, refusal: true });
@@ -90,7 +90,7 @@ async function callJSON(ai, system, user, schema, ms = 45000) { // ms: 이만큼
         headers: { 'content-type': 'application/json', authorization: `Bearer ${ai.key}` },
         body: JSON.stringify({ model: ai.model, messages: [{ role: 'system', content: system }, { role: 'user', content: user }], response_format: { type: 'json_schema', json_schema: { name: 'grade', strict: true, schema } } }),
       });
-      const j = await r.json();
+      const j = await r.json().catch(() => ({})); // JSON 이 아닌 오류 화면(504 등)이 와도 상태 번호로 알린다
       if (!r.ok) throw httpError(502, `AI 오류: ${(j.error && j.error.message) || r.status}`);
       out = j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
     }
@@ -140,9 +140,12 @@ comment 는 학생에게 직접 건네는 두세 문장(해요체): 잘한 점 �
   let used = ai, out;
   try { out = await callJSON(ai, sys, userMsg, schema, ms); } catch (e) {
     if (!e.refusal) throw e;
+    const rest = ms - (Date.now() - t0); // 함수 시간 예산(ms) 안에서만 대신 채점한다 (버셀 60초)
+    if (rest < 5000) throw Object.assign(httpError(504, 'Claude 가 이 글의 채점을 사양했고, 업스테이지로 대신 채점할 시간이 모자라요. 다시 해 주세요.'), { perStory: true });
     // Claude 가 채점을 사양하면 기본 업스테이지 Solar 로 다시 매긴다 (선생님 업스테이지 키, 없으면 시험용 업스테이지)
     try { used = { ...(await getAI(s, 'upstage')), model: PROVIDERS.upstage.model }; } catch (e2) { throw Object.assign(httpError(502, `Claude 가 이 글의 채점을 사양했고, 대신 채점할 업스테이지도 없어요. (${e2.message})`), { perStory: true }); }
-    out = await callJSON(used, sys, userMsg, schema, Math.max(5000, ms - (Date.now() - t0)));
+    // 대신 채점의 실패는 이 글에만 생긴 것이라, 「모두 AI 채점」은 이 글만 빼고 이어 간다
+    try { out = await callJSON(used, sys, userMsg, schema, rest); } catch (e3) { throw Object.assign(httpError(e3.status || 502, `Claude 가 이 글의 채점을 사양해 업스테이지로 대신 채점하려 했지만 안 됐어요. (${e3.message})`), { perStory: true }); }
   }
   const scores = {};
   s.rubric.forEach(r => { scores[r.id] = Math.min(3, Math.max(1, Math.round(Number(out.scores && out.scores[r.id]) || 1))); });

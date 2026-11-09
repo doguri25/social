@@ -207,7 +207,7 @@ function openAfter() {
   let starter = [draft && draft.starter, doc && doc.starter].find(v => STARTERS.some(x => x.id === v));
   if (starter == null) starter = STARTERS[Math.floor(Math.random() * STARTERS.length)].id;
   const ta = h('textarea', 'afterta');
-  ta.value = (draft && draft.text && !(doc && doc.at > (draft.at || 0)) && draft.text) || afterText(); // 이 기기 초안보다 나중에 낸 글(다른 기기)이 있으면 그 글
+  ta.value = (draft && draft.text && !(doc && draft.at != null && doc.at > draft.at) && draft.text) || afterText(); // 이 기기 초안보다 나중에 낸 글(다른 기기)이 있으면 그 글 (시각이 없는 예전 초안은 예전처럼 초안 먼저)
   ta.placeholder = '이야기 시작 바로 다음부터 이어서 써요.';
   ta.setAttribute('aria-label', '이후의 이야기');
   const count = h('div', 'aftercount');

@@ -37,6 +37,7 @@ function cleanProgress(p) {
 // ended: 책마다 결말에 닿아 이어 보기를 지운 때 (화면이 보낸 것과 저장된 것 가운데 더 나중). 이 화면에 없는 이어 보기 자리는 지운 것이 아니라
 // 모르는 것(다른 기기가 남김)이라 남기고, 지우는 것은 ended 로만 한다
 function mergeProgress(next, cur, endedIn) {
+  const legacy = endedIn === undefined; // v0.8.2 이하 화면: ended 없이, 결말에 닿으면 그 자리를 빼고 보낸다 (그때처럼 보내지 않은 자리는 지운다)
   const ended = { ...((cur && cur.ended) || {}) };
   for (const [id, t] of Object.entries(endedIn && typeof endedIn === 'object' && !Array.isArray(endedIn) ? endedIn : {}).slice(0, 12)) if (isBook(id) && Number(t) > (ended[id] || 0)) ended[id] = Number(t);
   next.ended = ended;
@@ -49,7 +50,7 @@ function mergeProgress(next, cur, endedIn) {
     n.acts = { ...(o.acts || {}), ...n.acts };
     n.role = n.role || o.role || '';
   }
-  for (const [id, r] of Object.entries(cur.resume || {})) if (r && (!next.resume[id] || r.at > next.resume[id].at)) next.resume[id] = r;
+  for (const [id, r] of Object.entries(cur.resume || {})) if (r && (next.resume[id] ? r.at > next.resume[id].at : !legacy)) next.resume[id] = r;
   drop();
   return next;
 }

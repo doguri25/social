@@ -70,11 +70,13 @@ async function flush(now) {
   NET.queue = NET.queue.filter(a => a.no === NET.me.no); // 앞서 나간 학생이 못 보낸 답을 이 학생 기록에 넣지 않는다
   const answers = NET.queue.splice(0, 60);
   let r = null;
+  const who = NET.me; // 저장이 돌아오는 사이 나가거나 다른 학생이 들어오면 돌아온 값을 이 화면에 넣지 않는다
   // since: 진행을 받아 온 때. 그 뒤에 선생님이 기록을 지웠으면 서버는 이 진행을 받지 않고(stale) 화면은 진행을 다시 받아 온다
   try { r = await api('save', { since: NET.me.since, progress: { books: save.books, resume: save.resume }, ended: NET.ended, answers }, !!now); }
   catch (e) { NET.queue.unshift(...answers); if (e.status === 401) { toast(e.message); enterGuest(); toShelf(); showGate(); } } // 못 보내면 다음에 다시. 코드가 바뀌었으면 손님으로 이어 읽지 않고 첫 화면으로
+  if (r && NET.me !== who) r = null;
   if (r && r.stale && NET.mode === 'student') { // 그사이 나가거나 다른 학생이 들어왔으면 바꾸지 않는다
-    const who = NET.me, old = { books: save.books, resume: save.resume };
+    const old = { books: save.books, resume: save.resume };
     let me = null;
     try { me = await api('me'); } catch (e) { /* 다음 저장 때 다시 */ }
     if (me && NET.me === who && me.no === who.no) {
