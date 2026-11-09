@@ -60,11 +60,12 @@ const shadows = new BABYLON.ShadowGenerator(2048, sun);
 Object.assign(shadows, { usePercentageCloserFiltering: true, bias: 0.0015, normalBias: 0.012 });
 shadows.setDarkness(0.15);
 scene.imageProcessingConfiguration.contrast = 1.08;
+// evening: 창밖은 밤이고 방은 불을 켠 저녁 (집 부엌). 방 밝기·그림자는 낮과 같게 두고(얼굴이 읽히게), 조금 따뜻한 천장 불빛과 은은한 식탁 등
 function setLight(mode, lampAt) {
-  const night = mode === 'night';
+  const night = mode === 'night', eve = mode === 'evening';
   Object.assign(hemi, { diffuse: C3(night ? '#9aa8e0' : '#fff7ec'), groundColor: C3(night ? '#3a3f60' : '#c9b597'), intensity: night ? 0.58 : 0.72 }); // 밤에도 얼굴은 읽히게
-  Object.assign(sun, { diffuse: C3(night ? '#8fa3ff' : '#ffe7c2'), intensity: night ? 0.25 : 1.05 });
-  lamp.intensity = night ? 2.2 : 0;
+  Object.assign(sun, { diffuse: C3(night ? '#8fa3ff' : eve ? '#ffdcb0' : '#ffe7c2'), intensity: night ? 0.25 : eve ? 1.0 : 1.05 });
+  lamp.intensity = night ? 2.2 : eve ? 0.4 : 0;
   if (lampAt) lamp.position = V3(...lampAt);
   scene.clearColor = BABYLON.Color4.FromHexString((night ? BG_NIGHT : BG) + 'ff');
   canvas.parentElement.style.background = night ? BG_NIGHT : BG;
@@ -234,8 +235,9 @@ function wallGroup(parent, side, x, z) {
   return n;
 }
 function wallMeshes(w) { return w.meshes || (w.meshes = w.node.getChildMeshes()); }
+let shotWalls = false; // 컷을 찍는 중: 찍기 안에서 도는 그리기(onBeforeRender)가 벽을 무대 카메라 기준으로 되돌리지 않게
 function updateWalls(instant) {
-  if (!stageNow) return;
+  if (!stageNow || shotWalls) return;
   const dx = camera.position.x - camera.target.x, dz = camera.position.z - camera.target.z;
   const L = Math.hypot(dx, dz) || 1;
   let moving = false;
@@ -252,6 +254,7 @@ function updateWalls(instant) {
 scene.onBeforeRenderObservable.add(() => updateWalls(false));
 // 컷 찍기: 컷 카메라가 벽 바깥에 있을 때만 그 벽을 뺀다. 찍은 뒤 restoreWalls 로 무대 카메라 기준으로 되돌린다
 function wallsForShot(pos) {
+  shotWalls = true;
   stageNow.walls.forEach(w => {
     const p = w.node.getAbsolutePosition();
     w.node.setEnabled((pos.x - p.x) * w.n[0] + (pos.z - p.z) * w.n[1] < 0);
@@ -259,7 +262,7 @@ function wallsForShot(pos) {
     w.vis = -1;
   });
 }
-function restoreWalls() { updateWalls(true); }
+function restoreWalls() { shotWalls = false; updateWalls(true); }
 
 // ---- 화질: 높음(그늘, 빛 번짐, 계단 없는 선) / 낮음. 「자동」은 처음 90장이 느리면 낮춘다 ----
 let pipe = null, ssao = null, slowDevice = false, tier = 'high';

@@ -157,7 +157,7 @@ function portrait(c, face, my) {
   return serial(async () => {
     if (my != null) chk(my);
     if (!shown(c)) return null; // 기다리는 사이 무대에서 빠진 인물은 빈 그림이 되므로 찍지도 저장하지도 않는다
-    const keep = c.face, night = stageNow.def.light === 'night';
+    const keep = c.face, night = stageNow.def.light === 'night'; // 밤 무대만 (저녁 부엌은 방이 밝아 그대로 찍고, 무대 조명이 깜빡이지 않게)
     if (face) setFace(c, face);
     const n = c.faceN;
     if (night) setLight('day'); // 얼굴 사진은 밤 장면에서도 밝게
