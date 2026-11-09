@@ -330,6 +330,7 @@ addEventListener('keydown', e => {
   if (e.key === 'Escape') { if (!$('#settings').hidden) $('#settings').hidden = true; else if (paused) setPaused(false); return; }
   if (!$('#settings').hidden || !$('#gate').hidden || paused) return;
   if (e.isComposing || e.target.closest('input, textarea, select, [contenteditable]')) return; // 글 쓰는 칸에서는 Enter·화살표를 그대로
+  if (e.repeat && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); return; } // 누르고 있어도 새로 초점을 받은 단추(선택지·감정 카드·바구니)가 저절로 눌리지 않게
   if (document.activeElement !== canvas && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) { alphaGoal = camera.alpha + (e.key === 'ArrowLeft' ? 0.35 : -0.35); poke(); return; }
   if ((e.key === 'Enter' || e.key === 'PageDown') && !e.target.closest('button, [role="button"]')) { e.preventDefault(); if (!e.repeat) $('#btnNext').click(); } // 누르고 있어도 한 컷만
 });
@@ -347,7 +348,7 @@ async function boot() {
   const logged = await netBoot(); // 학급 서버가 있으면: QR(?c=)·쿠키로 학생 로그인 (그 전에 책장을 누르면 「로그인 없이」 기록에 섞인다)
   $('#loading').hidden = true;
   const want = 'book' + ARGS.get('book');
-  if (STORIES[want]) startBook(want, ARGS.get('scene')); // 수업 링크는 첫 화면을 건너뛴다
+  if (STORIES[want]) { if (ARGS.get('scene')) startBook(want, ARGS.get('scene')); else { showShelf(); openBook(want); } } // 수업 링크는 첫 화면을 건너뛴다 (이어 볼 자리가 있으면 묻는다)
   else { showShelf(); if (!logged) showGate(); }
   ARGS.delete('scene'); // 장면 바로 열기는 처음 한 번만 (책장에서 다른 책을 열 때는 처음부터)
 }

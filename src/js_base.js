@@ -23,6 +23,9 @@ const save = (() => {
   } catch (e) { /* 저장소를 못 쓰는 기기: 새로 시작 */ }
   return { v: 1, books: {}, set: {} };
 })();
+const isObj = o => !!o && typeof o === 'object' && !Array.isArray(o);
+if (!isObj(save.books)) save.books = {};
+for (const k in save.books) { const b = save.books[k]; if (!isObj(b)) delete save.books[k]; else { if (!Array.isArray(b.endings)) b.endings = []; if (!isObj(b.feels)) b.feels = {}; } } // 깨진 기록 하나로 책장이 죽지 않게
 save.set = Object.assign({ read: false, fs: 1, q: 'auto', sound: true, cls: false, lang: 'ko' }, save.set);
 function store() {
   if (NET.mode === 'student') return netStore();

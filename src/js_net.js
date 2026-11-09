@@ -2,8 +2,9 @@
 // 서버(버셀 서버리스 함수 api/student)가 없는 곳(GitHub Pages, 아티팩트, 파일로 열기)에서는 「로그인 없이 하기」만 보인다
 const APP_URL = 'https://social-ruddy-gamma.vercel.app/';
 const NET = { server: false, mode: 'guest', me: null, queue: [], timer: 0, ended: {} }; // ended: 이 화면에서 결말에 닿아 이어 보기를 지운 때
-save.resume = save.resume || {};
-save.answers = save.answers || [];
+save.resume = isObj(save.resume) ? save.resume : {};
+for (const k in save.resume) { const r = save.resume[k]; if (!isObj(r) || typeof r.scene !== 'string' || typeof r.place !== 'string' || !Array.isArray(r.trail)) delete save.resume[k]; } // 깨진 이어 보기 자리는 버린다
+save.answers = Array.isArray(save.answers) ? save.answers : [];
 const GUEST = { books: save.books, resume: save.resume, answers: save.answers }; // 이 기기 기록 (학생으로 들어와도 지우지 않는다)
 
 async function api(action, data = {}, keepalive = false, ms = 0) { // ms: 이만큼 기다려도 답이 없으면 그만 (첫 화면이 멈추지 않게)

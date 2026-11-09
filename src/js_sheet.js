@@ -145,7 +145,8 @@ function askCompose(spec, pieces) {
       if (tb) out.push(tb);
       const list = h('div', 'pieces');
       order.forEach(pc => {
-        const b = btn(pc.text, 'piece', () => {
+        const b = btn(pc.text, 'piece', e => {
+          if (e.detail > 0) b.blur(); // 마우스로 고른 뒤의 Enter 는 「다음」(이렇게 말하기)
           if (picked.has(pc)) picked.delete(pc); else picked.add(pc);
           b.setAttribute('aria-pressed', picked.has(pc));
           sfx('tap');
@@ -318,6 +319,7 @@ const basketName = k => BASKET[k].replace(/ \(.*\)$/, '');
 function askSort(spec) {
   return waitFor(done => {
     const put = [];
+    let lastPut = 0; // 두 번 빨리 누르면 다음 카드를 읽기도 전에 같은 바구니에 넣지 않게
     const draw = () => {
       const wrap = h('div', 'baskets');
       ['feel', 'act'].forEach(k => {
@@ -345,7 +347,7 @@ function askSort(spec) {
       if (put.length < spec.items.length) {
         out.push(h('p', 'scur', `「${spec.items[put.length].text}」`));
         const row = h('div', 'btnrow');
-        ['feel', 'act'].forEach(k => row.appendChild(btn(BASKET[k], 'sbtn sortbtn', () => { put.push(k); sfx('tap'); draw(); renderAsk(); if (put.length === spec.items.length) { setNext(() => done(put.slice()), '계속'); speak(spec.reveal); } else focusFirst('.sortbtn'); })));
+        ['feel', 'act'].forEach(k => row.appendChild(btn(BASKET[k], 'sbtn sortbtn', e => { if (e.timeStamp - lastPut < 400) return; lastPut = e.timeStamp; put.push(k); sfx('tap'); draw(); renderAsk(); if (put.length === spec.items.length) { setNext(() => done(put.slice()), '계속'); speak(spec.reveal); } else focusFirst('.sortbtn'); })));
         out.push(row, h('p', '', `${put.length + 1} / ${spec.items.length}`));
       } else {
         const box = h('div', 'reveal');

@@ -70,7 +70,8 @@ button:disabled { cursor: default; }
 .cast button.ask::after { content: '?'; position: absolute; top: -6px; right: -4px; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; border: 2px solid var(--ink); background: var(--hot); font-size: 13px; animation: pulse 1.8s ease-in-out infinite; }
 .cast img { width: 100%; aspect-ratio: 1; border-radius: 12px; background: var(--c); display: block; }
 
-.side { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 12px; min-height: 0; }
+.side { display: grid; grid-template-rows: minmax(0, 1fr) minmax(0, auto); gap: 12px; min-height: 0; }
+#ask { min-height: 0; overflow-y: auto; } /* 높이가 낮은 화면(휴대전화 가로·노트북 창)에서도 고르는 칸을 굴려 볼 수 있게 */
 .card { background: var(--card-2); border: 1.5px solid var(--line); border-radius: 16px; padding: 14px; }
 #story { display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow-y: auto; }
 #story.rise { animation: rise .35s ease both; }

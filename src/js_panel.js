@@ -8,7 +8,7 @@ let nextFn = null, nextLabel = '다음';
 let making = 0; // 컷을 찍는 중 (이때 「이전」으로 무대를 바꾸면 새 컷이 엉뚱한 무대·표정으로 찍힌다)
 let shownAt = 0; // 새 컷이 나온 때 (더블클릭·Enter 되풀이로 글·수첩 컷을 건너뛰지 않게)
 function resetHist() { hist = []; hi = -1; renderFoot(); }
-function setNext(fn, label = '다음') { nextFn = fn; nextLabel = label; renderFoot(); }
+function setNext(fn, label = '다음') { if (fn && fn !== nextFn) shownAt = performance.now(); nextFn = fn; nextLabel = label; renderFoot(); } // 새 할 일(첫 장·결말 카드)도 두 번 누름에 건너뛰지 않게
 function renderFoot() {
   const live = hi === hist.length - 1;
   $('#btnPrev').disabled = hi <= 0 || making > 0;
@@ -18,13 +18,13 @@ function renderFoot() {
 }
 // 「다음」을 누를 때까지 기다린다. 지난 컷을 보는 중이면 「다음」은 먼저 지금 컷으로 돌아온다
 function waitNext(label) { return waitFor(done => { setNext(done, label); return () => { if (nextFn === done) setNext(null); }; }); }
-$('#btnNext').addEventListener('click', () => {
-  if (hi === hist.length - 1 && performance.now() - shownAt < 300) return;
+$('#btnNext').addEventListener('click', e => {
+  if (hi === hist.length - 1 && e.timeStamp - shownAt < 300) return; // 누른 때(timeStamp)로 잰다: 앞 클릭 처리가 길어 뒤 클릭이 늦게 와도 막히게
   sfx('tap');
   if (hi < hist.length - 1) { hi++; renderEntry(); return; }
   if (nextFn) nextFn();
 });
-$('#btnPrev').addEventListener('click', () => { if (hi > 0 && !making) { sfx('tap'); hi--; renderEntry(); } });
+$('#btnPrev').addEventListener('click', e => { if (e.detail > 0) e.currentTarget.blur(); if (hi > 0 && !making) { sfx('tap'); hi--; renderEntry(); } }); // 마우스로 누른 뒤의 Enter 는 「다음」
 
 // ---- 컷 만들기: 무대를 찍고, 말하는 사람 얼굴 사진을 붙인다 ----
 const panelW = () => Math.round(clamp(storyEl.clientWidth * 2, 560, 900));
@@ -44,6 +44,7 @@ async function makeEntry(p, my) {
   return e;
 }
 async function showPanel(p, my) {
+  if (hi < hist.length - 1) { hi = hist.length - 1; renderEntry(); } // 지난 컷을 보는 사이 흐름이 이어지면(숨 고르기가 저절로 끝남) 지금 무대로 돌아와서 찍는다
   making++;
   renderFoot();
   let e;

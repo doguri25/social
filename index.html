@@ -77,7 +77,8 @@ button:disabled { cursor: default; }
 .cast button.ask::after { content: '?'; position: absolute; top: -6px; right: -4px; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; border: 2px solid var(--ink); background: var(--hot); font-size: 13px; animation: pulse 1.8s ease-in-out infinite; }
 .cast img { width: 100%; aspect-ratio: 1; border-radius: 12px; background: var(--c); display: block; }
 
-.side { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 12px; min-height: 0; }
+.side { display: grid; grid-template-rows: minmax(0, 1fr) minmax(0, auto); gap: 12px; min-height: 0; }
+#ask { min-height: 0; overflow-y: auto; } /* 높이가 낮은 화면(휴대전화 가로·노트북 창)에서도 고르는 칸을 굴려 볼 수 있게 */
 .card { background: var(--card-2); border: 1.5px solid var(--line); border-radius: 16px; padding: 14px; }
 #story { display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow-y: auto; }
 #story.rise { animation: rise .35s ease both; }
@@ -8054,6 +8055,9 @@ const save = (() => {
   } catch (e) { /* 저장소를 못 쓰는 기기: 새로 시작 */ }
   return { v: 1, books: {}, set: {} };
 })();
+const isObj = o => !!o && typeof o === 'object' && !Array.isArray(o);
+if (!isObj(save.books)) save.books = {};
+for (const k in save.books) { const b = save.books[k]; if (!isObj(b)) delete save.books[k]; else { if (!Array.isArray(b.endings)) b.endings = []; if (!isObj(b.feels)) b.feels = {}; } } // 깨진 기록 하나로 책장이 죽지 않게
 save.set = Object.assign({ read: false, fs: 1, q: 'auto', sound: true, cls: false, lang: 'ko' }, save.set);
 function store() {
   if (NET.mode === 'student') return netStore();
@@ -8187,8 +8191,9 @@ function applyLang(book) {
 // 서버(버셀 서버리스 함수 api/student)가 없는 곳(GitHub Pages, 아티팩트, 파일로 열기)에서는 「로그인 없이 하기」만 보인다
 const APP_URL = 'https://social-ruddy-gamma.vercel.app/';
 const NET = { server: false, mode: 'guest', me: null, queue: [], timer: 0, ended: {} }; // ended: 이 화면에서 결말에 닿아 이어 보기를 지운 때
-save.resume = save.resume || {};
-save.answers = save.answers || [];
+save.resume = isObj(save.resume) ? save.resume : {};
+for (const k in save.resume) { const r = save.resume[k]; if (!isObj(r) || typeof r.scene !== 'string' || typeof r.place !== 'string' || !Array.isArray(r.trail)) delete save.resume[k]; } // 깨진 이어 보기 자리는 버린다
+save.answers = Array.isArray(save.answers) ? save.answers : [];
 const GUEST = { books: save.books, resume: save.resume, answers: save.answers }; // 이 기기 기록 (학생으로 들어와도 지우지 않는다)
 
 async function api(action, data = {}, keepalive = false, ms = 0) { // ms: 이만큼 기다려도 답이 없으면 그만 (첫 화면이 멈추지 않게)
@@ -9858,7 +9863,7 @@ let nextFn = null, nextLabel = '다음';
 let making = 0; // 컷을 찍는 중 (이때 「이전」으로 무대를 바꾸면 새 컷이 엉뚱한 무대·표정으로 찍힌다)
 let shownAt = 0; // 새 컷이 나온 때 (더블클릭·Enter 되풀이로 글·수첩 컷을 건너뛰지 않게)
 function resetHist() { hist = []; hi = -1; renderFoot(); }
-function setNext(fn, label = '다음') { nextFn = fn; nextLabel = label; renderFoot(); }
+function setNext(fn, label = '다음') { if (fn && fn !== nextFn) shownAt = performance.now(); nextFn = fn; nextLabel = label; renderFoot(); } // 새 할 일(첫 장·결말 카드)도 두 번 누름에 건너뛰지 않게
 function renderFoot() {
   const live = hi === hist.length - 1;
   $('#btnPrev').disabled = hi <= 0 || making > 0;
@@ -9868,13 +9873,13 @@ function renderFoot() {
 }
 // 「다음」을 누를 때까지 기다린다. 지난 컷을 보는 중이면 「다음」은 먼저 지금 컷으로 돌아온다
 function waitNext(label) { return waitFor(done => { setNext(done, label); return () => { if (nextFn === done) setNext(null); }; }); }
-$('#btnNext').addEventListener('click', () => {
-  if (hi === hist.length - 1 && performance.now() - shownAt < 300) return;
+$('#btnNext').addEventListener('click', e => {
+  if (hi === hist.length - 1 && e.timeStamp - shownAt < 300) return; // 누른 때(timeStamp)로 잰다: 앞 클릭 처리가 길어 뒤 클릭이 늦게 와도 막히게
   sfx('tap');
   if (hi < hist.length - 1) { hi++; renderEntry(); return; }
   if (nextFn) nextFn();
 });
-$('#btnPrev').addEventListener('click', () => { if (hi > 0 && !making) { sfx('tap'); hi--; renderEntry(); } });
+$('#btnPrev').addEventListener('click', e => { if (e.detail > 0) e.currentTarget.blur(); if (hi > 0 && !making) { sfx('tap'); hi--; renderEntry(); } }); // 마우스로 누른 뒤의 Enter 는 「다음」
 
 // ---- 컷 만들기: 무대를 찍고, 말하는 사람 얼굴 사진을 붙인다 ----
 const panelW = () => Math.round(clamp(storyEl.clientWidth * 2, 560, 900));
@@ -9894,6 +9899,7 @@ async function makeEntry(p, my) {
   return e;
 }
 async function showPanel(p, my) {
+  if (hi < hist.length - 1) { hi = hist.length - 1; renderEntry(); } // 지난 컷을 보는 사이 흐름이 이어지면(숨 고르기가 저절로 끝남) 지금 무대로 돌아와서 찍는다
   making++;
   renderFoot();
   let e;
@@ -10164,7 +10170,8 @@ function askCompose(spec, pieces) {
       if (tb) out.push(tb);
       const list = h('div', 'pieces');
       order.forEach(pc => {
-        const b = btn(pc.text, 'piece', () => {
+        const b = btn(pc.text, 'piece', e => {
+          if (e.detail > 0) b.blur(); // 마우스로 고른 뒤의 Enter 는 「다음」(이렇게 말하기)
           if (picked.has(pc)) picked.delete(pc); else picked.add(pc);
           b.setAttribute('aria-pressed', picked.has(pc));
           sfx('tap');
@@ -10337,6 +10344,7 @@ const basketName = k => BASKET[k].replace(/ \(.*\)$/, '');
 function askSort(spec) {
   return waitFor(done => {
     const put = [];
+    let lastPut = 0; // 두 번 빨리 누르면 다음 카드를 읽기도 전에 같은 바구니에 넣지 않게
     const draw = () => {
       const wrap = h('div', 'baskets');
       ['feel', 'act'].forEach(k => {
@@ -10364,7 +10372,7 @@ function askSort(spec) {
       if (put.length < spec.items.length) {
         out.push(h('p', 'scur', `「${spec.items[put.length].text}」`));
         const row = h('div', 'btnrow');
-        ['feel', 'act'].forEach(k => row.appendChild(btn(BASKET[k], 'sbtn sortbtn', () => { put.push(k); sfx('tap'); draw(); renderAsk(); if (put.length === spec.items.length) { setNext(() => done(put.slice()), '계속'); speak(spec.reveal); } else focusFirst('.sortbtn'); })));
+        ['feel', 'act'].forEach(k => row.appendChild(btn(BASKET[k], 'sbtn sortbtn', e => { if (e.timeStamp - lastPut < 400) return; lastPut = e.timeStamp; put.push(k); sfx('tap'); draw(); renderAsk(); if (put.length === spec.items.length) { setNext(() => done(put.slice()), '계속'); speak(spec.reveal); } else focusFirst('.sortbtn'); })));
         out.push(row, h('p', '', `${put.length + 1} / ${spec.items.length}`));
       } else {
         const box = h('div', 'reveal');
@@ -11063,6 +11071,7 @@ addEventListener('keydown', e => {
   if (e.key === 'Escape') { if (!$('#settings').hidden) $('#settings').hidden = true; else if (paused) setPaused(false); return; }
   if (!$('#settings').hidden || !$('#gate').hidden || paused) return;
   if (e.isComposing || e.target.closest('input, textarea, select, [contenteditable]')) return; // 글 쓰는 칸에서는 Enter·화살표를 그대로
+  if (e.repeat && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); return; } // 누르고 있어도 새로 초점을 받은 단추(선택지·감정 카드·바구니)가 저절로 눌리지 않게
   if (document.activeElement !== canvas && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) { alphaGoal = camera.alpha + (e.key === 'ArrowLeft' ? 0.35 : -0.35); poke(); return; }
   if ((e.key === 'Enter' || e.key === 'PageDown') && !e.target.closest('button, [role="button"]')) { e.preventDefault(); if (!e.repeat) $('#btnNext').click(); } // 누르고 있어도 한 컷만
 });
@@ -11080,7 +11089,7 @@ async function boot() {
   const logged = await netBoot(); // 학급 서버가 있으면: QR(?c=)·쿠키로 학생 로그인 (그 전에 책장을 누르면 「로그인 없이」 기록에 섞인다)
   $('#loading').hidden = true;
   const want = 'book' + ARGS.get('book');
-  if (STORIES[want]) startBook(want, ARGS.get('scene')); // 수업 링크는 첫 화면을 건너뛴다
+  if (STORIES[want]) { if (ARGS.get('scene')) startBook(want, ARGS.get('scene')); else { showShelf(); openBook(want); } } // 수업 링크는 첫 화면을 건너뛴다 (이어 볼 자리가 있으면 묻는다)
   else { showShelf(); if (!logged) showGate(); }
   ARGS.delete('scene'); // 장면 바로 열기는 처음 한 번만 (책장에서 다른 책을 열 때는 처음부터)
 }
