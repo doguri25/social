@@ -144,7 +144,7 @@ function showShelf() {
     row(i, `${i + 1}권 · ${B.title}`, `${B.sub} · 본 결말 ${seenEnds(bookRec(id), B)} / ${B.endings.length}${res ? ` · 이어 보기: ${res.place.split(' · ').pop()}` : ''}`, true, () => openBook(id));
   });
   // 다섯째 칸: 1~4권에서 결말을 하나씩 보면 열리는 「이후의 이야기」
-  const read = ids.slice(0, 4).filter(id => (bookRec(id).endings || []).length).length;
+  const read = ids.slice(0, 4).filter(id => seenEnds(bookRec(id), STORIES[id])).length;
   row(4, '이후의 이야기 쓰기', unlockedAfter() ? (afterText() ? '쓴 글이 있어요 · 고쳐 쓸 수 있어요' : '네 권을 다 읽었어요. 이제 쓸 수 있어요') : `${read} / 4권 읽음 · 네 권에서 결말을 하나씩 보면 열려요`, unlockedAfter(), openAfter);
   const head = h('div', 'endcard');
   const who = h('p', 'whoami');
@@ -161,6 +161,8 @@ function showShelf() {
 // 이어 볼 자리가 있으면 먼저 묻는다
 async function openBook(id) {
   sfx('pick');
+  cancelFlow(); // 앞서 띄운 이어 보기 물음은 거둔다
+  const my = ++runId;
   const res = save.resume[id];
   if (res && !ARGS.get('scene')) {
     const pick = await waitFor(done => {
@@ -173,6 +175,7 @@ async function openBook(id) {
       focusFirst('.sbtn');
       return doneAsk;
     }).catch(() => 'cancel');
+    if (my !== runId) return; // 그새 다른 책·이후의 이야기·책장으로 갔으면 그쪽을 둔다
     if (pick === 'cancel') return showShelf();
     if (pick === 'resume') return startBook(id, null, res);
   }
@@ -214,7 +217,10 @@ function openAfter() {
     box.replaceChildren(h('b', '', `「${st.title}」 · ${st.who}가 들려주는 이야기`), ...st.text.split('\n').map(l => h('p', '', l)));
   };
   const keep = () => { try { localStorage.setItem(draftKey(), JSON.stringify({ text: ta.value, starter })); } catch (e) { /* 저장 못 해도 쓰기는 계속 */ } };
+  let sending = false;
   const submit = async () => {
+    if (sending) return;
+    sending = true;
     const text = ta.value.trim();
     try {
       if (student) { await api('story', { text, starter }); NET.me.story = { text, starter, at: Date.now() }; }
@@ -222,7 +228,7 @@ function openAfter() {
       try { localStorage.removeItem(draftKey()); } catch (e) { /* 없음 */ }
       sfx('end');
       toast(student ? '냈어요! 선생님이 읽어 볼 거예요. 짝과 바꿔 읽은 뒤 고쳐서 다시 낼 수도 있어요.' : '이 기기에 저장했어요.');
-    } catch (e) { toast(e.message); }
+    } catch (e) { toast(e.message); } finally { sending = false; }
   };
   const upd = () => {
     const n = [...ta.value.replace(/\s/g, '')].length;
@@ -286,7 +292,7 @@ function openSettings() {
   let sure = false;
   const wipe = btn('기록 지우기', 'sbtn', () => {
     if (!sure) { sure = true; wipe.textContent = '한 번 더 누르면 지워져요'; return; }
-    save.books = {};
+    for (const k of Object.keys(GUEST.books)) delete GUEST.books[k]; // 이 기기 기록만, 같은 그릇을 비운다 (학급 서버 기록은 그대로)
     store();
     wipe.textContent = '지웠어요';
     wipe.disabled = true;
@@ -323,7 +329,8 @@ $('#btnResume').addEventListener('click', () => setPaused(false));
 $('#btnHome').addEventListener('click', () => { sfx('tap'); flush(true); toast(`지금까지 ${NET.mode === 'student' ? '학급 서버' : '이 기기'}에 저장했어요. 다음에 이 장면부터 이어 볼 수 있어요.`); toShelf(); });
 addEventListener('keydown', e => {
   if (e.key === 'Escape') { if (!$('#settings').hidden) $('#settings').hidden = true; else if (paused) setPaused(false); return; }
-  if (!$('#settings').hidden || paused) return;
+  if (!$('#settings').hidden || !$('#gate').hidden || paused) return;
+  if (e.isComposing || e.target.closest('input, textarea, select, [contenteditable]')) return; // 글 쓰는 칸에서는 Enter·화살표를 그대로
   if (document.activeElement !== canvas && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) { alphaGoal = camera.alpha + (e.key === 'ArrowLeft' ? 0.35 : -0.35); poke(); return; }
   if ((e.key === 'Enter' || e.key === 'PageDown') && !e.target.closest('button, [role="button"]')) { e.preventDefault(); $('#btnNext').click(); }
 });
@@ -338,9 +345,8 @@ async function boot() {
   try { await loadModels(); } catch (e) { console.error(e); $('#loading').textContent = '그림을 불러오지 못했어요. 인터넷 연결을 확인하고 새로 고쳐 주세요.'; return; }
   applyTier();
   loadBook('book1');
-  showShelf();
+  const logged = await netBoot(); // 학급 서버가 있으면: QR(?c=)·쿠키로 학생 로그인 (그 전에 책장을 누르면 「로그인 없이」 기록에 섞인다)
   $('#loading').hidden = true;
-  const logged = await netBoot(); // 학급 서버가 있으면: QR(?c=)·쿠키로 학생 로그인
   const want = 'book' + ARGS.get('book');
   if (STORIES[want]) startBook(want, ARGS.get('scene')); // 수업 링크는 첫 화면을 건너뛴다
   else { showShelf(); if (!logged) showGate(); }

@@ -2,12 +2,13 @@
 // 서버(버셀 서버리스 함수 api/student)가 없는 곳(GitHub Pages, 아티팩트, 파일로 열기)에서는 「로그인 없이 하기」만 보인다
 const APP_URL = 'https://social-ruddy-gamma.vercel.app/';
 const NET = { server: false, mode: 'guest', me: null, queue: [], timer: 0 };
-const GUEST = { books: save.books, resume: save.resume || {}, answers: save.answers || [] }; // 이 기기 기록 (학생으로 들어와도 지우지 않는다)
 save.resume = save.resume || {};
-save.answers = GUEST.answers;
+save.answers = save.answers || [];
+const GUEST = { books: save.books, resume: save.resume, answers: save.answers }; // 이 기기 기록 (학생으로 들어와도 지우지 않는다)
 
-async function api(action, data = {}, keepalive = false) {
-  const r = await fetch('api/student', { method: 'POST', headers: { 'content-type': 'application/json' }, credentials: 'same-origin', keepalive, body: JSON.stringify({ action, ...data }) });
+async function api(action, data = {}, keepalive = false, ms = 0) { // ms: 이만큼 기다려도 답이 없으면 그만 (첫 화면이 멈추지 않게)
+  const signal = ms && typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(ms) : undefined;
+  const r = await fetch('api/student', { method: 'POST', headers: { 'content-type': 'application/json' }, credentials: 'same-origin', keepalive, signal, body: JSON.stringify({ action, ...data }) });
   const j = await r.json().catch(() => null);
   if (!j) throw new Error('서버에 닿지 않아요.');
   if (!r.ok) throw Object.assign(new Error(j.error || '문제가 생겼어요.'), { status: r.status });
@@ -16,8 +17,11 @@ async function api(action, data = {}, keepalive = false) {
 // 처음에 한 번: 서버가 있는지, 이미 들어와 있는지(쿠키), QR 로 왔는지
 async function netBoot() {
   if (location.protocol === 'file:') return false;
-  try { NET.server = !!(await api('ping')).ready; } catch (e) { return false; }
+  try { NET.server = !!(await api('ping', {}, false, 10000)).ready; } catch (e) { return false; }
   if (!NET.server) return false; // 서버는 있지만 선생님이 학급 저장소(MONGODB_URI)를 아직 연결하지 않음
+  let out = false;
+  try { out = !!localStorage.getItem('social-out'); } catch (e) { /* 없음 */ }
+  if (out) { try { await api('logout'); localStorage.removeItem('social-out'); } catch (e) { return false; } } // 나가기 때 못 지운 쿠키를 먼저 지운다
   const code = ARGS.get('c');
   if (code) {
     ARGS.delete('c');
@@ -30,6 +34,7 @@ async function loginCode(code) { await api('login', { code }); enterStudent(awai
 function enterStudent(me) {
   NET.mode = 'student';
   NET.me = me;
+  try { localStorage.removeItem('social-out'); } catch (e) { /* 없음 */ }
   save.books = me.progress.books || {}; // 이 기기 기록과 섞지 않는다
   save.resume = me.progress.resume || {};
 }
@@ -42,28 +47,32 @@ function enterGuest() {
 }
 async function logout() {
   await flush(true);
-  try { await api('logout'); } catch (e) { /* 그래도 나간다 */ }
+  try { await api('logout'); } catch (e) { try { localStorage.setItem('social-out', '1'); } catch (e2) { /* 없음 */ } } // 쿠키가 남으면 다음에 열 때 지운다
   enterGuest();
 }
 // store() 가 부른다: 학생이면 설정만 이 기기에, 진행은 잠시 모았다가 서버로
 function netStore() {
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ set: save.set, books: GUEST.books, resume: GUEST.resume, answers: GUEST.answers })); } catch (e) { /* 저장 실패해도 놀이는 계속 */ }
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 1, set: save.set, books: GUEST.books, resume: GUEST.resume, answers: GUEST.answers, after: save.after })); } catch (e) { /* 저장 실패해도 놀이는 계속 */ }
   clearTimeout(NET.timer);
   NET.timer = setTimeout(() => flush(), 2500);
 }
 async function flush(now) {
   if (NET.mode !== 'student') return;
   clearTimeout(NET.timer);
+  NET.queue = NET.queue.filter(a => a.no === NET.me.no); // 앞서 나간 학생이 못 보낸 답을 이 학생 기록에 넣지 않는다
   const answers = NET.queue.splice(0, 60);
-  try { await api('save', { progress: { books: save.books, resume: save.resume }, answers }, !!now); }
+  let r = null;
+  // since: 진행을 받아 온 때. 그 뒤에 선생님이 기록을 지웠으면 서버는 이 진행을 받지 않고(stale) 화면은 진행을 다시 받아 온다
+  try { r = await api('save', { since: NET.me.since, progress: { books: save.books, resume: save.resume }, answers }, !!now); }
   catch (e) { NET.queue.unshift(...answers); if (e.status === 401) { toast(e.message); enterGuest(); } } // 못 보내면 다음에 다시
+  if (r && r.stale && NET.mode === 'student') { try { enterStudent(await api('me')); } catch (e) { /* 다음 저장 때 다시 */ } }
   if (NET.queue.length) NET.timer = setTimeout(() => flush(), 2500);
 }
 addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(true); });
 // 고른 답 하나를 쌓는다 (감정 카드, 갈림길, 만약에, 하고 싶은 말, 활동, 결말)
 function logAnswer(kind, q, a) {
   const row = { book: BOOK.id, scene: curScene, kind, q: String(q || ''), a, t: Date.now() };
-  if (NET.mode === 'student') { NET.queue.push(row); netStore(); return; }
+  if (NET.mode === 'student') { NET.queue.push(Object.assign(row, { no: NET.me.no })); netStore(); return; }
   GUEST.answers.push(row);
   if (GUEST.answers.length > 400) GUEST.answers.splice(0, GUEST.answers.length - 400);
   store();
@@ -74,4 +83,4 @@ function markResume() {
   store();
 }
 function clearResume() { delete save.resume[BOOK.id]; store(); }
-const unlockedAfter = () => ['book1', 'book2', 'book3', 'book4'].every(id => ((save.books[id] || {}).endings || []).length > 0);
+const unlockedAfter = () => ['book1', 'book2', 'book3', 'book4'].every(id => save.books[id] && STORIES[id] && seenEnds(save.books[id], STORIES[id]) > 0); // 지금 책에 있는 결말만 센다 (책장 「본 결말」과 같게)
