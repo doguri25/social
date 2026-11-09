@@ -332,7 +332,7 @@ addEventListener('keydown', e => {
   if (!$('#settings').hidden || !$('#gate').hidden || paused) return;
   if (e.isComposing || e.target.closest('input, textarea, select, [contenteditable]')) return; // 글 쓰는 칸에서는 Enter·화살표를 그대로
   if (document.activeElement !== canvas && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) { alphaGoal = camera.alpha + (e.key === 'ArrowLeft' ? 0.35 : -0.35); poke(); return; }
-  if ((e.key === 'Enter' || e.key === 'PageDown') && !e.target.closest('button, [role="button"]')) { e.preventDefault(); $('#btnNext').click(); }
+  if ((e.key === 'Enter' || e.key === 'PageDown') && !e.target.closest('button, [role="button"]')) { e.preventDefault(); if (!e.repeat) $('#btnNext').click(); } // 누르고 있어도 한 컷만
 });
 
 // 시험용으로 지금 상태만 읽을 수 있게 (바꾸지는 못함)

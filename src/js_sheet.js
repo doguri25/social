@@ -2,6 +2,7 @@
 const askEl = $('#ask');
 const EMO = [['joy', '기쁨'], ['sad', '슬픔'], ['angry', '화남'], ['worried', '걱정'], ['surprised', '놀람'], ['shy', '부끄러움'], ['hurt', '서운함'], ['calm', '편안함']];
 let askBuild = null, askKind = 'tip', timerT = 0;
+let teachLeft = null, hands = []; // 함께 보기: 남은 생각 시간, 선택지마다 손든 사람 수 (칸을 다시 그려도 이어서)
 function btn(text, cls, onClick) { const b = h('button', cls, text); b.type = 'button'; b.addEventListener('click', onClick); return b; }
 const svg = d => { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('aria-hidden', 'true'); s.innerHTML = d; return s; };
 const ICON = { // innerHTML 에는 이 고정된 그림만 넣는다
@@ -20,33 +21,34 @@ function renderAsk() {
 }
 function focusFirst(sel) { setTimeout(() => { const b = askEl.querySelector(sel); if (b) b.focus({ preventScroll: true }); }, 60); }
 // 할 일이 끝나면 칸을 둘러보기로 되돌린다
-const doneAsk = () => { clearInterval(timerT); setAsk('tip', null); setNext(null); };
+const doneAsk = () => { clearInterval(timerT); teachLeft = null; hands = []; setAsk('tip', null); setNext(null); };
 
 // 함께 보기(전자칠판)에서만: 선생님 질문과 생각 시간
 function teachBox(ask) {
   if (!save.set.cls || !ask) return null;
   const box = h('div', 'teach');
-  const out = h('span', 'tleft', '');
+  const show = () => (teachLeft == null ? '' : teachLeft > 0 ? `${teachLeft}초` : '시간 끝');
+  const out = h('span', 'tleft', show());
   const tm = h('div', 'timer');
   [30, 60, 90].forEach(sec => tm.appendChild(btn(`생각 시간 ${sec}초`, 'chip', () => {
     clearInterval(timerT);
-    let left = sec;
-    out.textContent = `${left}초`;
+    teachLeft = sec;
+    out.textContent = show();
     timerT = setInterval(() => {
-      left--;
-      out.textContent = left > 0 ? `${left}초` : '시간 끝';
-      if (left <= 0) { clearInterval(timerT); sfx('soft'); }
+      teachLeft--;
+      const o = askEl.querySelector('.tleft'); // 칸을 다시 그렸으면 새 칸에
+      if (o) o.textContent = show();
+      if (teachLeft <= 0) { clearInterval(timerT); sfx('soft'); }
     }, 1000);
   })));
   tm.appendChild(out);
   box.append(h('b', '', '선생님 질문'), h('p', '', ask), tm);
   return box;
 }
-function tally() {
+function tally(i) {
   const t = h('div', 'tally');
-  const out = h('output', '', '0');
-  let n = 0;
-  const step = (txt, d, label) => { const b = btn(txt, 'chip', () => { n = Math.max(0, n + d); out.textContent = n; }); b.setAttribute('aria-label', label); return b; };
+  const out = h('output', '', String(hands[i] || 0));
+  const step = (txt, d, label) => { const b = btn(txt, 'chip', () => { hands[i] = Math.max(0, (hands[i] || 0) + d); out.textContent = hands[i]; }); b.setAttribute('aria-label', label); return b; };
   const row = h('div', 'row');
   row.append(step('−', -1, '손든 사람 빼기'), out, step('+', 1, '손든 사람 더하기'));
   t.append(row, h('small', '', '손든 사람'));
@@ -78,7 +80,7 @@ function askChoice(spec, kind) {
         const b = btn('', 'opt ' + ['', 'pink', 'sky'][i % 3], () => { sfx('pick'); done(i); });
         b.append(h('span', 'ico', String(i + 1)), h('span', '', o.text));
         row.appendChild(b);
-        if (save.set.cls) row.appendChild(tally());
+        if (save.set.cls) row.appendChild(tally(i));
         list.appendChild(row);
       });
       out.push(list);
@@ -174,18 +176,19 @@ function breathe() {
     wrap.append(h('div', 'eyebrow', '숨 고르기'), ring, msg, dotsEl);
     actView = () => storyEl.replaceChildren(wrap);
     actView();
-    let n = 0, holding = false, phase = 'idle', t0 = 0, raf = 0, scale = 1;
+    let n = 0, holding = false, phase = 'idle', t0 = 0, raf = 0, scale = 1, pid = null;
     const setScale = s => { scale = s; ring.style.transform = `scale(${s})`; };
     const grow = () => { if (!holding) return; setScale(1 + 0.6 * Math.min(1, (performance.now() - t0) / 3000)); raf = requestAnimationFrame(grow); };
     const down = e => {
       if (phase !== 'idle' || n >= 3) return;
       if (e.preventDefault) e.preventDefault();
+      pid = e.pointerId == null ? null : e.pointerId; // 키보드면 null
       holding = true; phase = 'in'; t0 = performance.now();
       msg.textContent = '들이쉬기…';
       grow();
     };
-    const up = () => {
-      if (!holding) return;
+    const up = e => {
+      if (!holding || (e && e.pointerId != null && pid != null && e.pointerId !== pid)) return; // 다른 손가락을 떼도 숨은 이어진다
       holding = false;
       cancelAnimationFrame(raf);
       if (performance.now() - t0 < 900) { phase = 'idle'; setScale(1); msg.textContent = '조금 더 길게 눌러 볼까요?'; return; }

@@ -5,11 +5,13 @@ const readText = p => [p.pre, ...asList(p.lines).map(l => l.say || l.think || l.
 let hist = [], hi = -1; // 지금 장면에서 본 컷 (「이전」으로 다시 보기)
 let actView = null; // 활동(숨 고르기·몸 신호·바구니)이 옆 칸 위를 쓰는 동안 그 화면을 다시 그리는 함수
 let nextFn = null, nextLabel = '다음';
+let making = 0; // 컷을 찍는 중 (이때 「이전」으로 무대를 바꾸면 새 컷이 엉뚱한 무대·표정으로 찍힌다)
+let shownAt = 0; // 새 컷이 나온 때 (더블클릭·Enter 되풀이로 글·수첩 컷을 건너뛰지 않게)
 function resetHist() { hist = []; hi = -1; renderFoot(); }
 function setNext(fn, label = '다음') { nextFn = fn; nextLabel = label; renderFoot(); }
 function renderFoot() {
   const live = hi === hist.length - 1;
-  $('#btnPrev').disabled = hi <= 0;
+  $('#btnPrev').disabled = hi <= 0 || making > 0;
   const nb = $('#btnNext');
   nb.disabled = live && !nextFn;
   nb.firstChild.textContent = (live ? nextLabel : '다음') + ' ';
@@ -17,11 +19,12 @@ function renderFoot() {
 // 「다음」을 누를 때까지 기다린다. 지난 컷을 보는 중이면 「다음」은 먼저 지금 컷으로 돌아온다
 function waitNext(label) { return waitFor(done => { setNext(done, label); return () => { if (nextFn === done) setNext(null); }; }); }
 $('#btnNext').addEventListener('click', () => {
+  if (hi === hist.length - 1 && performance.now() - shownAt < 300) return;
   sfx('tap');
   if (hi < hist.length - 1) { hi++; renderEntry(); return; }
   if (nextFn) nextFn();
 });
-$('#btnPrev').addEventListener('click', () => { if (hi > 0) { sfx('tap'); hi--; renderEntry(); } });
+$('#btnPrev').addEventListener('click', () => { if (hi > 0 && !making) { sfx('tap'); hi--; renderEntry(); } });
 
 // ---- 컷 만들기: 무대를 찍고, 말하는 사람 얼굴 사진을 붙인다 ----
 const panelW = () => Math.round(clamp(storyEl.clientWidth * 2, 560, 900));
@@ -41,11 +44,15 @@ async function makeEntry(p) {
   return e;
 }
 async function showPanel(p, my) {
-  const e = await makeEntry(p);
+  making++;
+  renderFoot();
+  let e;
+  try { e = await makeEntry(p); } finally { making--; renderFoot(); }
   if (my !== runId) throw CANCEL;
   hist.push(e);
   hi = hist.length - 1;
   renderEntry();
+  shownAt = performance.now();
   sfx('page');
   speak(readText(p));
 }

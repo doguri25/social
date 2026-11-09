@@ -50,10 +50,11 @@ function meets(cond, f = flags) {
 function startBook(id, sceneId, resume) {
   loadBook(id);
   lastBook = id;
+  if (resume && !BOOK.scenes[resume.scene]) resume = null; // 책이 바뀌어 그 장면이 없으면 처음부터 (남은 표시·지나온 길도 버린다)
   flags = resume ? Object.assign({}, resume.flags) : {};
   trail = resume ? resume.trail.slice() : [];
   curPart = null;
-  if (resume && BOOK.scenes[resume.scene]) return runFrom(resume.scene, {});
+  if (resume) return runFrom(resume.scene, {});
   runFrom(sceneId && BOOK.scenes[sceneId] ? sceneId : BOOK.start, {});
 }
 // 새 흐름을 시작하면 앞 흐름의 기다림은 모두 취소된다

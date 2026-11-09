@@ -9815,11 +9815,13 @@ const readText = p => [p.pre, ...asList(p.lines).map(l => l.say || l.think || l.
 let hist = [], hi = -1; // 지금 장면에서 본 컷 (「이전」으로 다시 보기)
 let actView = null; // 활동(숨 고르기·몸 신호·바구니)이 옆 칸 위를 쓰는 동안 그 화면을 다시 그리는 함수
 let nextFn = null, nextLabel = '다음';
+let making = 0; // 컷을 찍는 중 (이때 「이전」으로 무대를 바꾸면 새 컷이 엉뚱한 무대·표정으로 찍힌다)
+let shownAt = 0; // 새 컷이 나온 때 (더블클릭·Enter 되풀이로 글·수첩 컷을 건너뛰지 않게)
 function resetHist() { hist = []; hi = -1; renderFoot(); }
 function setNext(fn, label = '다음') { nextFn = fn; nextLabel = label; renderFoot(); }
 function renderFoot() {
   const live = hi === hist.length - 1;
-  $('#btnPrev').disabled = hi <= 0;
+  $('#btnPrev').disabled = hi <= 0 || making > 0;
   const nb = $('#btnNext');
   nb.disabled = live && !nextFn;
   nb.firstChild.textContent = (live ? nextLabel : '다음') + ' ';
@@ -9827,11 +9829,12 @@ function renderFoot() {
 // 「다음」을 누를 때까지 기다린다. 지난 컷을 보는 중이면 「다음」은 먼저 지금 컷으로 돌아온다
 function waitNext(label) { return waitFor(done => { setNext(done, label); return () => { if (nextFn === done) setNext(null); }; }); }
 $('#btnNext').addEventListener('click', () => {
+  if (hi === hist.length - 1 && performance.now() - shownAt < 300) return;
   sfx('tap');
   if (hi < hist.length - 1) { hi++; renderEntry(); return; }
   if (nextFn) nextFn();
 });
-$('#btnPrev').addEventListener('click', () => { if (hi > 0) { sfx('tap'); hi--; renderEntry(); } });
+$('#btnPrev').addEventListener('click', () => { if (hi > 0 && !making) { sfx('tap'); hi--; renderEntry(); } });
 
 // ---- 컷 만들기: 무대를 찍고, 말하는 사람 얼굴 사진을 붙인다 ----
 const panelW = () => Math.round(clamp(storyEl.clientWidth * 2, 560, 900));
@@ -9851,11 +9854,15 @@ async function makeEntry(p) {
   return e;
 }
 async function showPanel(p, my) {
-  const e = await makeEntry(p);
+  making++;
+  renderFoot();
+  let e;
+  try { e = await makeEntry(p); } finally { making--; renderFoot(); }
   if (my !== runId) throw CANCEL;
   hist.push(e);
   hi = hist.length - 1;
   renderEntry();
+  shownAt = performance.now();
   sfx('page');
   speak(readText(p));
 }
@@ -9974,6 +9981,7 @@ function setHeader(page) {
 const askEl = $('#ask');
 const EMO = [['joy', '기쁨'], ['sad', '슬픔'], ['angry', '화남'], ['worried', '걱정'], ['surprised', '놀람'], ['shy', '부끄러움'], ['hurt', '서운함'], ['calm', '편안함']];
 let askBuild = null, askKind = 'tip', timerT = 0;
+let teachLeft = null, hands = []; // 함께 보기: 남은 생각 시간, 선택지마다 손든 사람 수 (칸을 다시 그려도 이어서)
 function btn(text, cls, onClick) { const b = h('button', cls, text); b.type = 'button'; b.addEventListener('click', onClick); return b; }
 const svg = d => { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('aria-hidden', 'true'); s.innerHTML = d; return s; };
 const ICON = { // innerHTML 에는 이 고정된 그림만 넣는다
@@ -9992,33 +10000,34 @@ function renderAsk() {
 }
 function focusFirst(sel) { setTimeout(() => { const b = askEl.querySelector(sel); if (b) b.focus({ preventScroll: true }); }, 60); }
 // 할 일이 끝나면 칸을 둘러보기로 되돌린다
-const doneAsk = () => { clearInterval(timerT); setAsk('tip', null); setNext(null); };
+const doneAsk = () => { clearInterval(timerT); teachLeft = null; hands = []; setAsk('tip', null); setNext(null); };
 
 // 함께 보기(전자칠판)에서만: 선생님 질문과 생각 시간
 function teachBox(ask) {
   if (!save.set.cls || !ask) return null;
   const box = h('div', 'teach');
-  const out = h('span', 'tleft', '');
+  const show = () => (teachLeft == null ? '' : teachLeft > 0 ? `${teachLeft}초` : '시간 끝');
+  const out = h('span', 'tleft', show());
   const tm = h('div', 'timer');
   [30, 60, 90].forEach(sec => tm.appendChild(btn(`생각 시간 ${sec}초`, 'chip', () => {
     clearInterval(timerT);
-    let left = sec;
-    out.textContent = `${left}초`;
+    teachLeft = sec;
+    out.textContent = show();
     timerT = setInterval(() => {
-      left--;
-      out.textContent = left > 0 ? `${left}초` : '시간 끝';
-      if (left <= 0) { clearInterval(timerT); sfx('soft'); }
+      teachLeft--;
+      const o = askEl.querySelector('.tleft'); // 칸을 다시 그렸으면 새 칸에
+      if (o) o.textContent = show();
+      if (teachLeft <= 0) { clearInterval(timerT); sfx('soft'); }
     }, 1000);
   })));
   tm.appendChild(out);
   box.append(h('b', '', '선생님 질문'), h('p', '', ask), tm);
   return box;
 }
-function tally() {
+function tally(i) {
   const t = h('div', 'tally');
-  const out = h('output', '', '0');
-  let n = 0;
-  const step = (txt, d, label) => { const b = btn(txt, 'chip', () => { n = Math.max(0, n + d); out.textContent = n; }); b.setAttribute('aria-label', label); return b; };
+  const out = h('output', '', String(hands[i] || 0));
+  const step = (txt, d, label) => { const b = btn(txt, 'chip', () => { hands[i] = Math.max(0, (hands[i] || 0) + d); out.textContent = hands[i]; }); b.setAttribute('aria-label', label); return b; };
   const row = h('div', 'row');
   row.append(step('−', -1, '손든 사람 빼기'), out, step('+', 1, '손든 사람 더하기'));
   t.append(row, h('small', '', '손든 사람'));
@@ -10050,7 +10059,7 @@ function askChoice(spec, kind) {
         const b = btn('', 'opt ' + ['', 'pink', 'sky'][i % 3], () => { sfx('pick'); done(i); });
         b.append(h('span', 'ico', String(i + 1)), h('span', '', o.text));
         row.appendChild(b);
-        if (save.set.cls) row.appendChild(tally());
+        if (save.set.cls) row.appendChild(tally(i));
         list.appendChild(row);
       });
       out.push(list);
@@ -10146,18 +10155,19 @@ function breathe() {
     wrap.append(h('div', 'eyebrow', '숨 고르기'), ring, msg, dotsEl);
     actView = () => storyEl.replaceChildren(wrap);
     actView();
-    let n = 0, holding = false, phase = 'idle', t0 = 0, raf = 0, scale = 1;
+    let n = 0, holding = false, phase = 'idle', t0 = 0, raf = 0, scale = 1, pid = null;
     const setScale = s => { scale = s; ring.style.transform = `scale(${s})`; };
     const grow = () => { if (!holding) return; setScale(1 + 0.6 * Math.min(1, (performance.now() - t0) / 3000)); raf = requestAnimationFrame(grow); };
     const down = e => {
       if (phase !== 'idle' || n >= 3) return;
       if (e.preventDefault) e.preventDefault();
+      pid = e.pointerId == null ? null : e.pointerId; // 키보드면 null
       holding = true; phase = 'in'; t0 = performance.now();
       msg.textContent = '들이쉬기…';
       grow();
     };
-    const up = () => {
-      if (!holding) return;
+    const up = e => {
+      if (!holding || (e && e.pointerId != null && pid != null && e.pointerId !== pid)) return; // 다른 손가락을 떼도 숨은 이어진다
       holding = false;
       cancelAnimationFrame(raf);
       if (performance.now() - t0 < 900) { phase = 'idle'; setScale(1); msg.textContent = '조금 더 길게 눌러 볼까요?'; return; }
@@ -10516,10 +10526,11 @@ function meets(cond, f = flags) {
 function startBook(id, sceneId, resume) {
   loadBook(id);
   lastBook = id;
+  if (resume && !BOOK.scenes[resume.scene]) resume = null; // 책이 바뀌어 그 장면이 없으면 처음부터 (남은 표시·지나온 길도 버린다)
   flags = resume ? Object.assign({}, resume.flags) : {};
   trail = resume ? resume.trail.slice() : [];
   curPart = null;
-  if (resume && BOOK.scenes[resume.scene]) return runFrom(resume.scene, {});
+  if (resume) return runFrom(resume.scene, {});
   runFrom(sceneId && BOOK.scenes[sceneId] ? sceneId : BOOK.start, {});
 }
 // 새 흐름을 시작하면 앞 흐름의 기다림은 모두 취소된다
@@ -11013,7 +11024,7 @@ addEventListener('keydown', e => {
   if (!$('#settings').hidden || !$('#gate').hidden || paused) return;
   if (e.isComposing || e.target.closest('input, textarea, select, [contenteditable]')) return; // 글 쓰는 칸에서는 Enter·화살표를 그대로
   if (document.activeElement !== canvas && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) { alphaGoal = camera.alpha + (e.key === 'ArrowLeft' ? 0.35 : -0.35); poke(); return; }
-  if ((e.key === 'Enter' || e.key === 'PageDown') && !e.target.closest('button, [role="button"]')) { e.preventDefault(); $('#btnNext').click(); }
+  if ((e.key === 'Enter' || e.key === 'PageDown') && !e.target.closest('button, [role="button"]')) { e.preventDefault(); if (!e.repeat) $('#btnNext').click(); } // 누르고 있어도 한 컷만
 });
 
 // 시험용으로 지금 상태만 읽을 수 있게 (바꾸지는 못함)
