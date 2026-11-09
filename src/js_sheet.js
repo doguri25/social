@@ -279,9 +279,9 @@ function askSignals(spec) {
       if (shown) setNext(() => done([...picked]), '계속');
       else setNext(picked.size ? () => { shown = true; sfx('pick'); update(); speak(spec.reveal); } : null, '다 찾았어요');
     };
-    const toggle = k => {
+    const toggle = (k, mouse) => {
       if (shown) return;
-      const at = [...askEl.querySelectorAll('.bodychip')].indexOf(document.activeElement); // 다시 그려도 누르던 단추에 머물게
+      const at = mouse ? -1 : [...askEl.querySelectorAll('.bodychip')].indexOf(document.activeElement); // 마우스로 고른 뒤의 Enter 는 「다 찾았어요」 // 다시 그려도 누르던 단추에 머물게
       if (picked.has(k)) picked.delete(k); else picked.add(k);
       sfx('tap');
       update();
@@ -294,7 +294,7 @@ function askSignals(spec) {
       if (tb) out.push(tb);
       const chips = h('div', 'bodychips');
       Object.entries(BODY).forEach(([k, name]) => {
-        const b = btn(name, 'bodychip', () => toggle(k));
+        const b = btn(name, 'bodychip', e => toggle(k, e.detail > 0));
         b.setAttribute('aria-pressed', picked.has(k));
         if (shown) { b.disabled = true; b.classList.toggle('real', spec.parts.includes(k)); }
         chips.appendChild(b);

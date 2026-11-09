@@ -102,7 +102,7 @@ module.exports = route({
     if (answers.length) answers = answers.slice(0, Math.max(0, MAX_ANSWERS - (await db().count('answers', { no: s.no })))); // 상한까지 남은 만큼은 받는다
     await db().insertMany('answers', answers);
     // wiped: 화면이 지운 뒤에 읽은 것을 가려 다시 넣게. ends: 다른 기기에서 본 결말까지 합친 것 (화면이 「이후의 이야기」 열림을 바로 알게)
-    return { ok: true, saved: answers.length, stale, wiped: stale ? wiped : undefined, ends: merged ? Object.fromEntries(Object.entries(merged.books).map(([id, b]) => [id, b.endings])) : undefined };
+    return { ok: true, saved: answers.length, stale, wiped: stale ? wiped : undefined, ends: merged ? Object.fromEntries(Object.entries(merged.books).map(([id, b]) => [id, b.endings])) : undefined, ended: merged ? merged.ended : undefined }; // ended: 다른 기기에서 끝낸 책의 옛 이어 보기 자리를 화면도 지우게
   },
   // 이후의 이야기: 1~4권을 모두 읽은 뒤에만, 정해진 글자 수(띄어쓰기 빼고) 안에서. starter: 선생님이 들려준 이야기 시작 번호
   story: async ({ req, body }) => {

@@ -73,7 +73,9 @@ const h = (tag, attrs = {}, ...kids) => {
   return e;
 };
 async function api(action, data = {}) {
-  const r = await fetch('api/teacher', { method: 'POST', headers: { 'content-type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ action, ...data }) });
+  let r;
+  try { r = await fetch('api/teacher', { method: 'POST', headers: { 'content-type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ action, ...data }) }); }
+  catch (e) { throw new Error('서버에 닿지 않아요. 인터넷 연결을 확인해 주세요.'); }
   const j = await r.json().catch(() => ({ error: '서버에 닿지 않아요. 버셀 주소에서 열어 주세요.' }));
   if (r.status === 401 && action !== 'login') { showLogin(j.error); throw Object.assign(new Error(j.error), { relogin: true }); }
   if (!r.ok) throw new Error(j.error || '문제가 생겼어요.');

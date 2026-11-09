@@ -20,7 +20,7 @@ function buildHot(list, onPick) {
   hidePop();
   hots = list.map(it => {
     const a = h('div', 'hs-a');
-    const b = btn(it.label || '?', 'hs' + (it.cls ? ' ' + it.cls : ''), e => { e.stopPropagation(); onPick(it); });
+    const b = btn(it.label || '?', 'hs' + (it.cls ? ' ' + it.cls : ''), e => { e.stopPropagation(); if (e.detail > 0) b.blur(); onPick(it); });
     b.setAttribute('aria-label', it.label || `${BOOK.castById[it.on] ? BOOK.castById[it.on].name : '물건'} 살펴보기`);
     a.appendChild(b);
     $('#hot').appendChild(a);
@@ -102,7 +102,7 @@ function updateCast() {
   nav.dataset.ids = ids.join();
   nav.replaceChildren(...ids.map(id => {
     const d = BOOK.castById[id];
-    const b = btn('', '', () => { sfx('tap'); pickChar(id); });
+    const b = btn('', '', e => { if (e.detail > 0) b.blur(); sfx('tap'); pickChar(id); });
     b.dataset.id = id;
     b.setAttribute('aria-pressed', id === narrator().id);
     b.setAttribute('aria-label', `${d.name} 살펴보기`);
@@ -216,14 +216,14 @@ function openAfter() {
     const st = STARTERS.find(x => x.id === starter);
     box.replaceChildren(h('b', '', `「${st.title}」 · ${st.who}가 들려주는 이야기`), ...st.text.split('\n').map(l => h('p', '', l)));
   };
-  const keep = () => { try { localStorage.setItem(draftKey(), JSON.stringify({ text: ta.value, starter, at: Date.now() })); } catch (e) { /* 저장 못 해도 쓰기는 계속 */ } };
+  const keep = () => { try { localStorage.setItem(draftKey(), JSON.stringify({ text: ta.value, starter, at: srvNow() })); } catch (e) { /* 저장 못 해도 쓰기는 계속 */ } };
   let sending = false;
   const submit = async () => {
     if (sending) return;
     sending = true;
     const text = ta.value.trim();
     try {
-      if (student) { await api('story', { text, starter }); NET.me.story = { text, starter, at: Date.now() }; }
+      if (student) { await api('story', { text, starter }); NET.me.story = { text, starter, at: srvNow() }; }
       else { save.after = { text, starter, at: Date.now() }; store(); }
       try { localStorage.removeItem(draftKey()); } catch (e) { /* 없음 */ }
       sfx('end');
@@ -296,7 +296,7 @@ function openSettings() {
     wipe.textContent = '지웠어요';
     wipe.disabled = true;
   });
-  const close = btn('닫기', 'btn go', () => { ov.hidden = true; $('#btnSet').focus({ preventScroll: true }); });
+  const close = btn('닫기', 'btn go', e => { ov.hidden = true; if (e.detail > 0) document.activeElement.blur(); else $('#btnSet').focus({ preventScroll: true }); }); // 마우스로 닫은 뒤의 Enter 는 「다음」
   close.style.justifySelf = 'end';
   card.append(
     h('h2', '', '설정'),
@@ -316,14 +316,14 @@ function openSettings() {
   ov.hidden = false;
   close.focus({ preventScroll: true });
 }
-function setPaused(on) {
+function setPaused(on, mouse) {
   paused = on;
   $('#pause').hidden = !on;
-  if (on) { hush(); $('#btnResume').focus({ preventScroll: true }); } else { poke(); $('#btnPause').focus({ preventScroll: true }); }
+  if (on) { hush(); $('#btnResume').focus({ preventScroll: true }); } else { poke(); if (mouse) document.activeElement.blur(); else $('#btnPause').focus({ preventScroll: true }); } // 마우스로 닫은 뒤의 Enter 는 「다음」
 }
 $('#btnSet').addEventListener('click', openSettings);
 $('#btnPause').addEventListener('click', () => setPaused(true));
-$('#btnResume').addEventListener('click', () => setPaused(false));
+$('#btnResume').addEventListener('click', e => setPaused(false, e.detail > 0));
 // 처음 화면으로: 지금 장면을 이어 보기 자리로 저장하고(장면을 시작할 때 이미 적어 둠) 책장으로
 $('#btnHome').addEventListener('click', () => { sfx('tap'); flush(true); toast(`지금까지 ${NET.mode === 'student' ? '학급 서버' : '이 기기'}에 저장했어요. 다음에 이 장면부터 이어 볼 수 있어요.`); toShelf(); });
 addEventListener('keydown', e => {

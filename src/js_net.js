@@ -1,7 +1,9 @@
 // ===== 학급 접속: 접속 코드·QR(?c=코드)로 들어온 학생은 서버에 저장, 「로그인 없이 하기」는 이 기기에만 =====
 // 서버(버셀 서버리스 함수 api/student)가 없는 곳(GitHub Pages, 아티팩트, 파일로 열기)에서는 「로그인 없이 하기」만 보인다
 const APP_URL = 'https://social-ruddy-gamma.vercel.app/';
-const NET = { server: false, mode: 'guest', me: null, queue: [], timer: 0, ended: {} }; // ended: 이 화면에서 결말에 닿아 이어 보기를 지운 때
+const NET = { server: false, mode: 'guest', me: null, queue: [], timer: 0, ended: {}, skew: 0, lost: null }; // ended: 이 화면에서 결말에 닿아 이어 보기를 지운 때
+// 학생이면 서버 시계로 적는다 (기기 시계가 틀려도 선생님이 지운 때·다른 기기에서 끝낸 때와 바르게 견주게)
+const srvNow = () => Date.now() + (NET.mode === 'student' ? NET.skew : 0);
 save.resume = isObj(save.resume) ? save.resume : {};
 for (const k in save.resume) { const r = save.resume[k]; if (!isObj(r) || typeof r.scene !== 'string' || typeof r.place !== 'string' || !Array.isArray(r.trail)) delete save.resume[k]; } // 깨진 이어 보기 자리는 버린다
 save.answers = Array.isArray(save.answers) ? save.answers : [];
@@ -41,10 +43,19 @@ async function loginCode(code) { await api('login', { code }); enterStudent(awai
 function enterStudent(me) {
   NET.mode = 'student';
   NET.me = me;
+  NET.skew = me.since ? me.since - Date.now() : 0;
   NET.ended = {};
   try { localStorage.removeItem('social-out'); } catch (e) { /* 없음 */ }
   save.books = me.progress.books || {}; // 이 기기 기록과 섞지 않는다
   save.resume = me.progress.resume || {};
+  const lost = NET.lost;
+  NET.lost = null;
+  if (lost && lost.no === me.no) { // 코드가 바뀌어 못 보낸 진행(본 결말·이어 보기)을 새 코드로 들어온 뒤 다시 보낸다
+    for (const [id, b] of Object.entries(lost.books)) (b.endings || []).forEach(e => bookRec(id).endings.includes(e) || bookRec(id).endings.push(e));
+    for (const [id, r] of Object.entries(lost.resume)) if (!save.resume[id] || save.resume[id].at < r.at) save.resume[id] = r;
+    NET.ended = Object.assign({}, lost.ended);
+    netStore();
+  }
 }
 function enterGuest() {
   NET.mode = 'guest';
@@ -73,7 +84,7 @@ async function flush(now) {
   const who = NET.me; // 저장이 돌아오는 사이 나가거나 다른 학생이 들어오면 돌아온 값을 이 화면에 넣지 않는다
   // since: 진행을 받아 온 때. 그 뒤에 선생님이 기록을 지웠으면 서버는 이 진행을 받지 않고(stale) 화면은 진행을 다시 받아 온다
   try { r = await api('save', { since: NET.me.since, progress: { books: save.books, resume: save.resume }, ended: NET.ended, answers }, !!now); }
-  catch (e) { NET.queue.unshift(...answers); if (e.status === 401) { toast(e.message); enterGuest(); toShelf(); showGate(); } } // 못 보내면 다음에 다시. 코드가 바뀌었으면 손님으로 이어 읽지 않고 첫 화면으로
+  catch (e) { NET.queue.unshift(...answers); if (e.status === 401) { NET.lost = { no: NET.me.no, books: save.books, resume: save.resume, ended: NET.ended }; toast(e.message); enterGuest(); toShelf(); showGate(); } } // 못 보내면 다음에 다시. 코드가 바뀌었으면 손님으로 이어 읽지 않고 첫 화면으로
   if (r && NET.me !== who) r = null;
   if (r && r.stale && NET.mode === 'student') { // 그사이 나가거나 다른 학생이 들어왔으면 바꾸지 않는다
     const old = { books: save.books, resume: save.resume };
@@ -87,6 +98,9 @@ async function flush(now) {
       netStore();
     }
   } else if (r && r.ends && NET.mode === 'student') { // 다른 기기에서 본 결말을 이 화면에도
+    let gone = false;
+    for (const [id, t] of Object.entries(r.ended || {})) if (save.resume[id] && save.resume[id].at <= t) { delete save.resume[id]; gone = true; } // 다른 기기에서 끝낸 책의 옛 자리
+    if (gone && askKind === 'shelf') showShelf();
     const was = unlockedAfter();
     for (const [id, list] of Object.entries(r.ends)) { if (!STORIES[id]) continue; const rec = bookRec(id); list.forEach(e => rec.endings.includes(e) || rec.endings.push(e)); }
     if (!was && unlockedAfter() && askKind === 'ending') renderAsk(); // 4권 결말 화면에 「이후의 이야기 쓰기」
@@ -96,7 +110,7 @@ async function flush(now) {
 addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(true); });
 // 고른 답 하나를 쌓는다 (감정 카드, 갈림길, 만약에, 하고 싶은 말, 활동, 결말)
 function logAnswer(kind, q, a) {
-  const row = { book: BOOK.id, scene: curScene, kind, q: String(q || ''), a, t: Date.now() };
+  const row = { book: BOOK.id, scene: curScene, kind, q: String(q || ''), a, t: srvNow() };
   if (NET.mode === 'student') { NET.queue.push(Object.assign(row, { no: NET.me.no })); netStore(); return; }
   GUEST.answers.push(row);
   if (GUEST.answers.length > 400) GUEST.answers.splice(0, GUEST.answers.length - 400);
@@ -104,8 +118,8 @@ function logAnswer(kind, q, a) {
 }
 // 이어 보기 자리: 장면을 시작할 때마다 저장, 결말에 닿으면 지운다
 function markResume() {
-  save.resume[BOOK.id] = { scene: curScene, place: BOOK.scenes[curScene].place, flags: Object.assign({}, flags), trail: trail.slice(), at: Date.now() };
+  save.resume[BOOK.id] = { scene: curScene, place: BOOK.scenes[curScene].place, flags: Object.assign({}, flags), trail: trail.slice(), at: srvNow() };
   store();
 }
-function clearResume() { delete save.resume[BOOK.id]; if (NET.mode === 'student') NET.ended[BOOK.id] = Date.now(); store(); } // 서버가 다른 기기에 남은 이 책 자리도 지우게
+function clearResume() { delete save.resume[BOOK.id]; if (NET.mode === 'student') NET.ended[BOOK.id] = srvNow(); store(); } // 서버가 다른 기기에 남은 이 책 자리도 지우게
 const unlockedAfter = () => ['book1', 'book2', 'book3', 'book4'].every(id => save.books[id] && STORIES[id] && seenEnds(save.books[id], STORIES[id]) > 0); // 지금 책에 있는 결말만 센다 (책장 「본 결말」과 같게)
