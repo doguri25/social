@@ -9,7 +9,7 @@ import { openPage, sleep } from './cdp.mjs';
 const shots = resolve(process.argv.slice(2).find(a => a.startsWith('/')) || 'dist/shots-class');
 const dir = mkdtempSync(join(tmpdir(), 'maum-db-'));
 const port = 4200 + Math.floor(Math.random() * 300);
-const srv = spawn(process.execPath, ['tools/dev.mjs', String(port)], { env: { ...process.env, DATA_FILE: join(dir, 'db.json'), MONGODB_URI: '', VERCEL: '' }, stdio: 'ignore' });
+const srv = spawn(process.execPath, ['tools/dev.mjs', String(port)], { env: { ...process.env, DATA_FILE: join(dir, 'db.json'), MONGODB_URI: '', VERCEL: '', AI_RELAY_URL: 'off' }, stdio: 'ignore' });
 process.on('exit', () => { srv.kill(); rmSync(dir, { recursive: true, force: true }); });
 const base = `http://localhost:${port}/`;
 let jar = '';

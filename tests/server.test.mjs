@@ -1,13 +1,26 @@
 // 서버 시험: node tests/server.test.mjs
 // 이 컴퓨터 저장소(임시 파일)로 tools/dev.mjs 를 띄워, 교사 로그인 → 명단·코드 → 학생 코드 로그인 → 진행·답 저장 → 이후의 이야기 → 교사 채점까지 따라간다
 import { spawn } from 'node:child_process';
+import http from 'node:http';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const dir = mkdtempSync(join(tmpdir(), 'maum-db-'));
 const port = 3900 + Math.floor(Math.random() * 300);
-const srv = spawn(process.execPath, ['tools/dev.mjs', String(port)], { env: { ...process.env, DATA_FILE: join(dir, 'db.json'), MONGODB_URI: '', VERCEL: '' }, stdio: 'ignore' });
+// 가짜 쌤비서 중계: 진짜 중계(하루 횟수)를 쓰지 않고, 마음극장 서버가 무엇을 보내는지 본다
+const relayReqs = [];
+const relay = http.createServer((req, res) => {
+  let b = '';
+  req.on('data', c => { b += c; });
+  req.on('end', () => {
+    relayReqs.push({ url: req.url, headers: req.headers, body: JSON.parse(b || '{}') });
+    res.setHeader('content-type', 'application/json');
+    res.end(JSON.stringify({ choices: [{ message: { content: JSON.stringify({ scores: { link: 2, main: 2, sense: 2, heart: 2 }, comment: '좋아요.' }) } }] }));
+  });
+});
+await new Promise(r => relay.listen(0, r));
+const srv = spawn(process.execPath, ['tools/dev.mjs', String(port)], { env: { ...process.env, DATA_FILE: join(dir, 'db.json'), MONGODB_URI: '', VERCEL: '', AI_RELAY_URL: `http://localhost:${relay.address().port}` }, stdio: 'ignore' });
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 let fails = 0;
 const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!cond) fails++; };
@@ -74,7 +87,16 @@ try {
   d = (await T('teacher', 'overview')).body.students;
   ok(d.length === 4 && !d.some(s => s.demo) && !(await T('teacher', 'student', { no: 92 })).body.answers.length && (await T('teacher', 'student', { no: 91 })).body.progress, '예시 학생과 그 기록만 지워짐');
   await T('teacher', 'roster', { text: '1 햇살\n2 구름\n3 단풍', dropRemoved: true });
-  ok(/키가 없어요/.test((await T('teacher', 'aiGrade', { no: 1 })).body.error || ''), 'AI 키가 없으면 알려 줌');
+  if (Date.now() <= Date.UTC(2027, 2, 31, 14, 59, 59)) { // 시험용 업스테이지 기한 (2027. 3. 31.) 안
+    ok((await T('teacher', 'overview')).body.settings.testAI.until === '2027. 3. 31.', '업스테이지 키가 없으면 시험용 업스테이지(쌤비서 중계)를 쓴다고 알려 줌');
+    const g1 = await T('teacher', 'aiGrade', { no: 1 });
+    const rq = relayReqs[0] || { headers: {}, body: {} };
+    ok(g1.body.done === 1 && rq.url === '/api/chat' && rq.headers.origin === 'https://social-ruddy-gamma.vercel.app' && !rq.headers.authorization && /^solar/.test(rq.body.model) && rq.body.response_format, '시험용 채점은 중계로: 마음극장 주소, 키 없이, Solar 모델');
+    ok((await T('teacher', 'stories')).body.stories.find(y => y.no === 1).ai.test === true, '시험용으로 채점했다고 남김');
+  }
+  await T('teacher', 'settings', { provider: 'openai' });
+  ok(/키가 없어요/.test((await T('teacher', 'aiGrade', { no: 1 })).body.error || ''), '다른 AI 를 고르고 키가 없으면 알려 줌');
+  await T('teacher', 'settings', { provider: 'upstage' });
   await T('teacher', 'settings', { keys: { claude: 'sk-ant-test-1234567890' }, minChars: 300 });
   const pub = (await T('teacher', 'overview')).body.settings;
   ok(pub.keys.claude === 'sk-a••••7890' && pub.minChars === 300, 'AI 키는 가린 모양으로만 돌아옴');
@@ -101,6 +123,7 @@ try {
   fails++;
 } finally {
   srv.kill();
+  relay.close();
   rmSync(dir, { recursive: true, force: true });
 }
 console.log(fails ? `실패 ${fails}개` : '통과');
