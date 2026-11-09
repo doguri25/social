@@ -92,8 +92,10 @@ const ys = (await teacher('stories')).stories;
 ok(ys.length === 1 && ys[0].text.startsWith('다음 주 월요일') && second.includes(titles[ys[0].starter]), '낸 글과 이야기 시작이 학급 서버에 저장됨');
 // 4권 결말 화면에서 바로 이후의 이야기로
 await send('Page.navigate', { url: base + '?book=4&scene=s15' });
+// 컴퓨터가 바쁘면 책이 뜨는 데만 한참 걸리므로, 먼저 다 뜨기를 기다린다
+await wait(`window.__maum && document.querySelector('#loading').hidden`, 60000);
 let found = false;
-for (let i = 0; i < 60 && !found; i++) {
+for (let i = 0; i < 90 && !found; i++) {
   await sleep(700);
   found = await run(`(() => { const b = [...document.querySelectorAll('#ask .sbtn')].find(x => x.textContent === '이후의 이야기 쓰기'); if (b) b.click(); return !!b; })()`);
   if (!found) await run(`(() => { const b = document.querySelector('#btnNext'); if (b && !b.disabled) b.click(); const o = document.querySelector('#ask .opt'); if (o) o.click(); })()`);
