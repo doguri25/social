@@ -16,8 +16,11 @@ async function auth(req) {
   if (!x || !x.startsWith('t:') || Number(exp) < Date.now() || Number(v) !== ((pin && pin.v) || 0)) throw httpError(401, '선생님 비밀번호를 입력해 주세요.');
   return pin;
 }
-// 한 학생의 진행·답·글을 지운다 (명단은 그대로)
-const wipe = no => Promise.all([db().del('progress', `s${no}`), db().delWhere('answers', { no }), db().del('stories', `s${no}`)]);
+// 한 학생의 진행·답·글을 지운다 (명단은 그대로). 지운 때를 남겨, 그 전에 열린 학생 화면이 옛 진행을 다시 올리지 못하게 한다 (api/student.js save)
+const wipe = no => Promise.all([db().del('progress', `s${no}`), db().delWhere('answers', { no }), db().del('stories', `s${no}`), db().set('meta', `wiped:s${no}`, { at: Date.now() })]);
+// 명단 한 줄: 「번호 가명」. 「1. 햇살」「1) 햇살」「1번 햇살」「1햇살」「１ 햇살」도 받는다 (teacher.html 도 같은 규칙)
+const ROSTER_LINE = /^\s*(\d{1,3})(?!\d)(?:번)?[\s.,):-]*(\S.*?)\s*$/;
+const halfDigits = line => line.replace(/[０-９]/g, d => String.fromCharCode(d.charCodeAt(0) - 0xfee0));
 const scoreSum = g => (g && g.scores ? Object.values(g.scores).reduce((a, b) => a + b, 0) : null);
 
 const open = {
@@ -46,8 +49,11 @@ const guarded = {
   // 한눈에: 명단과 학생마다 읽은 결말 수, 답 수, 이후의 이야기 상태
   overview: async ({ pin }) => {
     const [students, progress, stories, count, s] = await Promise.all([getRoster(), db().find('progress'), db().find('stories'), db().countBy('answers', 'no'), getSettings()]);
+    const onRoster = new Set(students.map(st => st.no));
     return {
       pinSet: !!pin,
+      // 명단에서 뺐지만 기록을 남겨 둔 번호 (그 번호에 새 학생을 넣을 때 선생님께 묻는다)
+      orphans: [...new Set([...progress.map(x => x.no), ...stories.map(x => x.no), ...Object.keys(count).map(Number)])].filter(no => !onRoster.has(no)).sort((a, b) => a - b),
       settings: publicSettings(s),
       students: students.map(st => {
         const p = progress.find(x => x.no === st.no), y = stories.find(x => x.no === st.no);
@@ -60,18 +66,19 @@ const guarded = {
     };
   },
   // 명단: 한 줄에 「번호 가명」. 같은 번호는 원래 코드를 그대로 쓴다. dropRemoved: 명단에서 빠진 번호의 기록도 지운다
+  // wipeNew: 새로 넣는 번호 가운데, 예전 학생 기록이 남아 있어 지우고 시작할 번호 (새 학생이 남의 기록을 물려받지 않게)
   roster: async ({ body }) => {
     const old = await getRoster();
     // 예시 학생은 명단 글에 나오지 않고 그대로 남는다. 같은 번호를 적으면 실제 학생이 그 자리를 쓰고 예시 기록은 지운다
     const demo = old.filter(s => s.demo);
     const taken = new Set(old.map(s => s.code));
     const seen = new Set();
-    const students = [];
+    const students = [], skipped = [];
     for (const line of text(body.text, 6000).split('\n')) {
-      const m = /^\s*(\d{1,3})[\s.,)]+(.+?)\s*$/.exec(line);
-      if (!m) continue;
+      const m = ROSTER_LINE.exec(halfDigits(line));
+      if (!m) { if (line.trim()) skipped.push(line.trim().slice(0, 30)); continue; }
       const no = Number(m[1]);
-      if (seen.has(no)) continue;
+      if (seen.has(no)) { skipped.push(line.trim().slice(0, 30)); continue; }
       seen.add(no);
       const prev = old.find(s => s.no === no && !s.demo);
       const code = prev ? prev.code : newCode(taken);
@@ -83,8 +90,10 @@ const guarded = {
     students.sort((a, b) => a.no - b.no);
     const removed = old.filter(s => !s.demo && !seen.has(s.no)).map(s => s.no);
     if (body.dropRemoved) for (const no of removed) await wipe(no);
+    const fresh = new Set([].concat(body.wipeNew || []).map(Number));
+    for (const st of students) if (!st.demo && fresh.has(st.no) && !old.some(o => o.no === st.no)) await wipe(st.no); // 지금 명단에 있던 학생 기록은 건드리지 않는다
     await setRoster(students);
-    return { students, removed };
+    return { students, removed, skipped: skipped.slice(0, 10) };
   },
   newCode: async ({ body }) => {
     const no = int(body.no, 0, 999);
@@ -122,12 +131,16 @@ const guarded = {
     const list = body.all ? (await db().find('stories')).filter(y => !demo.has(y.no) && (!y.ai || y.ai.at < y.at)) : [await db().get('stories', `s${int(body.no, 0, 999)}`)];
     let done = 0;
     const t0 = Date.now();
-    for (const y of list.slice(0, 3)) { // 함수 한 번에 세 편까지, 35초를 넘기면 멈춘다 (버셀 시간 제한 60초)
+    for (const y of list.slice(0, 3)) { // 함수 한 번에 세 편까지. AI 를 기다리는 시간까지 합해 55초 안에 끝낸다 (버셀 시간 제한 60초)
       if (!y) throw httpError(404, '아직 쓴 글이 없어요.');
-      if (done && Date.now() - t0 > 35000) break;
-      const ai = await aiGrade(s, y.text, y.starter);
-      const { id, ...doc } = y;
-      await db().set('stories', `s${y.no}`, { ...doc, ai });
+      const left = 55000 - (Date.now() - t0);
+      if (done && left < 20000) break;
+      const ai = await aiGrade(s, y.text, y.starter, Math.min(45000, left));
+      // AI 를 기다리는 동안 학생이 글을 고쳐 냈을 수 있다: 새 글을 덮어쓰지 않고, 옛 글의 점수로 남겨 「다시 채점」 대상이 되게 한다
+      const cur = await db().get('stories', `s${y.no}`);
+      if (!cur) continue;
+      const { id, ...doc } = cur;
+      await db().set('stories', `s${y.no}`, { ...doc, ai: cur.text === y.text ? ai : { ...ai, at: Math.min(ai.at, cur.at - 1) } });
       done++;
     }
     return { done, left: Math.max(0, list.length - done) };
@@ -143,8 +156,9 @@ const guarded = {
       if (k === '') delete next.keys[p]; // 빈 글자 = 지우기, 안 보내면 그대로
       else if (typeof k === 'string' && k.trim()) next.keys[p] = encrypt(k.trim().slice(0, 300));
     }
-    if (Array.isArray(body.rubric) && body.rubric.length) {
-      next.rubric = body.rubric.slice(0, 6).map((r, i) => ({ id: text(r.id || `c${i}`, 20).replace(/[^\w]/g, '') || `c${i}`, name: text(r.name, 30), levels: [0, 1, 2].map(k => text(r.levels && r.levels[k], 200)) }));
+    const rubric = Array.isArray(body.rubric) ? body.rubric.filter(r => r && typeof r === 'object') : [];
+    if (rubric.length) {
+      next.rubric = rubric.slice(0, 6).map((r, i) => ({ id: text(r.id || `c${i}`, 20).replace(/[^\w]/g, '') || `c${i}`, name: text(r.name, 30), levels: [0, 1, 2].map(k => text(r.levels && r.levels[k], 200)) }));
     }
     if (body.minChars != null) next.minChars = int(body.minChars, 50, 2000);
     if (body.maxChars != null) next.maxChars = int(body.maxChars, next.minChars, 5000);
@@ -176,7 +190,7 @@ const guarded = {
   },
   // 기록 지우기: 한 명(no) 또는 반 전체(all). 명단과 설정은 남는다
   clear: async ({ body }) => {
-    if (body.all) { for (const col of ['progress', 'answers', 'stories']) await db().delWhere(col, {}); return { ok: true }; }
+    if (body.all) { for (const col of ['progress', 'answers', 'stories']) await db().delWhere(col, {}); await db().set('meta', 'wiped:all', { at: Date.now() }); return { ok: true }; }
     await wipe(int(body.no, 0, 999));
     return { ok: true };
   },

@@ -3,7 +3,7 @@
 # 이미 있는 파일은 덮어쓰지 않고, 새로 생긴 글만 더한다. python3 tools/i18n.py check vi 는 빠진 줄 수를 센다.
 import json, sys, glob, os
 
-TEXT_KEYS = {'title', 'sub', 'place', 'cap', 'pre', 'text', 'say', 'shout', 'think', 'whisper', 'q', 'ask', 'reveal', 'same', 'back', 'intro', 'name'}
+TEXT_KEYS = {'title', 'sub', 'place', 'cap', 'pre', 'text', 'say', 'shout', 'think', 'whisper', 'q', 'ask', 'reveal', 'same', 'back', 'intro', 'name', 'sfx'}  # sfx: 컷 위 효과음 글자
 SKIP_UNDER = {'set', 'faces', 'poses', 'when', 'add', 'is', 'on', 'stage'}  # 무대 상태·조건 같은 이름표는 번역하지 않는다
 
 def walk(o, path, out):

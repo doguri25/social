@@ -89,7 +89,8 @@ function db() {
 const storageReady = () => !!process.env.MONGODB_URI || !onVercel();
 
 // ---- 시도 횟수 제한: 정해진 시간 안에 max 번까지. 아이피는 해시로만 저장한다 ----
-const ipOf = req => crypto.createHash('sha256').update(String(req.headers['x-real-ip'] || String(req.headers['x-forwarded-for'] || '').split(',')[0] || (req.socket && req.socket.remoteAddress) || '').trim()).digest('base64url').slice(0, 16);
+// 아이피 머리글은 버셀이 덮어쓸 때만 믿는다 (이 컴퓨터 서버에서는 누구나 머리글을 바꿔 시도 제한을 피할 수 있으므로 접속한 주소를 쓴다)
+const ipOf = req => crypto.createHash('sha256').update(String((onVercel() && (req.headers['x-real-ip'] || String(req.headers['x-forwarded-for'] || '').split(',')[0])) || (req.socket && req.socket.remoteAddress) || '').trim()).digest('base64url').slice(0, 16);
 async function throttle(key, max, windowMs) {
   const id = `try:${key}`;
   let doc = await db().inc('meta', id, 'n');
@@ -97,6 +98,11 @@ async function throttle(key, max, windowMs) {
   return doc.n > max ? { wait: Math.ceil((doc.start + windowMs - Date.now()) / 1000) } : {};
 }
 const forgive = key => db().del('meta', `try:${key}`);
+// 세지 않고 지금 막혀 있는지만 본다 (틀렸을 때만 throttle 로 세는 곳에서 쓴다). 막혔으면 남은 초
+async function blocked(key, max, windowMs) {
+  const doc = await db().get('meta', `try:${key}`);
+  return doc && doc.start && Date.now() - doc.start <= windowMs && doc.n >= max ? Math.ceil((doc.start + windowMs - Date.now()) / 1000) : 0;
+}
 
 // ---- 교사 비밀번호: 처음은 1324. 바꾸면 scrypt 로 바꿔 저장(숫자 4~12자리, 마음빛과 같게).
 // 버셀 환경 변수 TEACHER_PASSWORD 가 있으면 그 값은 늘 들어갈 수 있는 되찾기 비밀번호가 되고, 처음 비밀번호 1324 는 쓰지 않는다 ----
@@ -162,7 +168,12 @@ async function readBody(req) {
   try { body = req.body; } catch { throw httpError(400, 'JSON 이 아니에요.'); } // 버셀은 읽을 때 JSON 을 푼다
   if (body === undefined || typeof body === 'string' || Buffer.isBuffer(body)) {
     let raw = typeof body === 'string' ? body : Buffer.isBuffer(body) ? body.toString('utf8') : '';
-    if (body === undefined) for await (const ch of req) { raw += ch; if (raw.length > 300000) throw httpError(413, '보낸 내용이 너무 커요.'); }
+    if (body === undefined) { // 조각을 모은 뒤 한 번에 푼다 (조각 경계에 걸린 한글이 깨지지 않게)
+      const bufs = [];
+      let n = 0;
+      for await (const ch of req) { bufs.push(Buffer.from(ch)); if ((n += ch.length) > 300000) throw httpError(413, '보낸 내용이 너무 커요.'); }
+      raw = Buffer.concat(bufs).toString('utf8');
+    }
     try { body = JSON.parse(raw || '{}'); } catch { throw httpError(400, 'JSON 이 아니에요.'); }
   }
   if (!body || typeof body !== 'object' || Array.isArray(body)) throw httpError(400, '보낸 내용이 맞지 않아요.');
@@ -197,4 +208,4 @@ function route(actions) {
 const text = (v, max) => String(v == null ? '' : v).slice(0, max);
 const int = (v, lo, hi) => { const n = Math.round(Number(v)); if (!Number.isFinite(n) || n < lo || n > hi) throw httpError(400, '숫자가 맞지 않아요.'); return n; };
 
-module.exports = { storageReady, httpError, sign, unsign, db, ipOf, throttle, forgive, validPin, makePin, checkPassword, encrypt, decrypt, mask, newCode, cookies, setCookie, route, text, int };
+module.exports = { storageReady, httpError, sign, unsign, db, ipOf, throttle, forgive, blocked, validPin, makePin, checkPassword, encrypt, decrypt, mask, newCode, cookies, setCookie, route, text, int };

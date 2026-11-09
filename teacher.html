@@ -75,7 +75,7 @@ const h = (tag, attrs = {}, ...kids) => {
 async function api(action, data = {}) {
   const r = await fetch('api/teacher', { method: 'POST', headers: { 'content-type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ action, ...data }) });
   const j = await r.json().catch(() => ({ error: '서버에 닿지 않아요. 버셀 주소에서 열어 주세요.' }));
-  if (r.status === 401 && action !== 'login') { showLogin(j.error); throw new Error(j.error); }
+  if (r.status === 401 && action !== 'login') { showLogin(j.error); throw Object.assign(new Error(j.error), { relogin: true }); }
   if (!r.ok) throw new Error(j.error || '문제가 생겼어요.');
   return j;
 }
@@ -90,6 +90,17 @@ const demoTag = s => (s.demo ? h('span', { class: 'tag demo' }, '예시') : '');
 // 이후의 이야기 시작: 학생 화면에는 여섯 가지 가운데 하나가 무작위로 나온다. 선생님은 여기서 골라 읽어 준다
 const starterBox = x => h('details', {}, h('summary', {}, `「${x.title}」 · ${x.who}가 들려주는 이야기`), h('div', { class: 'story' }, x.text));
 let data = null, tab = 'roster';
+// 단추에서 부른 일이 실패하면 알려 준다 (로그인이 풀린 것은 이미 로그인 화면으로 돌아갔다)
+const safe = fn => async (...a) => { try { await fn(...a); } catch (e) { if (!e.relogin) alert(e.message); } };
+// 화면을 다시 그린 뒤에도 보여 줄 한마디 (저장했어요 등)
+let flash = '';
+const takeFlash = () => { const f = flash; flash = ''; return f; };
+// 명단 한 줄: 「번호 가명」 (api/teacher.js 의 ROSTER_LINE 과 같은 규칙)
+const ROSTER_LINE = /^\s*(\d{1,3})(?!\d)(?:번)?[\s.,):-]*(\S.*?)\s*$/;
+const halfDigits = line => line.replace(/[０-９]/g, d => String.fromCharCode(d.charCodeAt(0) - 0xfee0));
+const lineNo = l => { const m = ROSTER_LINE.exec(halfDigits(l)); return m ? Number(m[1]) : null; };
+const drafts = {}; // 아직 저장하지 않은 선생님 채점 (AI 채점 뒤 목록을 다시 그려도 남게)
+let detailSeq = 0;
 
 function showLogin(msg) {
   $('#tabs').hidden = true; $('#out').hidden = true;
@@ -107,7 +118,7 @@ async function load() {
   const tabs = $('#tabs');
   tabs.hidden = false;
   const list = [['roster', '명단·QR'], ['lesson', '수업 흐름'], ['records', '학생 기록'], ['stories', '이후의 이야기'], ['settings', '설정']];
-  tabs.replaceChildren(...list.map(([k, t]) => h('button', { 'aria-pressed': String(tab === k), on: { click: () => { tab = k; load(); } } }, t)));
+  tabs.replaceChildren(...list.map(([k, t]) => h('button', { 'aria-pressed': String(tab === k), on: { click: safe(() => { tab = k; return load(); }) } }, t)));
   ({ roster, lesson, records, stories, settings })[tab]();
 }
 
@@ -115,28 +126,35 @@ async function load() {
 function roster() {
   const ta = h('textarea', { rows: 8, placeholder: '1 햇살\n2 구름\n3 단풍' }, data.students.filter(s => !s.demo).map(s => `${s.no} ${s.alias}`).join('\n'));
   const demos = data.students.filter(s => s.demo).length;
-  const msg = h('span', { class: 'soft' });
+  const msg = h('span', { class: 'soft' }, takeFlash());
   const realTa = h('textarea', { rows: 4, placeholder: '1 김하늘\n2 이도윤' }, Object.entries(real()).map(([n, v]) => `${n} ${v}`).join('\n'));
   const origin = location.origin + location.pathname.replace(/teacher\.html$/, '');
-  const qrImg = code => { const q = qrcode(0, 'M'); q.addData(`${origin}?c=${code}`); q.make(); return h('img', { src: q.createDataURL(4, 2), alt: `${code} QR` }); };
+  const qrImg = code => { if (typeof qrcode !== 'function') return h('p', { class: 'soft' }, 'QR 그림을 불러오지 못했어요. 아래 코드를 넣어 들어와요.'); const q = qrcode(0, 'M'); q.addData(`${origin}?c=${code}`); q.make(); return h('img', { src: q.createDataURL(4, 2), alt: `${code} QR` }); };
   $('#main').replaceChildren(
     h('section', { class: 'card no-print' }, h('h2', {}, '반 명단'), h('p', { class: 'soft' }, '한 줄에 한 명, 「번호 가명」으로 적어요. 실명 대신 가명이나 별명을 권해요. 서버에는 번호와 가명만 저장해요.'), ta,
       h('div', { class: 'row', style: 'margin-top:8px' }, msg, h('span', { class: 'grow' }), h('button', { class: 'btn', on: { click: async () => {
         // 명단에서 빠지는 번호가 있으면 그 학생 기록도 지울지 묻는다 (지우지 않으면 기록은 남는다)
-        const keep = new Set(ta.value.split('\n').map(l => (/^\s*(\d{1,3})/.exec(l) || [])[1]).filter(Boolean).map(Number));
+        const keep = new Set(ta.value.split('\n').map(lineNo).filter(n => n != null));
         const gone = data.students.filter(s => !s.demo && !keep.has(s.no));
         const dropRemoved = gone.length > 0 && confirm(`명단에서 빠지는 ${gone.map(s => s.no + '번').join(', ')}의 기록(진행, 답, 글)도 지울까요?\n취소를 누르면 기록은 남아요.`);
-        try { const r = await api('roster', { text: ta.value, dropRemoved }); msg.textContent = `${r.students.length}명을 저장했어요. 같은 번호는 원래 코드를 그대로 써요.`; load(); } catch (e) { msg.textContent = e.message; }
+        // 명단에서 뺄 때 남겨 둔 기록이 있는 번호에 학생을 넣으면, 새 학생인지 묻는다 (새 학생이 남의 기록을 물려받지 않게)
+        const reused = [...keep].filter(no => (data.orphans || []).includes(no));
+        const wipeNew = reused.length && confirm(`${reused.map(n => n + '번').join(', ')}에는 명단에서 뺄 때 남겨 둔 기록이 있어요.\n새 학생이면 [확인]을 눌러 예전 기록을 지우고 시작해요.\n같은 학생을 다시 넣는 거면 [취소]를 눌러 기록을 이어서 써요.`) ? reused : [];
+        try {
+          const r = await api('roster', { text: ta.value, dropRemoved, wipeNew });
+          flash = `${r.students.filter(s => !s.demo).length}명을 저장했어요. 같은 번호는 원래 코드를 그대로 써요.${r.skipped && r.skipped.length ? ` 알아보지 못한 줄(빠짐): ${r.skipped.join(' / ')}` : ''}`;
+          await load();
+        } catch (e) { if (!e.relogin) msg.textContent = e.message; }
       } } }, '명단 저장'))),
     h('section', { class: 'card no-print' }, h('h2', {}, '예시 학생'), h('p', { class: 'soft' }, `수업 전에 선생님 화면을 미리 둘러볼 수 있게, 읽은 정도가 서로 다른 「예시-」 학생 다섯 명(91번부터)과 답·이후의 이야기를 넣어요. 반 명단 글에는 나오지 않아요.${demos ? ` 지금 ${demos}명이 있어요.` : ''}`),
-      h('div', { class: 'row' }, h('button', { class: 'sub', on: { click: async () => { await api('seedDemo'); load(); } } }, demos ? '예시 학생 새로 넣기' : '예시 학생 넣기'),
-        demos ? h('button', { class: 'sub', on: { click: async () => { if (confirm('예시 학생과 그 기록을 지울까요? 실제 학생 기록은 남아요.')) { await api('clearDemo'); load(); } } } }, '예시 학생 지우기') : '')),
+      h('div', { class: 'row' }, h('button', { class: 'sub', on: { click: safe(async () => { await api('seedDemo'); await load(); }) } }, demos ? '예시 학생 새로 넣기' : '예시 학생 넣기'),
+        demos ? h('button', { class: 'sub', on: { click: safe(async () => { if (confirm('예시 학생과 그 기록을 지울까요? 실제 학생 기록은 남아요.')) { await api('clearDemo'); await load(); } }) } }, '예시 학생 지우기') : '')),
     h('section', { class: 'card no-print' }, h('h2', {}, '실명 보기 (이 컴퓨터에만)'), h('p', { class: 'soft' }, '「번호 이름」을 넣으면 이 브라우저에만 저장돼요. 서버와 AI 로는 보내지 않아요.'), realTa,
-      h('div', { class: 'row', style: 'margin-top:8px' }, h('button', { class: 'sub', on: { click: () => { const m = {}; realTa.value.split('\n').forEach(l => { const x = /^\s*(\d+)\s+(.+)$/.exec(l); if (x) m[x[1]] = x[2].trim(); }); localStorage.setItem('maum-real', JSON.stringify(m)); load(); } } }, '이 컴퓨터에 저장'), h('button', { class: 'sub', on: { click: () => { if (confirm('이 컴퓨터의 실명을 지울까요?')) { localStorage.removeItem('maum-real'); load(); } } } }, '지우기'))),
+      h('div', { class: 'row', style: 'margin-top:8px' }, h('button', { class: 'sub', on: { click: () => { const m = {}; realTa.value.split('\n').forEach(l => { const x = ROSTER_LINE.exec(halfDigits(l)); if (x) m[Number(x[1])] = x[2]; }); localStorage.setItem('maum-real', JSON.stringify(m)); load(); } } }, '이 컴퓨터에 저장'), h('button', { class: 'sub', on: { click: () => { if (confirm('이 컴퓨터의 실명을 지울까요?')) { localStorage.removeItem('maum-real'); load(); } } } }, '지우기'))),
     data.students.length ? h('section', { class: 'card' }, h('div', { class: 'row no-print' }, h('h2', { class: 'grow' }, '접속 코드·QR 카드'), h('button', { class: 'sub', on: { click: () => print() } }, 'QR 카드 인쇄')),
       h('p', { class: 'soft no-print' }, `학생은 이 주소에서 코드를 넣거나 QR 을 찍어 들어와요: ${origin}`),
       h('div', { class: 'cards' }, data.students.map(s => h('div', { class: 'card qr' }, h('div', {}, `${s.no}번 ${nameOf(s)} `, demoTag(s)), qrImg(s.code), h('div', { class: 'code' }, s.code),
-        h('button', { class: 'sub no-print', on: { click: async () => { if (confirm(`${s.no}번 코드를 새로 만들까요? 예전 코드와 QR 은 더 쓸 수 없어요.`)) { await api('newCode', { no: s.no }); load(); } } } }, '새 코드'))))) : '',
+        h('button', { class: 'sub no-print', on: { click: safe(async () => { if (confirm(`${s.no}번 코드를 새로 만들까요? 예전 코드와 QR 은 더 쓸 수 없어요.`)) { await api('newCode', { no: s.no }); await load(); } }) } }, '새 코드'))))) : '',
   );
 }
 
@@ -159,16 +177,18 @@ function lesson() {
 // ---- 학생 기록 ----
 function records() {
   const tb = h('tbody');
-  data.students.forEach(s => tb.append(h('tr', { class: 'pick', on: { click: () => detail(s) } }, h('td', {}, `${s.no} ${nameOf(s)} `, demoTag(s)),
+  data.students.forEach(s => tb.append(h('tr', { class: 'pick', on: { click: safe(() => detail(s)) } }, h('td', {}, `${s.no} ${nameOf(s)} `, demoTag(s)),
     BOOKS.map(([id]) => h('td', {}, s.books[id] ? h('span', { class: 'tag' }, `결말 ${s.books[id]}`) : h('span', { class: 'tag no' }, '아직'))),
     h('td', {}, String(s.answers)), h('td', {}, s.story ? `${s.story.chars}자` : '-'), h('td', {}, when(s.at)))));
   $('#main').replaceChildren(h('section', { class: 'card' }, h('h2', {}, '학생 기록'), h('p', { class: 'soft' }, '학생을 누르면 고른 답이 시간순으로 나와요.'),
     h('div', { style: 'overflow-x:auto' }, h('table', {}, h('thead', {}, h('tr', {}, h('th', {}, '학생'), BOOKS.map(([, t]) => h('th', {}, t)), h('th', {}, '답'), h('th', {}, '이후의 이야기'), h('th', {}, '마지막 저장'))), tb))), h('div', { id: 'detail' }));
 }
 async function detail(s) {
+  const ask = ++detailSeq;
   const d = await api('student', { no: s.no });
   const box = $('#detail');
-  box.replaceChildren(h('section', { class: 'card' }, h('div', { class: 'row' }, h('h2', { class: 'grow' }, `${s.no} ${nameOf(s)}의 답`), h('button', { class: 'sub', on: { click: async () => { if (confirm(`${s.no}번의 기록(진행, 답, 글)을 모두 지울까요? 되돌릴 수 없어요.`)) { await api('clear', { no: s.no }); load(); } } } }, '이 학생 기록 지우기')),
+  if (!box || ask !== detailSeq) return; // 그사이 다른 탭이나 다른 학생으로 옮겼다
+  box.replaceChildren(h('section', { class: 'card' }, h('div', { class: 'row' }, h('h2', { class: 'grow' }, `${s.no} ${nameOf(s)}의 답`), h('button', { class: 'sub', on: { click: safe(async () => { if (confirm(`${s.no}번의 기록(진행, 답, 글)을 모두 지울까요? 되돌릴 수 없어요.`)) { await api('clear', { no: s.no }); await load(); } }) } }, '이 학생 기록 지우기')),
     d.answers.length ? d.answers.map(a => h('div', { class: 'answer' }, h('small', {}, `${when(a.t)} · ${(BOOKS.find(b => b[0] === a.book) || [, a.book])[1]} · ${KIND[a.kind] || a.kind}`), h('div', {}, a.q ? `${a.q} → ` : '', h('b', {}, a.a)))) : h('p', { class: 'soft' }, '아직 쌓인 답이 없어요.'),
     d.story ? [h('h2', { style: 'margin-top:12px' }, '이후의 이야기'), h('div', { class: 'story' }, d.story.text)] : ''));
   box.scrollIntoView({ behavior: 'smooth' });
@@ -177,30 +197,31 @@ async function detail(s) {
 // ---- 이후의 이야기: 교사 채점 + AI 채점 ----
 async function stories() {
   const { stories: list } = await api('stories');
+  if (tab !== 'stories') return; // 기다리는 동안 다른 탭으로 옮겼다
   const rub = data.settings.rubric;
   const msg = h('span', { class: 'soft' });
   const sec = h('section', { class: 'card' }, h('div', { class: 'row' }, h('h2', { class: 'grow' }, `이후의 이야기 (${list.length}편)`), msg,
-    h('button', { class: 'sub', on: { click: async () => { msg.textContent = 'AI 가 채점하는 중…'; try { let r; do { r = await api('aiGrade', { all: true }); msg.textContent = `AI 채점 ${r.done}편 끝${r.left ? `, ${r.left}편 남음` : ''}`; } while (r.left && r.done); stories(); } catch (e) { msg.textContent = e.message; } } } }, '아직 안 된 글 모두 AI 채점')),
+    h('button', { class: 'sub', on: { click: async e => { const b = e.currentTarget; b.disabled = true; msg.textContent = 'AI 가 채점하는 중…'; try { let r; do { r = await api('aiGrade', { all: true }); msg.textContent = `AI 채점 ${r.done}편 끝${r.left ? `, ${r.left}편 남음` : ''}`; } while (r.left && r.done); await stories(); } catch (e) { if (!e.relogin) msg.textContent = e.message; } finally { b.disabled = false; } } } }, '아직 안 된 글 모두 AI 채점')),
     h('p', { class: 'soft' }, `채점 기준 ${rub.length}가지, 기준마다 1~3점. AI 에는 학생 글만 보내고 번호·이름은 보내지 않아요. 지금 AI: ${data.settings.providers[data.settings.provider].label}`),
     h('p', { class: 'soft' }, `쓰기 조건 (${data.settings.minChars}~${data.settings.maxChars}자, 띄어쓰기 빼고)`), h('ol', { class: 'soft' }, data.settings.conditions.map(c => h('li', {}, c))));
   const main = $('#main');
   main.replaceChildren(sec);
   list.forEach(y => {
     const s = data.students.find(x => x.no === y.no) || { no: y.no, alias: '(명단에 없음)' };
-    const pick = {};
+    const dr = drafts[y.no] || (drafts[y.no] = { pick: { ...((y.teacher && y.teacher.scores) || {}) }, comment: (y.teacher && y.teacher.comment) || '' });
+    const pick = dr.pick;
     const form = h('div', { class: 'rub' }, rub.map(r => h('fieldset', {}, h('legend', {}, r.name), r.levels.map((lv, i) => {
-      const inp = h('input', { type: 'radio', name: `${y.no}-${r.id}`, value: i + 1, checked: y.teacher && y.teacher.scores[r.id] === i + 1, on: { change: () => { pick[r.id] = i + 1; } } });
-      if (y.teacher && y.teacher.scores[r.id] === i + 1) pick[r.id] = i + 1;
+      const inp = h('input', { type: 'radio', name: `${y.no}-${r.id}`, value: i + 1, checked: pick[r.id] === i + 1, on: { change: () => { pick[r.id] = i + 1; } } });
       return h('label', {}, inp, ` ${i + 1}점 · ${lv}`);
     }))));
-    const comment = h('textarea', { rows: 2, placeholder: '학생에게 한마디' }, (y.teacher && y.teacher.comment) || '');
+    const comment = h('textarea', { rows: 2, placeholder: '학생에게 한마디', on: { input: e => { dr.comment = e.target.value; } } }, dr.comment);
     const note = h('span', { class: 'soft' });
     const ai = y.ai ? h('div', { class: 'card', style: 'background:#f6fbff' }, h('b', {}, `AI 채점 (${y.ai.model}) · 합 ${Object.values(y.ai.scores).reduce((a, b) => a + b, 0)}점`), h('div', {}, rub.map(r => `${r.name} ${y.ai.scores[r.id] || '-'}`).join(' · ')), h('p', {}, y.ai.comment), y.ai.at < y.at ? h('p', { class: 'err' }, '학생이 글을 고친 뒤라 다시 채점하면 좋아요.') : '') : '';
-    main.append(h('section', { class: 'card' }, h('div', { class: 'row' }, h('h2', { class: 'grow' }, `${s.no} ${nameOf(s)}`), h('span', { class: 'soft' }, `${[...y.text.replace(/\s/g, '')].length}자 · ${when(y.at)}${y.versions > 1 ? ` · ${y.versions}번째 고침` : ''}`)),
+    main.append(h('section', { class: 'card' }, h('div', { class: 'row' }, h('h2', { class: 'grow' }, `${s.no} ${nameOf(s)}`), h('span', { class: 'soft' }, `${[...y.text.replace(/\s/g, '')].length}자 · ${when(y.at)}${y.versions > 1 ? ` · ${y.versions - 1}번 고쳐 냄` : ''}`)),
       starterOf(y.starter) ? starterBox(starterOf(y.starter)) : '', h('div', { class: 'story' }, y.text), h('h2', { style: 'margin-top:12px' }, '선생님 채점'), form, comment,
       h('div', { class: 'row', style: 'margin-top:8px' }, note, h('span', { class: 'grow' }),
-        h('button', { class: 'sub', on: { click: async () => { note.textContent = 'AI 채점 중…'; try { await api('aiGrade', { no: y.no }); stories(); } catch (e) { note.textContent = e.message; } } } }, 'AI 채점'),
-        h('button', { class: 'btn', on: { click: async () => { try { await api('grade', { no: y.no, scores: pick, comment: comment.value }); note.textContent = '저장했어요.'; } catch (e) { note.textContent = e.message; } } } }, '선생님 채점 저장')), ai));
+        h('button', { class: 'sub', on: { click: async e => { const b = e.currentTarget; b.disabled = true; note.textContent = 'AI 채점 중…'; try { await api('aiGrade', { no: y.no }); await stories(); } catch (e) { if (!e.relogin) note.textContent = e.message; } finally { b.disabled = false; } } } }, 'AI 채점'),
+        h('button', { class: 'btn', on: { click: async () => { try { await api('grade', { no: y.no, scores: pick, comment: comment.value }); delete drafts[y.no]; note.textContent = '저장했어요.'; } catch (e) { if (!e.relogin) note.textContent = e.message; } } } }, '선생님 채점 저장')), ai));
   });
 }
 
@@ -214,20 +235,20 @@ function settings() {
   const provBox = h('div', { class: 'rub' });
   const LINKS = { upstage: 'https://console.upstage.ai/api-keys', claude: 'https://console.anthropic.com/settings/keys', openai: 'https://platform.openai.com/api-keys', gemini: 'https://aistudio.google.com/apikey' };
   const drawProv = () => provBox.replaceChildren(...Object.entries(st.providers).map(([p, info]) => {
-    const key = h('input', { type: 'password', autocomplete: 'off', placeholder: st.keys[p] ? '바꿀 때만 새로 넣어요' : `키 붙여 넣기 (${info.keyHint})`, on: { input: e => { keys[p] = e.target.value; } } });
+    const key = h('input', { type: 'password', autocomplete: 'off', value: keys[p] || '', placeholder: st.keys[p] ? '바꿀 때만 새로 넣어요' : `키 붙여 넣기 (${info.keyHint})`, on: { input: e => { if (e.target.value.trim()) keys[p] = e.target.value; else delete keys[p]; } } }); // 비운 칸은 「그대로 두기」(키 지우기는 따로 단추로)
     const model = h('input', { value: models[p], on: { input: e => { models[p] = e.target.value; } } });
     const out = h('span', { class: 'soft' });
     return h('div', { class: 'prov' + (provider === p ? ' on' : '') },
       h('label', { class: 'row' }, h('input', { type: 'radio', name: 'prov', checked: provider === p, style: 'width:auto', on: { change: () => { provider = p; drawProv(); } } }), h('b', {}, info.label), h('span', { class: 'grow' }), h('span', { class: 'soft' }, st.keys[p] ? `저장됨 ${st.keys[p]}` : '키 없음')),
       h('span', { class: 'soft' }, 'API 키 · ', h('a', { href: LINKS[p], target: '_blank', rel: 'noreferrer' }, '발급받기')), key, h('span', { class: 'soft' }, '모델'), model,
-      h('div', { class: 'row' }, h('button', { class: 'sub', on: { click: async () => { out.textContent = '확인 중…'; try { if (keys[p]) await saveSettings({ keys: { [p]: keys[p] } }); const r = await api('testAI', { provider: p }); out.textContent = `✓ 연결됐어요 (${r.model})`; } catch (e) { out.textContent = e.message; } } } }, '연결 확인'),
-        st.keys[p] ? h('button', { class: 'sub', on: { click: async () => { if (confirm(`${info.label} 키를 지울까요?`)) { await saveSettings({ keys: { [p]: '' } }); load(); } } } }, '키 지우기') : '', out));
+      h('div', { class: 'row' }, h('button', { class: 'sub', on: { click: async () => { out.textContent = '확인 중…'; try { if (keys[p] || models[p] !== st.models[p]) await saveSettings({ keys: keys[p] ? { [p]: keys[p] } : {}, models: { [p]: models[p] } }); const r = await api('testAI', { provider: p }); out.textContent = `✓ 연결됐어요 (${r.model})`; } catch (e) { if (!e.relogin) out.textContent = e.message; } } } }, '연결 확인'),
+        st.keys[p] ? h('button', { class: 'sub', on: { click: safe(async () => { if (confirm(`${info.label} 키를 지울까요?`)) { delete keys[p]; await saveSettings({ keys: { [p]: '' } }); await load(); } }) } }, '키 지우기') : '', out));
   }));
   drawProv();
   const rub = st.rubric.map(r => ({ id: r.id, name: h('input', { value: r.name }), levels: r.levels.map(l => h('textarea', { rows: 2 }, l)) }));
   const minChars = h('input', { type: 'number', min: 50, max: 2000, value: st.minChars }), maxChars = h('input', { type: 'number', min: 50, max: 5000, value: st.maxChars });
   const prompt = h('textarea', { rows: 3 }, st.prompt);
-  const msg = h('span', { class: 'soft' });
+  const msg = h('span', { class: 'soft' }, takeFlash());
   async function saveSettings(extra = {}) { const r = await api('settings', extra); data.settings = r.settings; Object.assign(st, r.settings); }
   const pinCard = h('section', { class: 'card' }, h('h2', {}, '선생님 비밀번호'), h('p', { class: 'soft' }, data.pinSet ? '비밀번호를 바꾸면 다른 기기의 선생님 로그인은 풀려요. 잊었을 때는 버셀 환경 변수 TEACHER_PASSWORD 로 들어와 다시 바꿔요.' : '지금은 처음 비밀번호(1324)예요. 시연할 때는 그대로 써도 돼요. 실제 학생 기록을 모을 때는 숫자 4~12자리로 바꿔 주세요(1324 는 누구나 알 수 있어요).'), h('div', { class: 'row' }, cur, nx),
     h('div', { class: 'row', style: 'margin-top:8px' }, pinMsg, h('span', { class: 'grow' }), h('button', { class: 'btn', on: { click: async () => { try { await api('changePin', { current: cur.value.trim(), next: nx.value.trim() }); pinMsg.className = 'soft'; pinMsg.textContent = '바꿨어요. 다음부터 새 비밀번호로 들어와요.'; cur.value = nx.value = ''; data.pinSet = true; } catch (e) { pinMsg.className = 'err'; pinMsg.textContent = e.message; } } } }, '비밀번호 바꾸기')));
@@ -237,14 +258,14 @@ function settings() {
     h('section', { class: 'card' }, h('h2', {}, '이후의 이야기'), h('p', { class: 'soft' }, '1~4권에서 결말을 하나씩 본 학생에게 열려요.'), h('label', {}, '글자 수 (띄어쓰기 빼고): 최소 · 최대'), h('div', { class: 'row' }, h('span', { class: 'grow' }, minChars), h('span', { class: 'grow' }, maxChars)), h('label', {}, '글감 (학생 화면에 보여요)'), prompt,
       h('h2', { style: 'margin-top:12px' }, '채점 기준 (1·2·3점 설명)'), h('div', { class: 'rub' }, rub.map(r => h('fieldset', {}, h('legend', {}, '기준 이름'), r.name, r.levels.map((l, i) => h('label', {}, `${i + 1}점`, l)))))),
     h('div', { class: 'row' }, msg, h('span', { class: 'grow' }), h('button', { class: 'btn', on: { click: async () => {
-      try { await saveSettings({ provider, models, keys, minChars: Number(minChars.value), maxChars: Number(maxChars.value), prompt: prompt.value, rubric: rub.map(r => ({ id: r.id, name: r.name.value, levels: r.levels.map(l => l.value) })) }); msg.textContent = '저장했어요.'; for (const k in keys) delete keys[k]; load(); } catch (e) { msg.textContent = e.message; }
+      try { await saveSettings({ provider, models, keys, minChars: Number(minChars.value), maxChars: Number(maxChars.value), prompt: prompt.value, rubric: rub.map(r => ({ id: r.id, name: r.name.value, levels: r.levels.map(l => l.value) })) }); for (const k in keys) delete keys[k]; flash = '저장했어요.'; await load(); } catch (e) { if (!e.relogin) msg.textContent = e.message; }
     } } }, '설정 저장')),
     h('section', { class: 'card' }, h('h2', {}, '저장하는 것'), h('p', { class: 'soft' }, '서버(MongoDB)에는 학생 번호와 가명, 접속 코드, 읽은 결말과 이어 보기 자리, 이야기 속에서 고른 답, 「이후의 이야기」 글과 채점만 저장해요. 실명·사진·위치·연락처는 저장하지 않아요. 「로그인 없이 하기」로 읽은 학생의 기록은 그 기기에만 남아요.'),
-      h('button', { class: 'sub', on: { click: async () => { if (prompt && confirm('반 전체의 진행, 답, 글, 채점을 모두 지울까요? 명단과 설정은 남아요. 되돌릴 수 없어요.') && confirm('정말 지울까요?')) { await api('clear', { all: true }); load(); } } } }, '반 전체 기록 지우기')),
+      h('button', { class: 'sub', on: { click: safe(async () => { if (confirm('반 전체의 진행, 답, 글, 채점을 모두 지울까요? 명단과 설정은 남아요. 되돌릴 수 없어요.') && confirm('정말 지울까요?')) { await api('clear', { all: true }); await load(); } }) } }, '반 전체 기록 지우기')),
   );
 }
 
-$('#out').addEventListener('click', async () => { await api('logout'); showLogin(); });
+$('#out').addEventListener('click', async () => { try { await api('logout'); } catch (e) { /* 그래도 나간다 */ } showLogin(); });
 load().catch(e => { if (!$('#main').children.length) $('#main').replaceChildren(h('section', { class: 'card' }, h('p', { class: 'err' }, e.message), h('p', { class: 'soft' }, '선생님 화면은 학급 서버가 있는 버셀 주소에서만 열려요.'))); });
 </script>
 </body>
