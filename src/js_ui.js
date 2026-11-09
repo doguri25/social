@@ -207,7 +207,7 @@ function openAfter() {
   let starter = [draft && draft.starter, doc && doc.starter].find(v => STARTERS.some(x => x.id === v));
   if (starter == null) starter = STARTERS[Math.floor(Math.random() * STARTERS.length)].id;
   const ta = h('textarea', 'afterta');
-  ta.value = (draft && draft.text) || afterText();
+  ta.value = (draft && draft.text && !(doc && doc.at > (draft.at || 0)) && draft.text) || afterText(); // 이 기기 초안보다 나중에 낸 글(다른 기기)이 있으면 그 글
   ta.placeholder = '이야기 시작 바로 다음부터 이어서 써요.';
   ta.setAttribute('aria-label', '이후의 이야기');
   const count = h('div', 'aftercount');
@@ -216,7 +216,7 @@ function openAfter() {
     const st = STARTERS.find(x => x.id === starter);
     box.replaceChildren(h('b', '', `「${st.title}」 · ${st.who}가 들려주는 이야기`), ...st.text.split('\n').map(l => h('p', '', l)));
   };
-  const keep = () => { try { localStorage.setItem(draftKey(), JSON.stringify({ text: ta.value, starter })); } catch (e) { /* 저장 못 해도 쓰기는 계속 */ } };
+  const keep = () => { try { localStorage.setItem(draftKey(), JSON.stringify({ text: ta.value, starter, at: Date.now() })); } catch (e) { /* 저장 못 해도 쓰기는 계속 */ } };
   let sending = false;
   const submit = async () => {
     if (sending) return;
@@ -236,10 +236,9 @@ function openAfter() {
     count.classList.toggle('ok', n >= min && n <= max);
     count.classList.toggle('over', n > max);
     setNext(n >= min && n <= max ? submit : null, student ? '선생님께 내기' : '이 기기에 저장');
-    keep();
     renderAsk();
   };
-  ta.addEventListener('input', upd);
+  ta.addEventListener('input', () => { upd(); keep(); }); // 열기만 해서는 초안을 만들지 않는다
   drawStarter();
   const card = h('div', 'endcard after');
   card.append(h('div', 'eyebrow', '이후의 이야기'), h('h3', '', '그다음 이야기를 써요'), box, h('p', 'aprompt', student ? NET.me.prompt : AFTER_PROMPT), ta, count);

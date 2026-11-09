@@ -34,8 +34,14 @@ function cleanProgress(p) {
   return out;
 }
 // 다른 기기에 열려 있던 옛 화면이 보낸 진행이 새 기록을 지우지 않게: 본 결말은 합치고, 이어 보기 자리는 더 새 것을 남긴다
-function mergeProgress(next, cur) {
-  if (!cur) return next;
+// ended: 책마다 결말에 닿아 이어 보기를 지운 때 (화면이 보낸 것과 저장된 것 가운데 더 나중). 이 화면에 없는 이어 보기 자리는 지운 것이 아니라
+// 모르는 것(다른 기기가 남김)이라 남기고, 지우는 것은 ended 로만 한다
+function mergeProgress(next, cur, endedIn) {
+  const ended = { ...((cur && cur.ended) || {}) };
+  for (const [id, t] of Object.entries(endedIn && typeof endedIn === 'object' && !Array.isArray(endedIn) ? endedIn : {}).slice(0, 12)) if (isBook(id) && Number(t) > (ended[id] || 0)) ended[id] = Number(t);
+  next.ended = ended;
+  const drop = () => { for (const id of Object.keys(next.resume)) if (ended[id] >= next.resume[id].at) delete next.resume[id]; };
+  if (!cur) { drop(); return next; }
   for (const [id, o] of Object.entries(cur.books || {})) {
     const n = next.books[id] || (next.books[id] = { endings: [], feels: {}, acts: {}, role: '' });
     n.endings = [...new Set([...n.endings, ...(o.endings || [])])].slice(0, 20);
@@ -43,7 +49,8 @@ function mergeProgress(next, cur) {
     n.acts = { ...(o.acts || {}), ...n.acts };
     n.role = n.role || o.role || '';
   }
-  for (const [id, r] of Object.entries(cur.resume || {})) if (r && next.resume[id] && r.at > next.resume[id].at) next.resume[id] = r;
+  for (const [id, r] of Object.entries(cur.resume || {})) if (r && (!next.resume[id] || r.at > next.resume[id].at)) next.resume[id] = r;
+  drop();
   return next;
 }
 // 선생님이 이 학생(또는 반 전체) 기록을 지운 때 (api/teacher.js 의 wipe·clear 가 남긴다)
@@ -81,19 +88,20 @@ module.exports = route({
   save: async ({ req, body }) => {
     const s = await who(req);
     const p = body.progress;
-    let stale = false, wiped = 0;
+    let stale = false, wiped = 0, merged = null;
     if (p && typeof p === 'object' && p.books && typeof p.books === 'object') {
       let cur;
       [cur, wiped] = await Promise.all([db().get('progress', `s${s.no}`), wipedAt(s.no)]);
       // 선생님이 기록을 지우기 전에 받아 간 화면(since 를 보내지 않는 예전 화면 포함)이 보낸 진행은 받지 않는다 (지운 기록이 되살아나지 않게). 화면은 진행을 다시 받아 간다
       if (wiped && !(Number(body.since) >= wiped)) stale = true;
-      else await db().set('progress', `s${s.no}`, { no: s.no, ...mergeProgress(cleanProgress(p), cur), at: Date.now() });
+      else await db().set('progress', `s${s.no}`, { no: s.no, ...(merged = mergeProgress(cleanProgress(p), cur, body.ended)), at: Date.now() });
     }
     let answers = [].concat(body.answers || []).slice(0, 60).filter(a => a && typeof a === 'object').map(a => cleanAnswer(a, s.no));
     if (stale) answers = answers.filter(a => a.t >= wiped); // 지우기 전에 고른 답도 다시 넣지 않는다
     if (answers.length) answers = answers.slice(0, Math.max(0, MAX_ANSWERS - (await db().count('answers', { no: s.no })))); // 상한까지 남은 만큼은 받는다
     await db().insertMany('answers', answers);
-    return { ok: true, saved: answers.length, stale };
+    // wiped: 화면이 지운 뒤에 읽은 것을 가려 다시 넣게. ends: 다른 기기에서 본 결말까지 합친 것 (화면이 「이후의 이야기」 열림을 바로 알게)
+    return { ok: true, saved: answers.length, stale, wiped: stale ? wiped : undefined, ends: merged ? Object.fromEntries(Object.entries(merged.books).map(([id, b]) => [id, b.endings])) : undefined };
   },
   // 이후의 이야기: 1~4권을 모두 읽은 뒤에만, 정해진 글자 수(띄어쓰기 빼고) 안에서. starter: 선생님이 들려준 이야기 시작 번호
   story: async ({ req, body }) => {

@@ -170,6 +170,7 @@ async function playEnding(my) {
   }
   const rec = bookRec(BOOK.id);
   if (!rec.endings.includes(end.id)) rec.endings.push(end.id);
+  rec.endAt = Object.assign({}, rec.endAt, { [end.id]: Date.now() }); // 선생님이 지운 뒤에 본 결말인지 가리려고 (js_net flush)
   logAnswer('ending', BOOK.title, end.title);
   clearResume(); // 끝까지 읽었으니 다음에는 처음부터
   flush(true);
