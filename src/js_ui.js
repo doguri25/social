@@ -283,7 +283,7 @@ function openSettings() {
   const link = h('div', 'linkbox', '');
   link.hidden = true;
   const copy = btn('수업 링크 복사', 'sbtn', () => {
-    const url = `${location.origin}${location.pathname}?book=${(lastBook || 'book1').slice(4)}${save.set.cls ? '&mode=class' : ''}`;
+    const url = `${location.origin}${location.pathname}?book=${(lastBook || 'book1').slice(4)}${classMode() ? '&mode=class' : ''}`;
     link.textContent = url;
     link.hidden = false;
     try { navigator.clipboard.writeText(url).then(() => toast('수업 링크를 복사했어요.'), () => toast('아래 주소를 길게 눌러 복사해 주세요.')); } catch (e) { toast('아래 주소를 길게 눌러 복사해 주세요.'); }
@@ -305,7 +305,7 @@ function openSettings() {
     row('글자 크기', '', seg([[0.9, '작게'], [1, '보통'], [1.2, '크게']], save.set.fs, v => { save.set.fs = v; store(); document.documentElement.style.setProperty('--fs', v); fitSide(); })),
     row('화질', '높음: 그늘과 빛 번짐까지 / 느리면 「낮음」', seg([['auto', '자동'], ['low', '낮음'], ['high', '높음']], save.set.q, v => { save.set.q = v; slowDevice = false; frames = ftime = 0; store(); applyTier(); })),
     row('효과음', '', onOff('sound')),
-    row('함께 보기', '전자칠판용: 고를 때 선생님 질문, 생각 시간, 손든 사람 수', onOff('cls')),
+    row('함께 보기', '전자칠판용: 고를 때 선생님 질문, 생각 시간, 손든 사람 수', seg([[true, '켬'], [false, '끔']], classMode(), v => { save.set.cls = v; if (!v) CLS_LINK = false; store(); renderAsk(); })),
     row('수업 링크', '이 설정 그대로 마지막에 연 책을 바로 여는 주소 (GitHub Pages 주소에서 쓰세요)', copy),
     link,
     row('기록', '본 결말과 감정 카드 답은 이 기기에만 저장돼요', wipe),

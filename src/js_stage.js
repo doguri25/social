@@ -1,7 +1,8 @@
 // ===== 무대(디오라마): 둥근 나무 받침 위 작은 세트. 처음 쓸 때 만들고, 한 번에 하나만 보인다 =====
 // 방은 벽 네 개를 묶음으로 만들어, 카메라 쪽 벽은 저절로 걷힌다(js_world 의 벽 자르기). 자리와 카메라 값은 data/defs.json
 const WALL_H = 2.5, WALL_T = 0.12, SILL = 0.85, TABLE_H = 0.56; // 2등신 아이에게 맞춘 낮은 모둠 탁자
-const WALL_C = '#f8efdf', WAINS_C = '#ecd6b2', RAIL_C = '#d6b084', WOOD = '#e3bf8f', FRAME = '#ffffff';
+// 오른벽은 햇빛을 정면으로 받아 컷 배경에서 하얗게 날아가므로 어둡게 (햇빛을 받으면 다른 벽과 비슷한 밝기)
+const WALL_C = '#f8efdf', RIGHT_C = '#d6cab6', WAINS_C = '#ecd6b2', RAIL_C = '#d6b084', WOOD = '#e3bf8f', FRAME = '#ffffff';
 
 // ---- 공통 ----
 function stageBase(g, w, d) {
@@ -260,7 +261,7 @@ const BUILD = {
 
     // 오른쪽 벽: 문, 우리 반 약속, 키 큰 책장
     const rt = r.right;
-    plainWall(rt, D);
+    plainWall(rt, D, RIGHT_C);
     wainscot(rt, D);
     box(1.02, 2.08, 0.04, RAIL_C, 1.45, 1.04, 0.07, rt, false);
     box(0.92, 2.0, 0.04, '#e9b783', 1.45, 1.0, 0.09, rt, false);
@@ -396,7 +397,7 @@ const BUILD = {
     sheet(1.1, 0.72, paper(1.1, 0.72, [['오늘의 급식', 54, '#e8705a'], ['달걀말이', 46, '#3b302b'], ['미역국 · 밥 · 김치', 40, '#3b302b']]), 1.75, 1.55, 0.075, 0, r.back);
     windowWall(r.left, D, [[-1.7, -0.5], [0.5, 1.7]], SILL, 2.15, outsideTex(false), WALL2);
     wainscot(r.left, D);
-    plainWall(r.right, D, WALL2);
+    plainWall(r.right, D, '#c4bdb0'); // 오른벽: WALL2 보다 어둡게 (햇빛을 정면으로 받음)
     wainscot(r.right, D);
     model('pottedPlant', { h: 0.9, x: -1.8, z: 0.33, parent: r.right });
     plainWall(r.front, W, WALL2);
@@ -435,7 +436,7 @@ const BUILD = {
     cyl(0.12, 0.12, 0.14, '#e8705a', -1.5, 0.96, 0.3, r.back, 16);
     plainWall(r.left, D, WALL3);
     box(0.7, 1.6, 0.6, '#e8eef2', 0.9, 0.8, 0.33, r.left);
-    plainWall(r.right, D, WALL3);
+    plainWall(r.right, D, '#bfb19c'); // 오른벽: WALL3 보다 어둡게 (햇빛을 정면으로 받음)
     model('pottedPlant', { h: 0.8, x: 1.2, z: 0.33, parent: r.right });
     plainWall(r.front, W, WALL3);
     const t = node('table', g, 0, 0, -0.2);

@@ -227,7 +227,7 @@ async function stories() {
     }))));
     const comment = h('textarea', { rows: 2, placeholder: '학생에게 한마디', on: { input: e => { dr.comment = e.target.value; } } }, dr.comment);
     const note = h('span', { class: 'soft' }, aiRun.notes[y.no] || '');
-    const ai = y.ai ? h('div', { class: 'card', style: 'background:#f6fbff' }, h('b', {}, `AI 채점 (${y.ai.model}${y.ai.test ? ' · 시험용' : ''}) · 합 ${Object.values(y.ai.scores).reduce((a, b) => a + b, 0)}점`), h('div', {}, rub.map(r => `${r.name} ${y.ai.scores[r.id] || '-'}`).join(' · ')), h('p', {}, y.ai.comment), y.ai.at < y.at ? h('p', { class: 'err' }, '학생이 글을 고친 뒤라 다시 채점하면 좋아요.') : '') : '';
+    const ai = y.ai ? h('div', { class: 'card', style: 'background:#f6fbff' }, h('b', {}, `AI 채점 (${y.ai.model}${y.ai.test ? ' · 시험용' : ''}${y.ai.instead === 'claude' ? ' · Claude 가 사양해 대신 채점' : ''}) · 합 ${Object.values(y.ai.scores).reduce((a, b) => a + b, 0)}점`), h('div', {}, rub.map(r => `${r.name} ${y.ai.scores[r.id] || '-'}`).join(' · ')), h('p', {}, y.ai.comment), y.ai.at < y.at ? h('p', { class: 'err' }, '학생이 글을 고친 뒤라 다시 채점하면 좋아요.') : '') : '';
     main.append(h('section', { class: 'card' }, h('div', { class: 'row' }, h('h2', { class: 'grow' }, `${s.no} ${nameOf(s)}`), h('span', { class: 'soft' }, `${[...y.text.replace(/\s/g, '')].length}자 · ${when(y.at)}${y.versions > 1 ? ` · ${y.versions - 1}번 고쳐 냄` : ''}`)),
       starterOf(y.starter) ? starterBox(starterOf(y.starter)) : '', h('div', { class: 'story' }, y.text), h('h2', { style: 'margin-top:12px' }, '선생님 채점'), form, comment,
       h('div', { class: 'row', style: 'margin-top:8px' }, note, h('span', { class: 'grow' }),

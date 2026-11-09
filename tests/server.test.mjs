@@ -20,7 +20,11 @@ const relay = http.createServer((req, res) => {
   });
 });
 await new Promise(r => relay.listen(0, r));
-const srv = spawn(process.execPath, ['tools/dev.mjs', String(port)], { env: { ...process.env, DATA_FILE: join(dir, 'db.json'), MONGODB_URI: '', VERCEL: '', AI_RELAY_URL: `http://localhost:${relay.address().port}` }, stdio: 'ignore' });
+// 가짜 Claude: 늘 채점을 사양한다 (그러면 기본 업스테이지 Solar 로 다시 매기는지 본다)
+const claudeReqs = [];
+const claude = http.createServer((req, res) => { claudeReqs.push(req.url); req.resume(); req.on('end', () => { res.setHeader('content-type', 'application/json'); res.end(JSON.stringify({ stop_reason: 'refusal', content: [] })); }); });
+await new Promise(r => claude.listen(0, r));
+const srv = spawn(process.execPath, ['tools/dev.mjs', String(port)], { env: { ...process.env, DATA_FILE: join(dir, 'db.json'), MONGODB_URI: '', VERCEL: '', AI_RELAY_URL: `http://localhost:${relay.address().port}`, AI_CLAUDE_URL: `http://localhost:${claude.address().port}/v1/messages` }, stdio: 'ignore' });
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 let fails = 0;
 const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!cond) fails++; };
@@ -110,6 +114,14 @@ try {
   ok(/키가 없어요/.test((await T('teacher', 'aiGrade', { no: 1 })).body.error || ''), '다른 AI 를 고르고 키가 없으면 알려 줌');
   await T('teacher', 'settings', { provider: 'upstage' });
   await T('teacher', 'settings', { keys: { claude: 'sk-ant-test-1234567890' }, minChars: 300 });
+  if (Date.now() <= Date.UTC(2027, 2, 31, 14, 59, 59)) {
+    await T('teacher', 'settings', { provider: 'claude' });
+    const before = relayReqs.length;
+    const gc = await T('teacher', 'aiGrade', { no: 1 });
+    const yc = (await T('teacher', 'stories')).body.stories.find(y => y.no === 1).ai;
+    ok(gc.body.done === 1 && claudeReqs.length === 1 && relayReqs.length === before + 1 && relayReqs[before].body.model === 'solar-pro4' && yc.instead === 'claude' && yc.model === 'solar-pro4', 'Claude 가 채점을 사양하면 기본 업스테이지 Solar 로 대신 채점');
+    await T('teacher', 'settings', { provider: 'upstage' });
+  }
   const pub = (await T('teacher', 'overview')).body.settings;
   ok(pub.keys.claude === 'sk-a••••7890' && pub.minChars === 300, 'AI 키는 가린 모양으로만 돌아옴');
   ok(!JSON.stringify(await T('teacher', 'overview')).includes('test-1234567890'), '어떤 응답에도 키 원문이 없음');
@@ -139,6 +151,7 @@ try {
 } finally {
   srv.kill();
   relay.close();
+  claude.close();
   rmSync(dir, { recursive: true, force: true });
 }
 console.log(fails ? `실패 ${fails}개` : '통과');

@@ -42,7 +42,9 @@ const ARGS = new URLSearchParams(location.search);
   const m = /^book(\d)$/.exec(t);
   if (m) ARGS.set('book', m[1]);
 });
-if (ARGS.get('mode') === 'class') save.set.cls = true;
+// 수업 링크(&mode=class)로 켠 함께 보기는 그 화면에서만 (기기 설정에는 남기지 않는다. 설정에서 직접 켠 것만 기억)
+let CLS_LINK = ARGS.get('mode') === 'class';
+const classMode = () => CLS_LINK || !!save.set.cls;
 
 // ---- 효과음: 파일 없이 짧게 합성 ----
 let actx = null;

@@ -25,7 +25,7 @@ const doneAsk = () => { clearInterval(timerT); teachLeft = null; hands = []; set
 
 // 함께 보기(전자칠판)에서만: 선생님 질문과 생각 시간
 function teachBox(ask) {
-  if (!save.set.cls || !ask) return null;
+  if (!classMode() || !ask) return null;
   const box = h('div', 'teach');
   const show = () => (teachLeft == null ? '' : teachLeft > 0 ? `${teachLeft}초` : '시간 끝');
   const out = h('span', 'tleft', show());
@@ -80,7 +80,7 @@ function askChoice(spec, kind) {
         const b = btn('', 'opt ' + ['', 'pink', 'sky'][i % 3], () => { sfx('pick'); done(i); });
         b.append(h('span', 'ico', String(i + 1)), h('span', '', o.text));
         row.appendChild(b);
-        if (save.set.cls) row.appendChild(tally(i));
+        if (classMode()) row.appendChild(tally(i));
         list.appendChild(row);
       });
       out.push(list);
