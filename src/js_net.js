@@ -21,14 +21,18 @@ async function netBoot() {
   if (!NET.server) return false; // 서버는 있지만 선생님이 학급 저장소(MONGODB_URI)를 아직 연결하지 않음
   let out = false;
   try { out = !!localStorage.getItem('social-out'); } catch (e) { /* 없음 */ }
-  if (out) { try { await api('logout'); localStorage.removeItem('social-out'); } catch (e) { return false; } } // 나가기 때 못 지운 쿠키를 먼저 지운다
+  if (out) { try { await api('logout', {}, false, 10000); localStorage.removeItem('social-out'); } catch (e) { return false; } } // 나가기 때 못 지운 쿠키를 먼저 지운다
   const code = ARGS.get('c');
   if (code) {
     ARGS.delete('c');
     history.replaceState(null, '', location.pathname + (ARGS.toString() ? '?' + ARGS : ''));
-    try { await api('login', { code }); } catch (e) { toast(e.message); }
+    try { await api('login', { code }, false, 10000); } catch (e) { // 틀린 QR 이면 이 기기에 남은 앞 학생으로 들어가지 않는다
+      toast(e.message);
+      try { await api('logout', {}, false, 10000); } catch (e2) { /* 없음 */ }
+      return false;
+    }
   }
-  try { enterStudent(await api('me')); return true; } catch (e) { return false; }
+  try { enterStudent(await api('me', {}, false, 10000)); return true; } catch (e) { return false; }
 }
 async function loginCode(code) { await api('login', { code }); enterStudent(await api('me')); }
 function enterStudent(me) {
@@ -65,7 +69,10 @@ async function flush(now) {
   // since: 진행을 받아 온 때. 그 뒤에 선생님이 기록을 지웠으면 서버는 이 진행을 받지 않고(stale) 화면은 진행을 다시 받아 온다
   try { r = await api('save', { since: NET.me.since, progress: { books: save.books, resume: save.resume }, answers }, !!now); }
   catch (e) { NET.queue.unshift(...answers); if (e.status === 401) { toast(e.message); enterGuest(); } } // 못 보내면 다음에 다시
-  if (r && r.stale && NET.mode === 'student') { try { enterStudent(await api('me')); } catch (e) { /* 다음 저장 때 다시 */ } }
+  if (r && r.stale && NET.mode === 'student') { // 그사이 나가거나 다른 학생이 들어왔으면 바꾸지 않는다
+    const who = NET.me;
+    try { const me = await api('me'); if (NET.me === who && me.no === who.no) enterStudent(me); } catch (e) { /* 다음 저장 때 다시 */ }
+  }
   if (NET.queue.length) NET.timer = setTimeout(() => flush(), 2500);
 }
 addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(true); });

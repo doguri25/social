@@ -58,35 +58,39 @@ module.exports = route({
   // 서버가 있는지 확인 (GitHub Pages·아티팩트에서는 이 주소가 없어 「로그인 없이 하기」만 보인다)
   ping: async () => ({ ok: true, ready: storageReady() }),
   login: async ({ req, res, body }) => {
-    const key = `code:${ipOf(req)}`;
-    // 한 기기에서 10분에 20번까지 틀릴 수 있다 (코드 맞히기를 막는다). 틀린 것만 세고, 맞혀도 틀린 횟수는 지우지 않는다
-    // (맞힐 때마다 지우면 자기 코드를 가진 학생이 남의 코드를 끝없이 넣어 볼 수 있다)
-    const wait = await blocked(key, 20, 600000);
-    if (wait) throw httpError(429, `코드를 너무 많이 넣었어요. ${Math.ceil(wait / 60)}분 뒤에 다시 해 주세요.`);
     const code = text(body.code, 12).trim().toUpperCase();
+    if (!/^[2-9A-HJKMNP-Z]{6}$/.test(code)) throw httpError(401, '코드를 다시 확인해 주세요. 여섯 글자예요.'); // 빈 칸·자릿수가 틀린 것은 세지 않는다
+    const key = `code:${ipOf(req)}`;
+    // 한 접속 주소에서 10분에 100번까지 틀릴 수 있다 (코드 맞히기를 막는다). 학교는 반 전체가 공인 주소 하나를 함께 쓰므로 넉넉히 두고(코드는 31^6 가지),
+    // 틀린 것만 세고 맞혀도 지우지 않는다 (맞힐 때마다 지우면 자기 코드를 가진 학생이 남의 코드를 끝없이 넣어 볼 수 있다)
+    const wait = await blocked(key, 100, 600000);
+    if (wait) throw httpError(429, `코드를 너무 많이 넣었어요. ${Math.ceil(wait / 60)}분 뒤에 다시 해 주세요.`);
     const s = (await getRoster()).find(x => x.code === code);
-    if (!s) { await throttle(key, 20, 600000); throw httpError(401, '코드를 다시 확인해 주세요.'); }
+    if (!s) { await throttle(key, 100, 600000); throw httpError(401, '코드를 다시 확인해 주세요.'); }
     setCookie(res, COOKIE, sign(`s:${s.no}:${s.code}`), 60 * 60 * 24 * 180);
     return { no: s.no, alias: s.alias };
   },
   logout: async ({ res }) => { setCookie(res, COOKIE, '', 0); return { ok: true }; },
   me: async ({ req }) => {
     const s = await who(req);
+    const since = Date.now(); // 읽기 전에 잰다 (읽는 사이 선생님이 지우면 다음 저장이 stale 이 되게)
     const [prog, story, set] = await Promise.all([db().get('progress', `s${s.no}`), db().get('stories', `s${s.no}`), getSettings()]);
-    return { since: Date.now(), no: s.no, alias: s.alias, progress: prog ? { books: prog.books, resume: prog.resume } : { books: {}, resume: {} }, story: story ? { text: story.text, at: story.at, starter: story.starter } : null, minChars: set.minChars, maxChars: set.maxChars, prompt: set.prompt, books: BOOKS };
+    return { since, no: s.no, alias: s.alias, progress: prog ? { books: prog.books, resume: prog.resume } : { books: {}, resume: {} }, story: story ? { text: story.text, at: story.at, starter: story.starter } : null, minChars: set.minChars, maxChars: set.maxChars, prompt: set.prompt, books: BOOKS };
   },
   // 진행 저장 + 새로 고른 답 쌓기 (답은 지우지 않고 계속 쌓는다)
   save: async ({ req, body }) => {
     const s = await who(req);
     const p = body.progress;
-    let stale = false;
+    let stale = false, wiped = 0;
     if (p && typeof p === 'object' && p.books && typeof p.books === 'object') {
-      const [cur, wiped] = await Promise.all([db().get('progress', `s${s.no}`), wipedAt(s.no)]);
-      // 선생님이 기록을 지우기 전에 받아 간 화면이 보낸 진행은 받지 않는다 (지운 기록이 되살아나지 않게). 화면은 진행을 다시 받아 간다
-      if (Number(body.since) < wiped) stale = true;
+      let cur;
+      [cur, wiped] = await Promise.all([db().get('progress', `s${s.no}`), wipedAt(s.no)]);
+      // 선생님이 기록을 지우기 전에 받아 간 화면(since 를 보내지 않는 예전 화면 포함)이 보낸 진행은 받지 않는다 (지운 기록이 되살아나지 않게). 화면은 진행을 다시 받아 간다
+      if (wiped && !(Number(body.since) >= wiped)) stale = true;
       else await db().set('progress', `s${s.no}`, { no: s.no, ...mergeProgress(cleanProgress(p), cur), at: Date.now() });
     }
     let answers = [].concat(body.answers || []).slice(0, 60).filter(a => a && typeof a === 'object').map(a => cleanAnswer(a, s.no));
+    if (stale) answers = answers.filter(a => a.t >= wiped); // 지우기 전에 고른 답도 다시 넣지 않는다
     if (answers.length) answers = answers.slice(0, Math.max(0, MAX_ANSWERS - (await db().count('answers', { no: s.no })))); // 상한까지 남은 만큼은 받는다
     await db().insertMany('answers', answers);
     return { ok: true, saved: answers.length, stale };

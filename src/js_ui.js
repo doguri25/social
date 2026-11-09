@@ -374,8 +374,9 @@ function showGate() {
     inp.setAttribute('autocapitalize', 'characters');
     inp.setAttribute('aria-label', t('code'));
     const err = h('p', 'err', '');
-    const go = async () => { try { await loginCode(inp.value.trim()); sfx('pick'); close(); } catch (e) { err.textContent = e.message; } };
-    inp.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+    let sending = false;
+    const go = async () => { if (sending) return; sending = true; try { await loginCode(inp.value.trim()); sfx('pick'); close(); } catch (e) { err.textContent = e.message; } finally { sending = false; } };
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.repeat && !e.isComposing) go(); }); // 누르고 있어도 한 번만
     const r = h('div', 'coderow');
     r.append(inp, btn(t('enter'), 'btn go', go));
     card.append(h('label', 'lab', t('code')), r, h('p', 'soft', t('codeHint')), err);

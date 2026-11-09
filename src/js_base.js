@@ -19,7 +19,7 @@ const SAVE_KEY = 'social-v1';
 const save = (() => {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
-    if (s && s.v === 1) return s;
+    if (s && (s.v === 1 || (s.v == null && s.books && s.set))) { s.v = 1; return s; } // v0.8.1 학생 모드는 v 없이 저장했다 (설정·이 기기 기록을 살린다)
   } catch (e) { /* 저장소를 못 쓰는 기기: 새로 시작 */ }
   return { v: 1, books: {}, set: {} };
 })();

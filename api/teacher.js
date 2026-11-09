@@ -19,7 +19,8 @@ async function auth(req) {
 // 한 학생의 진행·답·글을 지운다 (명단은 그대로). 지운 때를 남겨, 그 전에 열린 학생 화면이 옛 진행을 다시 올리지 못하게 한다 (api/student.js save)
 const wipe = no => Promise.all([db().del('progress', `s${no}`), db().delWhere('answers', { no }), db().del('stories', `s${no}`), db().set('meta', `wiped:s${no}`, { at: Date.now() })]);
 // 명단 한 줄: 「번호 가명」. 「1. 햇살」「1) 햇살」「1번 햇살」「1햇살」「１ 햇살」도 받는다 (teacher.html 도 같은 규칙)
-const ROSTER_LINE = /^\s*(\d{1,3})(?!\d)(?:번)?[\s.,):-]*(\S.*?)\s*$/;
+// 「3학년 2반 명단」「10월 5일」「1모둠 …」 같은 머리 줄은 학생으로 보지 않는다
+const ROSTER_LINE = /^\s*(\d{1,3})(?!\d)(?!\s*(?:학년|반|모둠|월|일|교시|차시|층|조)(?:\s|$|[0-9]))(?:번(?=[\s.,):-]|$))?[\s.,):-]*(\S.*?)\s*$/;
 const halfDigits = line => line.replace(/[０-９]/g, d => String.fromCharCode(d.charCodeAt(0) - 0xfee0));
 const scoreSum = g => (g && g.scores ? Object.values(g.scores).reduce((a, b) => a + b, 0) : null);
 
@@ -128,14 +129,21 @@ const guarded = {
     const s = await getSettings();
     // 모두 채점에서는 예시 학생 글을 빼서 선생님 키를 쓰지 않는다
     const demo = body.all ? new Set((await getRoster()).filter(x => x.demo).map(x => x.no)) : null;
-    const list = body.all ? (await db().find('stories')).filter(y => !demo.has(y.no) && (!y.ai || y.ai.at < y.at)) : [await db().get('stories', `s${int(body.no, 0, 999)}`)];
+    const skip = new Set([].concat(body.skip || []).map(Number)); // 이번 「모두 채점」에서 이미 못 한 글은 다시 보내지 않는다
+    const list = body.all ? (await db().find('stories')).filter(y => !demo.has(y.no) && !skip.has(y.no) && (!y.ai || y.ai.at < y.at)) : [await db().get('stories', `s${int(body.no, 0, 999)}`)];
     let done = 0;
+    const failed = [];
     const t0 = Date.now();
     for (const y of list.slice(0, 3)) { // 함수 한 번에 세 편까지. AI 를 기다리는 시간까지 합해 55초 안에 끝낸다 (버셀 시간 제한 60초)
       if (!y) throw httpError(404, '아직 쓴 글이 없어요.');
       const left = 55000 - (Date.now() - t0);
-      if (done && left < 20000) break;
-      const ai = await aiGrade(s, y.text, y.starter, Math.min(45000, left));
+      if ((done || failed.length) && left < 20000) break;
+      let ai;
+      try { ai = await aiGrade(s, y.text, y.starter, Math.min(45000, left)); } catch (e) {
+        if (!body.all || !e.perStory) throw e; // 키 없음·하루 횟수·연결 실패는 모든 글에 같으니 멈춘다
+        failed.push({ no: y.no, error: e.message });
+        continue;
+      }
       // AI 를 기다리는 동안 학생이 글을 고쳐 냈을 수 있다: 새 글을 덮어쓰지 않고, 옛 글의 점수로 남겨 「다시 채점」 대상이 되게 한다
       const cur = await db().get('stories', `s${y.no}`);
       if (!cur) continue;
@@ -143,7 +151,7 @@ const guarded = {
       await db().set('stories', `s${y.no}`, { ...doc, ai: cur.text === y.text ? ai : { ...ai, at: Math.min(ai.at, cur.at - 1) } });
       done++;
     }
-    return { done, left: Math.max(0, list.length - done) };
+    return { done, failed, left: Math.max(0, list.length - done - failed.length) };
   },
   settings: async ({ body }) => {
     const s = await getSettings();

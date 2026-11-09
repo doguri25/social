@@ -255,6 +255,8 @@ scene.onBeforeRenderObservable.add(() => updateWalls(false));
 // 컷 찍기: 컷 카메라가 벽 바깥에 있을 때만 그 벽을 뺀다. 찍은 뒤 restoreWalls 로 무대 카메라 기준으로 되돌린다
 function wallsForShot(pos) {
   shotWalls = true;
+  // 컷 한 장을 그린 바로 뒤에 무대 카메라 기준으로 되돌린다 (찍기는 그 한 장을 그리기 전까지 큰 화면 그리기를 멈추므로, 큰 무대에는 컷용 벽이 보이지 않는다)
+  scene.onAfterRenderObservable.addOnce(restoreWalls);
   stageNow.walls.forEach(w => {
     const p = w.node.getAbsolutePosition();
     w.node.setEnabled((pos.x - p.x) * w.n[0] + (pos.z - p.z) * w.n[1] < 0);
@@ -296,7 +298,7 @@ engine.onContextRestoredObservable.add(() => poke()); // 쉬는 동안 문맥을
 canvas.addEventListener('pointerdown', poke);
 engine.runRenderLoop(() => {
   // 깜빡이는 중이면 눈을 뜬 장면까지는 그린 뒤 쉰다 (감은 눈으로 멈추지 않게)
-  if (paused || (performance.now() - lastPoke > 15000 && !Object.values(CH).some(c => c.blinking))) return;
+  if (paused || (performance.now() - lastPoke > 15000 && !Object.values(CH).some(c => c.blinking && shown(c)))) return; // 깜빡이다 무대에서 빠진 인물은 보지 않는다
   scene.render();
   if (save.set.q === 'auto' && !slowDevice && frames < 90) {
     frames++;

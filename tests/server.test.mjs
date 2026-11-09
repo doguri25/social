@@ -44,7 +44,7 @@ try {
   ok((await T('teacher', 'changePin', { current: '0000', next: '2468' })).status === 400 && (await T('teacher', 'overview')).status === 200, '지금 비밀번호가 틀려도 로그인은 풀리지 않음');
   ok((await T('teacher', 'changePin', { current: '1324', next: '12' })).status === 400, '새 비밀번호는 4자리 이상');
   ok((await T('teacher', 'changePin', { current: '1324', next: '246813' })).status === 200, '비밀번호 바꾸기');
-  const r = await T('teacher', 'roster', { text: '1 햇살\n2 구름\n2 중복\n잘못된 줄\n3 단풍' });
+  const r = await T('teacher', 'roster', { text: '3학년 2반 명단\n1 햇살\n2 구름\n2 중복\n잘못된 줄\n3 단풍' });
   ok(r.body.students.length === 3 && /^[2-9A-HJ-NP-Z]{6}$/.test(r.body.students[0].code), '명단 3명, 코드 여섯 글자');
   const code = r.body.students[0].code;
   ok((await S('student', 'login', { code: 'WRONG1' })).status === 401, '틀린 코드는 거절');
@@ -57,6 +57,18 @@ try {
   ok((await S('student', 'story', { text: '가'.repeat(250) })).status === 403, '네 권을 다 읽기 전에는 이후의 이야기 못 씀');
   progress.books.book2 = progress.books.book3 = progress.books.book4 = { endings: ['x'] };
   await S('student', 'save', { progress });
+  // 선생님이 지운 뒤: 그 전에 받아 간 화면(옛 since·since 없음)의 진행과 답은 되살아나지 않는다
+  const W = client();
+  await W('student', 'login', { code: r.body.students[1].code });
+  const wOld = (await W('student', 'me')).body.since;
+  await W('student', 'save', { since: wOld, progress: { books: { book4: { endings: ['late'] } } } });
+  await sleep(5);
+  await T('teacher', 'clear', { no: 2 });
+  const st1 = await W('student', 'save', { since: wOld, progress: { books: { book4: { endings: ['late'] } } }, answers: [{ book: 'book4', scene: 's02', kind: 'choice', q: '옛 답', a: 'x', t: wOld - 1 }] });
+  const st2 = await W('student', 'save', { progress: { books: { book4: { endings: ['late'] } } } });
+  ok(st1.body.stale && st2.body.stale && !(await W('student', 'me')).body.progress.books.book4 && !(await T('teacher', 'student', { no: 2 })).body.answers.some(a => a.q === '옛 답'), '선생님이 지운 뒤 옛 화면의 진행·답은 되살아나지 않음');
+  const wNew = (await W('student', 'me')).body.since;
+  ok(!(await W('student', 'save', { since: wNew, progress })).body.stale, '다시 받은 뒤에는 저장됨');
   ok((await S('student', 'story', { text: '짧아요' })).status === 400, '200자 안 되면 거절');
   ok((await S('student', 'story', { text: '가'.repeat(501) })).status === 400, '500자 넘으면 거절');
   ok((await S('student', 'story', { text: '다음 주 월요일 '.repeat(40), starter: 3 })).status === 200, '네 권을 다 읽고 200~500자로 쓰면 저장');
@@ -112,9 +124,12 @@ try {
   let locked = false;
   for (let i = 0; i < 6; i++) if ((await X('teacher', 'login', { password: '999999' })).status === 429) locked = true;
   ok(locked, '한 기기에서 1분에 5번 넘게 틀리면 잠김');
-  let codeLocked = false;
-  for (let i = 0; i < 22; i++) if ((await X('student', 'login', { code: 'ZZZZZ' + (i % 10) })).status === 429) codeLocked = true;
-  ok(codeLocked, '접속 코드를 10분에 20번 넘게 틀리면 잠김');
+  let shortLocked = false;
+  for (let i = 0; i < 120; i++) if ((await X('student', 'login', { code: i % 2 ? '' : 'ZZ1' })).status === 429) shortLocked = true;
+  ok(!shortLocked, '빈 칸·자릿수가 틀린 코드는 세지 않음');
+  let codeLocked = 0;
+  for (let i = 0; i < 102; i++) if ((await X('student', 'login', { code: 'ZZZZZ' + 'ABCDEFGHJK'[i % 10] })).status === 429) codeLocked++;
+  ok(codeLocked === 2, '접속 코드를 10분에 100번 넘게 틀리면 잠김 (학교는 주소 하나를 함께 씀)');
   ok((await fetch(`http://localhost:${port}/api/student`, { method: 'POST', headers: { 'content-type': 'text/plain; x=application/json' }, body: '{"action":"ping"}' })).status === 415, 'JSON 이 아닌 보내기는 거절');
   ok((await fetch(`http://localhost:${port}/api/student`, { method: 'POST', headers: { 'content-type': 'application/json', 'sec-fetch-site': 'cross-site' }, body: '{"action":"ping"}' })).status === 403, '다른 사이트에서 부르면 거절');
   for (const u of ['/.GIT/config', '/SERVER/core.js', '/.DATA/db.json', '/%', '/..%2f..%2fetc%2fpasswd']) ok([400, 404].includes((await fetch(`http://localhost:${port}${u}`)).status), `개발 서버가 ${u} 를 내주지 않음`);
