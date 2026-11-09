@@ -29,17 +29,17 @@ $('#btnPrev').addEventListener('click', () => { if (hi > 0 && !making) { sfx('ta
 // ---- 컷 만들기: 무대를 찍고, 말하는 사람 얼굴 사진을 붙인다 ----
 const panelW = () => Math.round(clamp(storyEl.clientWidth * 2, 560, 900));
 const stageKey = () => stageNow.name + JSON.stringify(curSet);
-async function makeEntry(p) {
+async function makeEntry(p, my) {
   const e = { p, stage: stageNow.name, set: curSet, key: stageKey(), img: null, photo: null, lines: [] };
   applyCut(p);
   const ph = p.phone && p.phone.profile && p.phone.profile.photo;
-  if (ph) { applyCut(ph); e.photo = await shoot(ph, 320, 320); applyCut(p); }
+  if (ph) { applyCut(ph); e.photo = await shoot(ph, 320, 320, my); chk(my); applyCut(p); }
   if (p.note) e.img = noteImg(p.note);
-  else if (p.text == null && !p.phone) { const w = panelW(); e.img = await shoot(p, w, Math.round(w / 1.6)); }
+  else if (p.text == null && !p.phone) { const w = panelW(); e.img = await shoot(p, w, Math.round(w / 1.6), my); }
   for (const l of asList(p.lines)) {
     const kind = ['shout', 'think', 'whisper', 'say'].find(k => l[k]);
     const c = l.who && CH[l.who];
-    e.lines.push({ who: l.who, kind, text: l[kind], img: c ? (shown(c) ? await portrait(c) : cardPic[c.id] || null) : null });
+    e.lines.push({ who: l.who, kind, text: l[kind], img: c ? (shown(c) && await portrait(c, undefined, my)) || cardPic[c.id] || null : null });
   }
   return e;
 }
@@ -47,7 +47,7 @@ async function showPanel(p, my) {
   making++;
   renderFoot();
   let e;
-  try { e = await makeEntry(p); } finally { making--; renderFoot(); }
+  try { e = await makeEntry(p, my); } finally { making--; renderFoot(); }
   if (my !== runId) throw CANCEL;
   hist.push(e);
   hi = hist.length - 1;

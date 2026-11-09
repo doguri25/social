@@ -1,6 +1,10 @@
 // ===== 3D 기본 (Babylon.js): 엔진, 카메라, 빛, 재질, 모델, 벽 자르기, 화질, 그리기 =====
 const canvas = $('#gl');
-const engine = new BABYLON.Engine(canvas, true, { stencil: true, powerPreference: 'high-performance' }, true);
+let engine;
+try { engine = new BABYLON.Engine(canvas, true, { stencil: true, powerPreference: 'high-performance' }, true); } catch (e) { // WebGL 없음, CDN 막힘
+  $('#loading').textContent = '이 기기나 네트워크에서는 3D 무대를 열 수 없어요. 인터넷 연결을 확인하거나 다른 브라우저로 열어 주세요.';
+  throw e;
+}
 const scene = new BABYLON.Scene(engine);
 // three 판에서 쓰던 오른손 좌표계: 인물의 앞이 +z 라서 자세와 자리 값을 그대로 쓴다
 scene.useRightHandedSystem = true;
@@ -25,6 +29,8 @@ let camFov = 40;
 // 무대마다 처음 카메라 자리 (defs 의 wide)
 function homeCam(def) {
   const w = def.wide;
+  alphaGoal = null; // 앞 무대에서 돌던 카메라(방향키·인물 카드)가 새 무대의 처음 자리를 돌려 놓지 않게
+  camera.inertialAlphaOffset = camera.inertialBetaOffset = camera.inertialRadiusOffset = 0;
   camera.target = V3(...w.target);
   camera.lowerRadiusLimit = camera.upperRadiusLimit = null; // 앞 무대의 확대 한계에 거리가 잘리지 않게
   camera.setPosition(V3(...w.pos));
@@ -283,9 +289,11 @@ function applyTier() {
 let lastPoke = 0, paused = false, frames = 0, ftime = 0;
 function poke() { lastPoke = performance.now(); }
 camera.onViewMatrixChangedObservable.add(poke);
+engine.onContextRestoredObservable.add(() => poke()); // 쉬는 동안 문맥을 잃었다 되찾으면 빈 캔버스로 남지 않게 한 번 다시 그린다
 canvas.addEventListener('pointerdown', poke);
 engine.runRenderLoop(() => {
-  if (paused || performance.now() - lastPoke > 15000) return;
+  // 깜빡이는 중이면 눈을 뜬 장면까지는 그린 뒤 쉰다 (감은 눈으로 멈추지 않게)
+  if (paused || (performance.now() - lastPoke > 15000 && !Object.values(CH).some(c => c.blinking))) return;
   scene.render();
   if (save.set.q === 'auto' && !slowDevice && frames < 90) {
     frames++;

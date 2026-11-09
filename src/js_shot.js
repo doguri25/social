@@ -131,8 +131,9 @@ function screentone(g, W, H) {
 }
 async function loadImg(src) { const img = new Image(); img.src = src; await img.decode(); return img; }
 // 컷 한 장: 지금 무대(표정·자세는 applyCut 으로 맞춘 상태)를 컷 카메라로 찍어 jpeg 주소로
-function shoot(p, w, hh) {
+function shoot(p, w, hh, my) {
   return serial(async () => {
+    if (my != null) chk(my); // 줄에서 기다리는 사이 흐름이 취소됐으면 (책장으로 나감) 찍지 않는다
     scene.render(); // 자세를 바꾼 뒤의 위치로 컷 자리를 계산한다
     placeShot(p);
     wallsForShot(shotCam.position);
@@ -150,12 +151,15 @@ function shoot(p, w, hh) {
 }
 // 얼굴 사진 (말풍선 옆, 인물 카드): 그 인물만 보이게 앞에서 찍는다. face 를 주면 그 표정으로
 const portraits = {};
-function portrait(c, face) {
+function portrait(c, face, my) {
   const key = `${c.id}:${face || c.face}:${face ? '' : c.pose}`;
   if (portraits[key]) return Promise.resolve(portraits[key]);
   return serial(async () => {
+    if (my != null) chk(my);
+    if (!shown(c)) return null; // 기다리는 사이 무대에서 빠진 인물은 빈 그림이 되므로 찍지도 저장하지도 않는다
     const keep = c.face, night = stageNow.def.light === 'night';
     if (face) setFace(c, face);
+    const n = c.faceN;
     if (night) setLight('day'); // 얼굴 사진은 밤 장면에서도 밝게
     scene.render();
     const hp = headPos(c), f = facing(c), r = c.r * c.root.scaling.x;
@@ -163,7 +167,7 @@ function portrait(c, face) {
     faceCam.setTarget(hp.add(V3(0, r * 0.05, 0)));
     faceCam.fov = 0.42;
     faceCam.layerMask = c.mask;
-    try { return (portraits[key] = await snap(faceCam, 160, 160)); } finally { if (face) setFace(c, keep); if (night) setLight('night', stageNow.def.lamp); }
+    try { return (portraits[key] = await snap(faceCam, 160, 160)); } finally { if (face && c.faceN === n) setFace(c, keep); if (night) setLight(stageNow.def.light, stageNow.def.lamp); }
   });
 }
 // 컷 하나의 표정과 자세를 무대 인물에게도 (다른 인물은 무대에서 정한 표정·자세로)

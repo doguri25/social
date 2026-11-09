@@ -110,7 +110,7 @@ function updateCast() {
     img.alt = '';
     img.style.setProperty('--c', d.card || '#f6ead7');
     if (cardPic[id]) img.src = cardPic[id];
-    else portrait(CH[id], 'joy').then(u => { cardPic[id] = u; img.src = u; }, () => {});
+    else portrait(CH[id], 'joy').then(u => { if (u) { cardPic[id] = u; img.src = u; } }, () => {});
     b.append(img, h('span', '', d.name));
     return b;
   }));
@@ -304,7 +304,7 @@ function openSettings() {
     row('읽어 주기', koVoice ? '글과 말풍선을 소리 내어 읽어요' : '이 기기에는 한국어 목소리가 없어요', read),
     row('언어', '다른 언어는 번역을 넣으면 고를 수 있어요. 책을 새로 열 때부터 바뀌어요', (() => { const sg = seg(LANGS.map(([c, n]) => [c, n]), LANG, v => { LANG = save.set.lang = v; store(); findVoice(); }); sg.querySelectorAll('button').forEach((b, i) => { b.disabled = !langReady(LANGS[i][0]); }); return sg; })()),
     row('글자 크기', '', seg([[0.9, '작게'], [1, '보통'], [1.2, '크게']], save.set.fs, v => { save.set.fs = v; store(); document.documentElement.style.setProperty('--fs', v); fitSide(); })),
-    row('화질', '높음: 그늘과 빛 번짐까지 / 느리면 「낮음」', seg([['auto', '자동'], ['low', '낮음'], ['high', '높음']], save.set.q, v => { save.set.q = v; slowDevice = false; store(); applyTier(); })),
+    row('화질', '높음: 그늘과 빛 번짐까지 / 느리면 「낮음」', seg([['auto', '자동'], ['low', '낮음'], ['high', '높음']], save.set.q, v => { save.set.q = v; slowDevice = false; frames = ftime = 0; store(); applyTier(); })),
     row('효과음', '', onOff('sound')),
     row('함께 보기', '전자칠판용: 고를 때 선생님 질문, 생각 시간, 손든 사람 수', onOff('cls')),
     row('수업 링크', '이 설정 그대로 마지막에 연 책을 바로 여는 주소 (GitHub Pages 주소에서 쓰세요)', copy),

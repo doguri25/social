@@ -258,6 +258,7 @@ function paintFace(c, closed) {
   c.faceTex.update();
 }
 function setFace(c, kind) {
+  c.faceN = (c.faceN || 0) + 1; // 얼굴 사진이 표정을 되돌릴 때, 그 사이 새로 정해진 표정이 있는지 본다
   if (c.face === kind && !c.blinking) return;
   c.face = kind;
   c.blinking = false;
