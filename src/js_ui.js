@@ -103,8 +103,9 @@ function markCards() {
 function updateCast() {
   const ids = BOOK.cast.map(d => d.id).filter(id => shown(CH[id]));
   const nav = $('#cast');
-  if (nav.dataset.ids === ids.join()) return markCards();
-  nav.dataset.ids = ids.join();
+  const key = LANG + ':' + ids.join(); // 언어를 바꾸면 같은 인물이라도 이름표를 다시 (책장에서 언어를 고를 때)
+  if (nav.dataset.ids === key) return markCards();
+  nav.dataset.ids = key;
   nav.replaceChildren(...ids.map(id => {
     const d = BOOK.castById[id];
     const b = btn('', '', e => { if (e.detail > 0) b.blur(); sfx('tap'); pickChar(id); });
@@ -208,11 +209,13 @@ function openAfter() {
   const student = NET.mode === 'student';
   const min = student ? NET.me.minChars : 200, max = student ? NET.me.maxChars || 500 : 500;
   const draft = readDraft(), doc = afterDoc();
-  // 이야기 시작: 낸 글이나 쓰던 글의 시작을 그대로, 없으면 여섯 가지 가운데 하나를 무작위로
-  let starter = [draft && draft.starter, doc && doc.starter].find(v => STARTERS.some(x => x.id === v));
+  // 이 기기 초안보다 나중에 낸 글(다른 기기)이 있으면 그 글 (시각이 없는 예전 초안은 예전처럼 초안 먼저)
+  const mine = !!(draft && draft.text && !(doc && draft.at != null && doc.at > draft.at));
+  // 이야기 시작: 보여 주는 글(쓰던 글이나 낸 글)의 시작을 그대로, 없으면 여섯 가지 가운데 하나를 무작위로 (옛 초안의 시작이 다른 기기에서 낸 글에 붙지 않게)
+  let starter = (mine ? [draft.starter, doc && doc.starter] : [doc && doc.starter, draft && draft.starter]).find(v => STARTERS.some(x => x.id === v));
   if (starter == null) starter = STARTERS[Math.floor(Math.random() * STARTERS.length)].id;
   const ta = h('textarea', 'afterta');
-  ta.value = (draft && draft.text && !(doc && draft.at != null && doc.at > draft.at) && draft.text) || afterText(); // 이 기기 초안보다 나중에 낸 글(다른 기기)이 있으면 그 글 (시각이 없는 예전 초안은 예전처럼 초안 먼저)
+  ta.value = (mine && draft.text) || afterText();
   ta.placeholder = t('afterPlaceholder');
   ta.setAttribute('aria-label', t('afterLabel'));
   const count = h('div', 'aftercount');
@@ -229,9 +232,10 @@ function openAfter() {
     sending = true;
     const text = ta.value.trim();
     try {
-      if (student) { await api('story', { text, starter }); NET.me.story = { text, starter, at: srvNow() }; }
+      if (student) { await api('story', { no: NET.me.no, text, starter }); NET.me.story = { text, starter, at: srvNow() }; }
       else { save.after = { text, starter, at: Date.now() }; store(); }
-      try { localStorage.removeItem(draftKey()); } catch (e) { /* 없음 */ }
+      if (ta.value.trim() !== text) keep(); // 답을 기다리는 동안 더 쓴 글은 초안으로 남긴다 (낸 글보다 나중 시각으로)
+      else try { localStorage.removeItem(draftKey()); } catch (e) { /* 없음 */ }
       sfx('end');
       toast(student ? t('afterSent') : t('afterSaved'));
     } catch (e) { toast(e.message); } finally { sending = false; }
@@ -244,7 +248,17 @@ function openAfter() {
     setNext(n >= min && n <= max ? submit : null, student ? t('sendTeacher') : t('saveHere'));
     renderAsk();
   };
-  ta.addEventListener('input', () => { upd(); keep(); }); // 열기만 해서는 초안을 만들지 않는다
+  let typed = false;
+  ta.addEventListener('input', () => { typed = true; upd(); keep(); }); // 열기만 해서는 초안을 만들지 않는다
+  if (student) { // 이 화면을 연 뒤 다른 기기에서 고쳐 낸 글이 있으면 그 글로 (오래 열어 둔 화면이 옛 글을 고쳐 내어 새 글을 덮지 않게)
+    const me0 = NET.me, my = runId;
+    api('me', {}, false, 10000).then(m => {
+      if (NET.me !== me0 || m.no !== me0.no || !m.story || (me0.story && me0.story.at >= m.story.at)) return;
+      const old = me0.story;
+      me0.story = m.story;
+      if (runId === my && !typed && (!old || old.text !== m.story.text || old.starter !== m.story.starter)) openAfter();
+    }, () => { /* 못 받으면 이 화면의 글로 */ });
+  }
   drawStarter();
   const card = h('div', 'endcard after');
   const prompt = student && NET.me.prompt && (LANG === 'ko' || NET.me.prompt !== AFTER_PROMPT) ? NET.me.prompt : t('afterPrompt'); // 선생님이 고친 안내는 그대로
@@ -300,6 +314,7 @@ function openSettings() {
   const wipe = btn(t('wipe'), 'sbtn', () => {
     if (!sure) { sure = true; wipe.textContent = t('wipeSure'); return; }
     for (const k of Object.keys(GUEST.books)) delete GUEST.books[k]; // 이 기기 기록만, 같은 그릇을 비운다 (학급 서버 기록은 그대로)
+    save.cleared = Date.now(); // 같은 기기의 다른 탭도 지우게 (js_net 의 storage)
     store();
     wipe.textContent = t('wiped');
     wipe.disabled = true;
@@ -334,7 +349,12 @@ $('#btnSet').addEventListener('click', openSettings);
 $('#btnPause').addEventListener('click', () => setPaused(true));
 $('#btnResume').addEventListener('click', e => setPaused(false, e.detail > 0));
 // 처음 화면으로: 지금 장면을 이어 보기 자리로 저장하고(장면을 시작할 때 이미 적어 둠) 책장으로
-$('#btnHome').addEventListener('click', () => { sfx('tap'); flush(true); toast(NET.mode === 'student' ? t('homeToastServer') : t('homeToastDevice')); toShelf(); });
+$('#btnHome').addEventListener('click', () => {
+  sfx('tap');
+  if (NET.mode !== 'student') toast(t('homeToastDevice'));
+  else flush(true).then(ok => { if (NET.mode === 'student') toast(ok ? t('homeToastServer') : t('homeToastOffline')); }); // 못 보냈는데 저장했다고 하지 않는다
+  toShelf();
+});
 addEventListener('keydown', e => {
   if (e.key === 'Escape') { if (!$('#settings').hidden) $('#settings').hidden = true; else if (paused) setPaused(false); return; }
   if (!$('#settings').hidden || !$('#gate').hidden || paused) return;

@@ -293,8 +293,8 @@ function askSignals(spec) {
       const tb = teachBox(spec.ask);
       if (tb) out.push(tb);
       const chips = h('div', 'bodychips');
-      Object.entries(BODY).forEach(([k, name]) => {
-        const b = btn(name, 'bodychip', e => toggle(k, e.detail > 0));
+      Object.keys(BODY).forEach(k => {
+        const b = btn(t('body_' + k), 'bodychip', e => toggle(k, e.detail > 0)); // BODY 는 선생님 화면 기록용 한국어, 보이는 이름은 고른 언어
         b.setAttribute('aria-pressed', picked.has(k));
         if (shown) { b.disabled = true; b.classList.toggle('real', spec.parts.includes(k)); }
         chips.appendChild(b);
@@ -381,7 +381,9 @@ function askRole(spec) {
           setNext(() => done(id), t('cont'));
           speak(spec.reveal);
         });
-        b.append(h('span', 'ico', String(i + 1)), h('span', '', `${text} · ${good}`));
+        const lab = h('span', '', `${text} · ${good}`);
+        if (showKo() && spec.roles[i]['~1']) { const k = h('span', 'ko', `${ko(spec.roles[i], 1)} · ${ko(spec.roles[i], 2)}`); k.lang = 'ko'; lab.appendChild(k); } // 한국어도 보기: 다른 고르는 말처럼
+        b.append(h('span', 'ico', String(i + 1)), lab);
         b.disabled = !!pick && pick !== id;
         list.appendChild(b);
       });
@@ -454,16 +456,19 @@ function endingCard(end) {
 function reviewCard() {
   return waitFor(done => {
     const path = h('div', 'path');
+    // 지나온 길(trail)의 물음·답은 한국어로 적어 둔다: 지금 책의 번역으로 보이고, 「한국어도 보기」면 원문을 아래에
+    const tr2 = s => (BOOK.ko2tr && BOOK.ko2tr[s]) || s;
+    const say = (node, s) => { if (showKo() && tr2(s) !== s) { const k = h('span', 'ko', s); k.lang = 'ko'; node.appendChild(k); } return node; };
     trail.forEach((tr, i) => {
       const sc = BOOK.scenes[tr.scene];
       const stop = h('div', 'stop');
       const kind = tr.type === 'whatif' ? t('stopWhatif') : tr.type === 'compose' ? (sc.compose.write ? t('stopWrote') : t('stopSaid')) : t('choiceEyebrow');
-      stop.append(h('div', 'kind', `${sc.place} · ${kind}`), h('p', 'sq', tr.q));
+      stop.append(h('div', 'kind', `${sc.place} · ${kind}`), say(h('p', 'sq', tr2(tr.q)), tr.q));
       if (tr.type === 'compose') {
-        tr.opts.forEach(o => stop.appendChild(h('div', 'alt mine', o)));
+        tr.opts.forEach(o => stop.appendChild(say(h('div', 'alt mine', tr2(o)), o)));
         stop.appendChild(btn(t('pickOther'), 'sbtn', () => done({ i })));
       } else {
-        tr.opts.forEach((o, k) => stop.appendChild(k === tr.pick ? h('div', 'alt mine', o) : btn(o, 'alt', () => done({ i, k }))));
+        tr.opts.forEach((o, k) => stop.appendChild(say(k === tr.pick ? h('div', 'alt mine', tr2(o)) : btn(tr2(o), 'alt', () => done({ i, k })), o)));
       }
       path.appendChild(stop);
     });

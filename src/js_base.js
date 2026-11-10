@@ -77,14 +77,14 @@ function sfx(kind) {
 }
 
 // ---- 읽어 주기: 브라우저 음성 합성, 고른 언어의 목소리가 있을 때만 (나중에 녹음 파일로 바꿀 자리) ----
+// 언어는 화면 언어 LANG (js_i18n: 글이 있는 언어만. 저장된 값이 다른 언어거나 깨져도 한국어). 처음 찾기도 js_i18n 에서 LANG 을 정한 뒤에
 let koVoice = null;
 function findVoice() {
-  const want = new RegExp('^' + (save.set.lang || 'ko'), 'i');
-  try { koVoice = speechSynthesis.getVoices().find(v => want.test(v.lang)) || null; } catch (e) { koVoice = null; }
+  const want = String(LANG).toLowerCase();
+  try { koVoice = speechSynthesis.getVoices().find(v => String(v.lang).toLowerCase().startsWith(want)) || null; } catch (e) { koVoice = null; }
   const b = $('#btnRead');
   if (b) b.hidden = !koVoice;
 }
-if ('speechSynthesis' in window) { findVoice(); speechSynthesis.addEventListener('voiceschanged', findVoice); }
 function speak(text) {
   if (!save.set.read || !koVoice || !text) return;
   try {

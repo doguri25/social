@@ -217,11 +217,13 @@
  "version": "Nhà hát Cảm xúc v{v}",
  "homeToastServer": "Đã lưu đến đây trên máy chủ của lớp. Lần sau có thể xem tiếp từ cảnh này.",
  "homeToastDevice": "Đã lưu đến đây trên thiết bị này. Lần sau có thể xem tiếp từ cảnh này.",
+ "homeToastOffline": "Mất mạng nên chưa gửi được lên máy chủ của lớp. Khi có mạng lại sẽ gửi tiếp.",
  "srv": {
   "코드를 다시 확인해 주세요. 여섯 글자예요.": "Hãy kiểm tra lại mã nhé. Mã có 6 ký tự.",
   "코드를 다시 확인해 주세요.": "Hãy kiểm tra lại mã nhé.",
   "접속 코드가 바뀌었어요. 선생님께 새 코드를 받아 주세요.": "Mã vào lớp đã đổi rồi. Hãy xin thầy cô mã mới nhé.",
   "접속 코드로 다시 들어와 주세요.": "Hãy vào lại bằng mã vào lớp nhé.",
+  "이 기기에서 다른 학생이 들어왔어요. 내 접속 코드로 다시 들어와 주세요.": "Có bạn khác vừa vào lớp trên thiết bị này. Hãy vào lại bằng mã vào lớp của em nhé.",
   "1~4권을 모두 끝까지 읽으면 쓸 수 있어요.": "Đọc hết tập 1–4 đến cuối là có thể viết.",
   "보낸 내용이 너무 커요.": "Nội dung gửi đi lớn quá.",
   "보낸 내용이 맞지 않아요.": "Nội dung gửi đi chưa đúng."

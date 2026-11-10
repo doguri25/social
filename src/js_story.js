@@ -114,7 +114,7 @@ async function playScene(id, opt, my) {
     const k = pick != null ? pick : await askChoice(sc.choices, 'choice');
     chk(my);
     const o = sc.choices.opts[k];
-    trail.push({ type: 'choice', scene: id, at: sc.panels.length, q: sc.choices.q, opts: sc.choices.opts.map(x => x.text), pick: k, flags: before });
+    trail.push({ type: 'choice', scene: id, at: sc.panels.length, q: ko(sc.choices, 'q'), opts: sc.choices.opts.map(x => ko(x, 'text')), pick: k, flags: before }); // 지나온 길은 한국어로 적고 「내가 고른 길」에서 지금 언어로 (언어를 바꿔 이어 봐도, 서버에 남는 이어 보기 자리도)
     addFlags(o.add);
     logAnswer('choice', ko(sc.choices, 'q'), ko(o, 'text'));
     return o.go;
@@ -127,7 +127,7 @@ async function playScene(id, opt, my) {
 async function playWhatif(w, sceneId, at, preset, my) {
   const k = preset != null ? preset : await askChoice(w, 'whatif');
   chk(my);
-  trail.push({ type: 'whatif', scene: sceneId, at, q: w.q, opts: w.opts.map(x => x.text), pick: k, flags: Object.assign({}, flags) });
+  trail.push({ type: 'whatif', scene: sceneId, at, q: ko(w, 'q'), opts: w.opts.map(x => ko(x, 'text')), pick: k, flags: Object.assign({}, flags) });
   const o = w.opts[k];
   logAnswer('whatif', ko(w, 'q'), ko(o, 'text'));
   if (o.story) return showAndWait({ text: w.same, '~text': w['~same'], tone: 'note' }, my);
@@ -147,7 +147,7 @@ async function playCompose(sc, id, preset, my) {
   const avail = spec.pieces.filter(pc => meets(pc.when, flags));
   const picked = preset || await askCompose(spec, avail);
   chk(my);
-  trail.push({ type: 'compose', scene: id, at: sc.panels.length, q: spec.q, opts: picked.map(pc => pc.text), pick: -1, flags: before });
+  trail.push({ type: 'compose', scene: id, at: sc.panels.length, q: ko(spec, 'q'), opts: picked.map(pc => ko(pc, 'text')), pick: -1, flags: before });
   picked.forEach(pc => addFlags(pc.add));
   logAnswer('compose', ko(spec, 'q'), picked.map(pc => ko(pc, 'text')));
   for (const pc of picked) {

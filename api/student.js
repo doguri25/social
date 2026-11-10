@@ -7,12 +7,14 @@ const { getRoster, getSettings, unlocked, BOOKS, STARTERS } = require('../server
 const COOKIE = 'maum_s';
 const KINDS = ['choice', 'whatif', 'feel', 'compose', 'signals', 'sort', 'role', 'ending'];
 
-async function who(req) {
+async function who(req, body) {
   const v = unsign(cookies(req)[COOKIE]);
   const m = v && /^s:(\d+):([A-Z0-9]+)$/.exec(v);
   if (!m) throw httpError(401, '접속 코드로 다시 들어와 주세요.');
   const s = (await getRoster()).find(x => x.no === Number(m[1]) && x.code === m[2]); // 선생님이 코드를 새로 만들면 예전 쿠키는 못 쓴다
   if (!s) throw httpError(401, '접속 코드가 바뀌었어요. 선생님께 새 코드를 받아 주세요.');
+  // no: 화면이 아는 학생. 같은 브라우저의 다른 탭에서 다른 학생이 들어오면 쿠키가 그 학생 것으로 바뀐다 (앞 학생 화면의 진행·답·글이 새 학생 기록에 섞이지 않게)
+  if (body && body.no != null && Number(body.no) !== s.no) throw httpError(409, '이 기기에서 다른 학생이 들어왔어요. 내 접속 코드로 다시 들어와 주세요.');
   return s;
 }
 // 진행: 책마다 본 결말·감정 카드 답·활동 답·역할, 책마다 이어 보기 자리. 정해진 모양만 골라 담는다(깊이·개수 제한)
@@ -61,6 +63,8 @@ function mergeProgress(next, cur, endedIn) {
 const wipedAt = async no => Math.max(0, ...(await Promise.all([db().get('meta', `wiped:s${no}`), db().get('meta', 'wiped:all')])).map(w => (w && w.at) || 0));
 const MAX_ANSWERS = 3000; // 한 학생의 답은 이만큼까지 (저장소가 넘치지 않게)
 const cleanAnswer = (a, no) => ({
+  // id: 화면이 답마다 붙인 무작위 글자. 저장은 됐는데 답이 끊겨 화면이 다시 보낸 답을 한 번만 쌓게 문서 id 로 쓴다 (예전 화면은 id 없이)
+  ...(typeof a.id === 'string' && /^[0-9a-z]{8,40}$/.test(a.id) ? { _id: `s${no}:${a.id}` } : {}),
   no, book: text(a.book, 12), scene: text(a.scene, 20), kind: KINDS.includes(a.kind) ? a.kind : 'choice',
   q: text(a.q, 300), a: text(Array.isArray(a.a) ? a.a.join(' / ') : a.a, 1000), t: Number.isFinite(a.t) ? a.t : Date.now(),
 });
@@ -90,7 +94,7 @@ module.exports = route({
   },
   // 진행 저장 + 새로 고른 답 쌓기 (답은 지우지 않고 계속 쌓는다)
   save: async ({ req, body }) => {
-    const s = await who(req);
+    const s = await who(req, body);
     const p = body.progress;
     let stale = false, wiped = 0, merged = null;
     if (p && typeof p === 'object' && p.books && typeof p.books === 'object') {
@@ -102,6 +106,8 @@ module.exports = route({
     }
     let answers = [].concat(body.answers || []).slice(0, 60).filter(a => a && typeof a === 'object').map(a => cleanAnswer(a, s.no));
     if (stale) answers = answers.filter(a => a.t >= wiped); // 지우기 전에 고른 답도 다시 넣지 않는다
+    const have = await Promise.all(answers.map(a => a._id && db().get('answers', a._id)));
+    answers = answers.filter((a, i) => !have[i]); // 이미 받은 답 (앞 저장의 답이 화면에 닿지 못해 다시 보낸 것)
     if (answers.length) answers = answers.slice(0, Math.max(0, MAX_ANSWERS - (await db().count('answers', { no: s.no })))); // 상한까지 남은 만큼은 받는다
     await db().insertMany('answers', answers);
     // wiped: 화면이 지운 뒤에 읽은 것을 가려 다시 넣게. ends: 다른 기기에서 본 결말까지 합친 것 (화면이 「이후의 이야기」 열림을 바로 알게)
@@ -109,7 +115,7 @@ module.exports = route({
   },
   // 이후의 이야기: 1~4권을 모두 읽은 뒤에만, 정해진 글자 수(띄어쓰기 빼고) 안에서. starter: 선생님이 들려준 이야기 시작 번호
   story: async ({ req, body }) => {
-    const s = await who(req);
+    const s = await who(req, body);
     const [prog, set, old] = await Promise.all([db().get('progress', `s${s.no}`), getSettings(), db().get('stories', `s${s.no}`)]);
     if (!unlocked(prog)) throw httpError(403, '1~4권을 모두 끝까지 읽으면 쓸 수 있어요.');
     const t = text(body.text, 24000).trim(); // 최대 5000자 (로마자는 두 배) + 띄어쓰기

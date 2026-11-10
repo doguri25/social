@@ -10,6 +10,7 @@ for (const [c] of LANGS) if (c !== 'ko') UI[c] = (STORY_I18N[c] || {}).ui || {};
 // 네 권 가운데 한 권이라도 번역이 있으면 고를 수 있다
 const langReady = code => code === 'ko' || ['book1', 'book2', 'book3', 'book4'].some(b => Object.keys((STORY_I18N[code] || {})[b] || {}).length > 0);
 let LANG = langReady(save.set.lang) ? save.set.lang : 'ko';
+if ('speechSynthesis' in window) { findVoice(); speechSynthesis.addEventListener('voiceschanged', findVoice); } // 읽어 주기 목소리는 LANG 을 정한 뒤에 찾는다 (js_base)
 const langName = c => (LANGS.find(l => l[0] === c) || LANGS[0])[1];
 // t('feelRight', { name }) : {name} 자리에 값을, 한국어일 때 {name은} {name과} 는 받침에 맞는 조사까지 붙인다
 const t = (key, v) => {

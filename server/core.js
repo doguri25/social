@@ -50,7 +50,11 @@ function mongo(uri) {
     kind: 'mongo',
     get: async (col, id) => plain(await (await c(col)).findOne({ _id: id })),
     set: async (col, id, doc) => void (await (await c(col)).replaceOne({ _id: id }, doc, { upsert: true })),
-    insertMany: async (col, docs) => { if (docs.length) await (await c(col)).insertMany(docs.map(d => ({ _id: crypto.randomUUID(), ...d }))); },
+    insertMany: async (col, docs) => { // d._id 가 있으면 그 id 로 (같은 id 가 이미 있으면 넣지 않는다)
+      if (!docs.length) return;
+      try { await (await c(col)).insertMany(docs.map(d => ({ _id: crypto.randomUUID(), ...d })), { ordered: false }); }
+      catch (e) { const errs = e && Array.isArray(e.writeErrors) && e.writeErrors.length ? e.writeErrors : [e]; if (!errs.every(w => w && w.code === 11000)) throw e; } // 같은 id(11000)만 건너뛴다
+    },
     find: async (col, filter = {}) => (await (await c(col)).find(filter).toArray()).map(plain),
     count: async (col, filter = {}) => (await c(col)).countDocuments(filter),
     countBy: async (col, field) => Object.fromEntries((await (await c(col)).aggregate([{ $group: { _id: '$' + field, n: { $sum: 1 } } }]).toArray()).map(r => [r._id, r.n])),
@@ -70,7 +74,7 @@ function local() {
     kind: 'local',
     get: async (col, id) => { const r = (read()[col] || {})[id]; return r ? { id, ...r } : null; },
     set: async (col, id, doc) => edit(col, r => { r[id] = doc; }),
-    insertMany: async (col, docs) => edit(col, r => { docs.forEach(d => { r[crypto.randomUUID()] = d; }); }),
+    insertMany: async (col, docs) => edit(col, r => { docs.forEach(({ _id, ...d }) => { const id = _id || crypto.randomUUID(); if (!r[id]) r[id] = d; }); }),
     find: async (col, filter = {}) => rows(col, filter).map(([id, d]) => ({ id, ...d })),
     count: async (col, filter = {}) => rows(col, filter).length,
     countBy: async (col, field) => { const out = {}; rows(col, {}).forEach(([, d]) => { out[d[field]] = (out[d[field]] || 0) + 1; }); return out; },

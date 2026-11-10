@@ -73,6 +73,11 @@ try {
   ok(st1.body.stale && st2.body.stale && !(await W('student', 'me')).body.progress.books.book4 && !(await T('teacher', 'student', { no: 2 })).body.answers.some(a => a.q === '옛 답'), '선생님이 지운 뒤 옛 화면의 진행·답은 되살아나지 않음');
   const wNew = (await W('student', 'me')).body.since;
   ok(!(await W('student', 'save', { since: wNew, progress })).body.stale, '다시 받은 뒤에는 저장됨');
+  // 저장은 됐는데 답이 끊겨 화면이 다시 보낸 답(같은 id)은 한 번만. 화면이 아는 학생(no)과 쿠키의 학생이 다르면(같은 브라우저 다른 탭에서 다른 학생이 들어옴) 받지 않는다
+  const dup = { book: 'book1', scene: 's05', kind: 'choice', q: '두 번 보낸 답', a: 'x', t: wNew + 1, id: 'dupcheck01' };
+  await W('student', 'save', { no: 2, since: wNew, progress, answers: [dup] });
+  ok((await W('student', 'save', { no: 2, since: wNew, progress, answers: [dup, dup] })).body.saved === 0 && (await T('teacher', 'student', { no: 2 })).body.answers.filter(a => a.q === dup.q).length === 1, '끊겨서 다시 보낸 같은 답(id)은 한 번만 쌓임');
+  ok((await W('student', 'save', { no: 1, since: wNew, progress })).status === 409 && (await W('student', 'story', { no: 1, text: '가'.repeat(250) })).status === 409, '화면이 아는 학생과 쿠키의 학생이 다르면 저장·글을 받지 않음 (409)');
   ok((await S('student', 'story', { text: '짧아요' })).status === 400, '200자 안 되면 거절');
   ok((await S('student', 'story', { text: '가'.repeat(501) })).status === 400, '500자 넘으면 거절');
   ok((await S('student', 'story', { text: 'Thu Hai tuan sau '.repeat(35) })).status === 200 && (await S('student', 'story', { text: 'a'.repeat(900) })).status === 200, '로마자 글은 두 자를 한 자로 (455자 → 228자, 900자 → 450자: 200~500 안)');
