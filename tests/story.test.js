@@ -211,5 +211,56 @@ for (const file of files) {
   console.log(`· ${file}: 장면 ${ids.length}개, 갈림길 ${decisions}개, 만약에 ${whatifs}개, 길 ${paths}가지, 결말 ${E.map(e => `${e.id} ${reached[e.id] || 0}`).join(' / ')}`);
 }
 
+// ---- 번역 (stories/i18n/<언어>/): 원문에 있는 열쇠만, 빈 값·한글 없이, 화면 글자의 {자리}는 원문과 같게 ----
+const i18nDir = path.join(root, 'stories/i18n');
+const TEXT_KEYS = new Set(['title', 'sub', 'place', 'cap', 'pre', 'text', 'say', 'shout', 'think', 'whisper', 'q', 'ask', 'reveal', 'same', 'back', 'intro', 'name', 'sfx']);
+const SKIP_UNDER = new Set(['set', 'faces', 'poses', 'when', 'add', 'is', 'on', 'stage']);
+function textPaths(o, p, out) { // tools/i18n.py 의 walk 와 같은 규칙
+  if (Array.isArray(o)) o.forEach((v, i) => { const q = `${p}.${i}`; if (typeof v === 'string' && (p.endsWith('talk') || (p.split('.').slice(-2, -1)[0] === 'roles' && i > 0))) out[q] = v; else textPaths(v, q, out); });
+  else if (o && typeof o === 'object') for (const [k, v] of Object.entries(o)) { if (SKIP_UNDER.has(k)) continue; const q = p ? `${p}.${k}` : k; if (typeof v === 'string' && TEXT_KEYS.has(k) && v.trim()) out[q] = v; else textPaths(v, q, out); }
+  return out;
+}
+const HANGUL = /[가-힣ㄱ-ㅎㅏ-ㅣ]/;
+const holes = s => [...new Set((String(s).match(/\{[^{}]*\}/g) || []).map(m => m.replace(/(은|과)\}$/, '}')))].sort().join(' ');
+if (fs.existsSync(i18nDir)) {
+  const UIKO = JSON.parse(fs.readFileSync(path.join(root, 'data/ui.json'), 'utf8'));
+  const STK = {};
+  JSON.parse(fs.readFileSync(path.join(root, 'server/starters.json'), 'utf8')).forEach(st => ['title', 'who', 'text'].forEach(k => { STK[`${st.id}.${k}`] = st[k]; }));
+  for (const lang of fs.readdirSync(i18nDir)) {
+    const err = (at, msg) => { errors++; console.log(`✗ i18n/${lang} ${at}: ${msg}`); };
+    const read = f => { try { return JSON.parse(fs.readFileSync(path.join(i18nDir, lang, f), 'utf8')); } catch (e) { err(f, '읽을 수 없음 ' + e.message); return null; } };
+    let lines = 0;
+    for (const file of files) {
+      if (!fs.existsSync(path.join(i18nDir, lang, file))) continue;
+      const tr = read(file);
+      if (!tr) continue;
+      const src = textPaths(JSON.parse(fs.readFileSync(path.join(root, 'stories', file), 'utf8')), '', {});
+      for (const [k, v] of Object.entries(tr)) {
+        if (!(k in src)) err(`${file} ${k}`, '원문에 없는 자리 (원문이 바뀌었으면 python3 tools/i18n.py export 로 맞추기)');
+        else if (typeof v !== 'string' || !v.trim()) err(`${file} ${k}`, '빈 번역');
+        else if (HANGUL.test(v)) err(`${file} ${k}`, '한글이 남음');
+        lines++;
+      }
+    }
+    const ui = fs.existsSync(path.join(i18nDir, lang, 'ui.json')) && read('ui.json');
+    if (ui) {
+      for (const [k, v] of Object.entries(ui)) {
+        if (!(k in UIKO)) { err(`ui.json ${k}`, 'data/ui.json 에 없는 열쇠'); continue; }
+        const pairs = typeof v === 'object' && v ? Object.entries(v).map(([k2, v2]) => [`${k}.${k2}`, v2, UIKO[k][k2]]) : [[k, v, UIKO[k]]];
+        for (const [at, val, ko] of pairs) {
+          if (ko == null) err(`ui.json ${at}`, 'data/ui.json 에 없는 열쇠');
+          else if (typeof val !== 'string') err(`ui.json ${at}`, '글이 아님');
+          else if (HANGUL.test(val)) err(`ui.json ${at}`, '한글이 남음');
+          else if (holes(val) !== holes(ko)) err(`ui.json ${at}`, `{자리}가 원문과 다름: ${holes(ko)} → ${holes(val)}`);
+          lines++;
+        }
+      }
+    }
+    const st = fs.existsSync(path.join(i18nDir, lang, 'starters.json')) && read('starters.json');
+    if (st) for (const [k, v] of Object.entries(st)) { if (!(k in STK)) err(`starters.json ${k}`, '원문에 없는 열쇠'); else if (typeof v !== 'string' || !v.trim() || HANGUL.test(v)) err(`starters.json ${k}`, '빈 번역이거나 한글이 남음'); lines++; }
+    console.log(`· i18n/${lang}: 번역 ${lines}줄`);
+  }
+}
+
 console.log(errors ? `실패: 오류 ${errors}개, 경고 ${warnings}개` : `통과 (경고 ${warnings}개)`);
 process.exit(errors ? 1 : 0);

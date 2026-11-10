@@ -65,7 +65,7 @@ async function runFrom(sceneId, opt) {
     let id = sceneId, o = opt;
     while (id && my === runId) { id = await playScene(id, o, my); o = {}; }
   } catch (e) {
-    if (e !== CANCEL) { console.error(e); toast('문제가 생겼어요. 책장으로 돌아가 다시 열어 주세요.'); }
+    if (e !== CANCEL) { console.error(e); toast(t('storyErr')); }
   }
 }
 function chk(my) { if (my !== runId) throw CANCEL; }
@@ -85,7 +85,7 @@ async function playScene(id, opt, my) {
   setHeader(parseInt(sc.page, 10) || 1);
   resetHist();
   // 인물의 둘러보기 말은 무대 위 점 대신 인물 카드의 ? 표시로 (점이 아이들 얼굴을 가리지 않게)
-  buildHot(asList(sc.explore).filter(x => !BOOK.castById[x.on]), it => showPop(it, it.text));
+  buildHot(asList(sc.explore).filter(x => !BOOK.castById[x.on]), it => showPop(it, it.text, it['~text']));
   markCards();
   if (!from && (stageChanged || partChanged || asList(sc.explore).length)) { await askIntro(sc); chk(my); }
   if (opt.note) await showAndWait({ text: opt.note, tone: 'note' }, my);
@@ -97,13 +97,13 @@ async function playScene(id, opt, my) {
     if (it.feel) {
       const k = await askFeel(it.feel); chk(my);
       bookRec(BOOK.id).feels[`${id}:${i}`] = k;
-      logAnswer('feel', it.feel.q, (EMO.find(e => e[0] === k) || [, k])[1]);
+      logAnswer('feel', ko(it.feel, 'q'), (EMO.find(e => e[0] === k) || [, k])[1]); // 선생님 화면 기록은 한국어
       continue;
     }
     if (it.whatif) { await playWhatif(it.whatif, id, i, pick, my); pick = undefined; continue; }
     if (it.activity) {
       const r = await (it.activity === 'breathe' ? breathe() : ACTS[it.activity](it)); chk(my);
-      if (r != null) { bookRec(BOOK.id).acts = Object.assign({}, bookRec(BOOK.id).acts, { [`${id}:${i}`]: r }); logAnswer(it.activity, it.q, actSummary(it, r)); }
+      if (r != null) { bookRec(BOOK.id).acts = Object.assign({}, bookRec(BOOK.id).acts, { [`${id}:${i}`]: r }); logAnswer(it.activity, ko(it, 'q'), actSummary(it, r)); }
       if (hist.length) renderEntry();
       continue;
     }
@@ -116,7 +116,7 @@ async function playScene(id, opt, my) {
     const o = sc.choices.opts[k];
     trail.push({ type: 'choice', scene: id, at: sc.panels.length, q: sc.choices.q, opts: sc.choices.opts.map(x => x.text), pick: k, flags: before });
     addFlags(o.add);
-    logAnswer('choice', sc.choices.q, o.text);
+    logAnswer('choice', ko(sc.choices, 'q'), ko(o, 'text'));
     return o.go;
   }
   if (sc.compose) await playCompose(sc, id, opt.pieces, my); // 고른 말을 다 하면 go 로 이어지거나 결말
@@ -129,8 +129,8 @@ async function playWhatif(w, sceneId, at, preset, my) {
   chk(my);
   trail.push({ type: 'whatif', scene: sceneId, at, q: w.q, opts: w.opts.map(x => x.text), pick: k, flags: Object.assign({}, flags) });
   const o = w.opts[k];
-  logAnswer('whatif', w.q, o.text);
-  if (o.story) return showAndWait({ text: w.same, tone: 'note' }, my);
+  logAnswer('whatif', ko(w, 'q'), ko(o, 'text'));
+  if (o.story) return showAndWait({ text: w.same, '~text': w['~same'], tone: 'note' }, my);
   const keepStage = stageNow.name, keepSet = curSet;
   for (const p of o.panels) {
     if (!meets(p.when)) continue;
@@ -138,7 +138,7 @@ async function playWhatif(w, sceneId, at, preset, my) {
     await showAndWait(Object.assign({ tone: 'whatif' }, p), my);
   }
   applySet(keepStage, keepSet, false);
-  await showAndWait({ text: w.back, tone: 'note' }, my);
+  await showAndWait({ text: w.back, '~text': w['~back'], tone: 'note' }, my);
 }
 
 async function playCompose(sc, id, preset, my) {
@@ -149,12 +149,12 @@ async function playCompose(sc, id, preset, my) {
   chk(my);
   trail.push({ type: 'compose', scene: id, at: sc.panels.length, q: spec.q, opts: picked.map(pc => pc.text), pick: -1, flags: before });
   picked.forEach(pc => addFlags(pc.add));
-  logAnswer('compose', spec.q, picked.map(pc => pc.text));
+  logAnswer('compose', ko(spec, 'q'), picked.map(pc => ko(pc, 'text')));
   for (const pc of picked) {
     await showAndWait({
-      shot: pc.shot || 'two', on: pc.on || [spec.who, spec.to], pre: pc.pre,
+      shot: pc.shot || 'two', on: pc.on || [spec.who, spec.to], pre: pc.pre, '~pre': pc['~pre'],
       faces: { [spec.who]: pc.face || 'shy' }, poses: pc.pose ? { [spec.who]: pc.pose } : undefined,
-      lines: [{ who: spec.who, [spec.write ? 'think' : 'say']: pc.text }], // write: 수첩에 적는 줄은 생각 말풍선으로
+      lines: [{ who: spec.who, [spec.write ? 'think' : 'say']: pc.text, [spec.write ? '~think' : '~say']: pc['~text'] }], // write: 수첩에 적는 줄은 생각 말풍선으로
     }, my);
   }
 }
@@ -171,7 +171,7 @@ async function playEnding(my) {
   const rec = bookRec(BOOK.id);
   if (!rec.endings.includes(end.id)) rec.endings.push(end.id);
   rec.endAt = Object.assign({}, rec.endAt, { [end.id]: srvNow() }); // 선생님이 지운 뒤에 본 결말인지 가리려고 (js_net flush)
-  logAnswer('ending', BOOK.title, end.title);
+  logAnswer('ending', ko(BOOK, 'title'), ko(end, 'title'));
   clearResume(); // 끝까지 읽었으니 다음에는 처음부터
   flush(true);
   lastEnd = end;
@@ -200,18 +200,18 @@ async function reviewMenu(my) {
 }
 // 지나온 갈림길 하나로 돌아가 다시 고르기 (pick 이 있으면 그 선택으로 바로 간다)
 function replayFrom(i, pick) {
-  const t = trail[i];
-  if (!t) return startBook(BOOK.id);
-  flags = Object.assign({}, t.flags);
+  const tr = trail[i];
+  if (!tr) return startBook(BOOK.id);
+  flags = Object.assign({}, tr.flags);
   trail = trail.slice(0, i);
-  const sc = BOOK.scenes[t.scene];
-  runFrom(t.scene, { from: t.at, pick, note: `다시, ${sc.place.split(' · ').pop()}에서` });
+  const sc = BOOK.scenes[tr.scene];
+  runFrom(tr.scene, { from: tr.at, pick, note: t('againAt', { place: sc.place.split(' · ').pop() }) });
 }
 
 // 활동 답을 한 줄로 (선생님 화면에 보이는 글)
 function actSummary(it, r) {
   if (it.activity === 'signals') return r.map(k => BODY[k] || k).join(', ');
   if (it.activity === 'sort') { const same = r.filter((k, i) => it.items[i] && it.items[i].is === k).length; return `이야기와 같게 넣은 카드 ${same} / ${it.items.length}`; }
-  if (it.activity === 'role') return (it.roles.find(x => x[0] === r) || [, r])[1];
+  if (it.activity === 'role') { const x = it.roles.find(y => y[0] === r); return x ? ko(x, 1) : r; }
   return String(r);
 }

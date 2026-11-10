@@ -4,17 +4,17 @@ const asList = v => (v == null ? [] : [].concat(v));
 const readText = p => [p.pre, ...asList(p.lines).map(l => l.say || l.think || l.shout || l.whisper), p.cap, p.text].flat().filter(Boolean).join(' ');
 let hist = [], hi = -1; // 지금 장면에서 본 컷 (「이전」으로 다시 보기)
 let actView = null; // 활동(숨 고르기·몸 신호·바구니)이 옆 칸 위를 쓰는 동안 그 화면을 다시 그리는 함수
-let nextFn = null, nextLabel = '다음';
+let nextFn = null, nextLabel = t('next');
 let making = 0; // 컷을 찍는 중 (이때 「이전」으로 무대를 바꾸면 새 컷이 엉뚱한 무대·표정으로 찍힌다)
 let shownAt = 0; // 새 컷이 나온 때 (더블클릭·Enter 되풀이로 글·수첩 컷을 건너뛰지 않게)
 function resetHist() { hist = []; hi = -1; renderFoot(); }
-function setNext(fn, label = '다음') { if (fn && fn !== nextFn) shownAt = performance.now(); nextFn = fn; nextLabel = label; renderFoot(); } // 새 할 일(첫 장·결말 카드)도 두 번 누름에 건너뛰지 않게
+function setNext(fn, label = t('next')) { if (fn && fn !== nextFn) shownAt = performance.now(); nextFn = fn; nextLabel = label; renderFoot(); } // 새 할 일(첫 장·결말 카드)도 두 번 누름에 건너뛰지 않게
 function renderFoot() {
   const live = hi === hist.length - 1;
   $('#btnPrev').disabled = hi <= 0 || making > 0;
   const nb = $('#btnNext');
   nb.disabled = live && !nextFn;
-  nb.firstChild.textContent = (live ? nextLabel : '다음') + ' ';
+  nb.firstChild.textContent = (live ? nextLabel : t('next')) + ' ';
 }
 // 「다음」을 누를 때까지 기다린다. 지난 컷을 보는 중이면 「다음」은 먼저 지금 컷으로 돌아온다
 function waitNext(label) { return waitFor(done => { setNext(done, label); return () => { if (nextFn === done) setNext(null); }; }); }
@@ -39,7 +39,7 @@ async function makeEntry(p, my) {
   for (const l of asList(p.lines)) {
     const kind = ['shout', 'think', 'whisper', 'say'].find(k => l[k]);
     const c = l.who && CH[l.who];
-    e.lines.push({ who: l.who, kind, text: l[kind], img: c ? (shown(c) && await portrait(c, undefined, my)) || cardPic[c.id] || null : null });
+    e.lines.push({ who: l.who, kind, text: l[kind], ko: l['~' + kind], img: c ? (shown(c) && await portrait(c, undefined, my)) || cardPic[c.id] || null : null });
   }
   return e;
 }
@@ -82,6 +82,7 @@ function lineNodes(lines) {
     const b = h('div', 'bub ' + l.kind);
     if (who) b.appendChild(h('small', '', who.name));
     b.appendChild(document.createTextNode(l.text));
+    if (l.ko && showKo()) { const k = h('span', 'ko', l.ko); k.lang = 'ko'; b.appendChild(k); }
     row.appendChild(b);
     return row;
   });
@@ -91,9 +92,10 @@ function panelNodes(e, past) {
   if (p.text != null) {
     const t = h('div', 'textp ' + (p.tone || ''));
     String(p.text).split('\n').forEach(s => t.appendChild(h('p', '', s)));
+    withKo(t, p, 'text');
     return [t];
   }
-  if (p.pre) out.push(h('p', 'cap pre', p.pre));
+  if (p.pre) out.push(withKo(h('p', 'cap pre', p.pre), p, 'pre'));
   const pic = h('div', 'pic' + (p.tone ? ' ' + p.tone : '') + (p.phone ? ' phonepic' : ''));
   if (p.phone) pic.appendChild(device(p.phone, e.photo));
   else {
@@ -102,14 +104,14 @@ function panelNodes(e, past) {
     img.alt = '';
     pic.appendChild(img);
   }
-  if (p.tone === 'memory') pic.appendChild(h('span', 'tag', '그때'));
-  if (p.tone === 'whatif') pic.appendChild(h('span', 'tag', '만약에…'));
-  if (past) pic.appendChild(h('span', 'tag past', '다시 보는 중'));
+  if (p.tone === 'memory') pic.appendChild(h('span', 'tag', t('tagThen')));
+  if (p.tone === 'whatif') pic.appendChild(h('span', 'tag', t('tagWhatif')));
+  if (past) pic.appendChild(h('span', 'tag past', t('tagPast')));
   if (p.fx) pic.appendChild(h('div', 'fx fx-' + p.fx));
   if (p.sfx) pic.appendChild(h('div', 'sfx', p.sfx));
   out.push(pic);
   out.push(...lineNodes(e.lines));
-  if (p.cap) out.push(h('p', 'cap', p.cap));
+  if (p.cap) out.push(withKo(h('p', 'cap', p.cap), p, 'cap'));
   return out;
 }
 // 휴대전화 화면: 메시지 또는 프로필
@@ -120,13 +122,13 @@ function device(ph, photo) {
     const body = h('div', 'dev-body');
     ph.chat.msgs.forEach(m => {
       const row = h('div', 'msg' + (m.me ? ' me' : ''));
-      if (m.me && m.read) row.appendChild(h('small', 'read', '읽음'));
+      if (m.me && m.read) row.appendChild(h('small', 'read', t('msgRead')));
       if (m.time && m.me) row.appendChild(h('small', '', m.time));
       row.appendChild(h('span', 'txt', m.text));
       if (m.time && !m.me) row.appendChild(h('small', '', m.time));
       body.appendChild(row);
     });
-    if (ph.chat.wait) body.appendChild(h('div', 'wait', `${ph.chat.wait} · 아직 답장이 없어요`));
+    if (ph.chat.wait) body.appendChild(h('div', 'wait', t('noReply', { wait: ph.chat.wait })));
     dev.appendChild(body);
     return dev;
   }
@@ -134,7 +136,7 @@ function device(ph, photo) {
   dev.classList.add('profile');
   const av = h('div', 'avatar');
   if (photo) { const img = new Image(); img.src = photo; img.alt = ''; av.appendChild(img); } else av.classList.add('empty');
-  dev.append(av, h('div', 'pname', pr.name), h('div', 'pnote', photo ? '프로필 사진' : '프로필 사진 없음'));
+  dev.append(av, h('div', 'pname', pr.name), h('div', 'pnote', photo ? t('profilePhoto') : t('noProfilePhoto')));
   return dev;
 }
 // 장면 첫 장: 어디인지 (면 번호와 기·승·전·결은 쓰지 않는다)
@@ -143,6 +145,7 @@ function titleCard(sc) {
   const segs = sc.place.split(' · '); // 「월요일 · 교실」 → 크게 「교실」, 작게 「월요일」
   t.appendChild(h('div', 'page', segs.pop()));
   if (segs.length) t.appendChild(h('div', 'place', segs.join(' · ')));
+  withKo(t, sc, 'place');
   storyEl.replaceChildren(t);
   rise();
 }
@@ -159,8 +162,8 @@ new ResizeObserver(() => fitSide()).observe($('.side'));
 // ---- 위 막대: 책 제목, 이야기 마디, 몇 면 ----
 function setHeader(page) {
   const inBook = page != null;
-  $('#bookTitle').textContent = inBook ? BOOK.title : '마음 극장';
-  $('#bookSub').textContent = inBook ? BOOK.sub : '사회정서 그림책 놀이';
+  $('#bookTitle').textContent = inBook ? BOOK.title : t('appTitle');
+  $('#bookSub').textContent = inBook ? BOOK.sub : t('appSub');
   $('#count').hidden = !inBook;
   $('#btnHome').hidden = !inBook;
   $('#dots').replaceChildren();

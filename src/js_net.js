@@ -13,10 +13,10 @@ async function api(action, data = {}, keepalive = false, ms = 0) { // ms: 이만
   const signal = ms && typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(ms) : undefined;
   let r;
   try { r = await fetch('api/student', { method: 'POST', headers: { 'content-type': 'application/json' }, credentials: 'same-origin', keepalive, signal, body: JSON.stringify({ action, ...data }) }); }
-  catch (e) { throw new Error('서버에 닿지 않아요. 인터넷 연결을 확인해 주세요.'); }
+  catch (e) { throw new Error(t('netDown')); }
   const j = await r.json().catch(() => null);
-  if (!j) throw new Error('서버에 닿지 않아요.');
-  if (!r.ok) throw Object.assign(new Error(j.error || '문제가 생겼어요.'), { status: r.status });
+  if (!j) throw new Error(t('netDown2'));
+  if (!r.ok) throw Object.assign(new Error(srvMsg(j.error) || t('netErr')), { status: r.status });
   return j;
 }
 // 처음에 한 번: 서버가 있는지, 이미 들어와 있는지(쿠키), QR 로 왔는지
@@ -118,7 +118,7 @@ function logAnswer(kind, q, a) {
 }
 // 이어 보기 자리: 장면을 시작할 때마다 저장, 결말에 닿으면 지운다
 function markResume() {
-  save.resume[BOOK.id] = { scene: curScene, place: BOOK.scenes[curScene].place, flags: Object.assign({}, flags), trail: trail.slice(), at: srvNow() };
+  save.resume[BOOK.id] = { scene: curScene, place: ko(BOOK.scenes[curScene], 'place'), flags: Object.assign({}, flags), trail: trail.slice(), at: srvNow() };
   store();
 }
 function clearResume() { delete save.resume[BOOK.id]; if (NET.mode === 'student') NET.ended[BOOK.id] = srvNow(); store(); } // 서버가 다른 기기에 남은 이 책 자리도 지우게

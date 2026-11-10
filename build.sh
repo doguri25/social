@@ -3,7 +3,7 @@
 #   index.html          브라우저에서 바로 열 수 있는 완성 파일 (GitHub Pages 용)
 #   dist/artifact.html  Claude 아티팩트에 게시하는 본문 조각 (doctype, html, body 없음)
 # 모든 js 조각은 하나의 모듈 스크립트 안에 이어지므로 순서를 바꾸면 안 된다.
-# @defs 자리에는 data/defs.json, @stories 자리에는 stories/*.json,
+# @defs 자리에는 data/defs.json, @stories 자리에는 stories/*.json, @ui 자리에는 data/ui.json(화면 글자),
 # @models 자리에는 MODEL_LIST 에 든 3D 모델(Kenney CC0)과 집 색 지도가 base64 로 들어간다.
 set -e
 cd "$(dirname "$0")"
@@ -23,6 +23,8 @@ pack() {
           { printf '"%s": ' "$(basename "$f" .json)"; cat "$f"; printf ',\n'; } >> "$out"
         done
         printf '};\n' >> "$out" ;;
+      @ui) # 화면 글자 (한국어). 번역은 stories/i18n/<언어>/ui.json
+        { printf 'const UI_KO = '; cat data/ui.json; printf ';\n'; } >> "$out" ;;
       @starters) # 이후의 이야기 시작 여섯 가지 (서버와 같은 파일)
         { printf 'const STARTERS = '; cat server/starters.json; printf ';\n'; } >> "$out" ;;
       @i18n) # 이야기 번역: stories/i18n/<언어>/<책>.json → STORY_I18N[언어][책]
@@ -62,7 +64,7 @@ check() {
 }
 
 MODEL_LIST=$(for f in assets/models/*.glb; do basename "$f" .glb; done)
-pack dist/artifact.html head.html @defs @stories @i18n @starters @models js_base.js js_i18n.js js_net.js js_face.js js_note.js js_world.js js_char.js js_stage.js js_shot.js js_panel.js js_sheet.js js_story.js js_ui.js
+pack dist/artifact.html head.html @defs @stories @i18n @ui @starters @models js_base.js js_i18n.js js_net.js js_face.js js_note.js js_world.js js_char.js js_stage.js js_shot.js js_panel.js js_sheet.js js_story.js js_ui.js
 page dist/artifact.html index.html
 check dist/artifact.html
 

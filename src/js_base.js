@@ -26,7 +26,7 @@ const save = (() => {
 const isObj = o => !!o && typeof o === 'object' && !Array.isArray(o);
 if (!isObj(save.books)) save.books = {};
 for (const k in save.books) { const b = save.books[k]; if (!isObj(b)) delete save.books[k]; else { if (!Array.isArray(b.endings)) b.endings = []; if (!isObj(b.feels)) b.feels = {}; } } // 깨진 기록 하나로 책장이 죽지 않게
-save.set = Object.assign({ read: false, fs: 1, q: 'auto', sound: true, cls: false, lang: 'ko' }, save.set);
+save.set = Object.assign({ read: false, fs: 1, q: 'auto', sound: true, cls: false, lang: 'ko', both: false }, save.set); // both: 다른 언어일 때 한국어도 보기
 function store() {
   if (NET.mode === 'student') return netStore();
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* 저장 실패해도 놀이는 계속 */ }

@@ -1,7 +1,7 @@
 <title>마음 극장</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@600;800&display=swap">
 <style>
 /* 한 화면: 위 제목 막대 / 왼쪽 돌려 보는 입체 무대 + 오른쪽 웹툰 컷과 할 일 / 아래 이전·진행·다음.
    크림색 종이 그림책 화면 하나로 정한 디자인이라 밝은 테마만 쓴다. 글꼴은 아이들이 읽기 쉬운 주아체 하나. */
@@ -25,12 +25,19 @@
   --sky: #3f8fc4;
   --sky-bg: #eef7fd;
   --f: 'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --fk: 'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   --fs: 1;
   color-scheme: light;
 }
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { height: 100%; margin: 0; overflow: hidden; }
+/* 다른 언어: 주아체에 없는 글자(베트남어 성조, 키릴 문자, 간체자)를 한 글꼴로 */
+html[lang="vi"], html[lang="ru"] { --f: 'Nunito', 'Jua', 'Apple SD Gothic Neo', sans-serif; }
+html[lang="vi"] body, html[lang="ru"] body { font-weight: 600; }
+html[lang="zh"] { --f: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', 'Noto Sans CJK SC', sans-serif; }
+.ko { display: block; font-family: var(--fk); font-weight: 400; font-size: .8em; line-height: 1.35; color: var(--ink-2); margin-top: 3px; }
+.opt .ko, .piece .ko, .alt .ko { margin-top: 1px; }
 body { background: var(--paper); color: var(--ink); font-family: var(--f); -webkit-tap-highlight-color: transparent; }
 button { font: inherit; color: inherit; cursor: pointer; }
 button:disabled { cursor: default; }
@@ -156,7 +163,7 @@ button:disabled { cursor: default; }
 .emo:disabled { opacity: .5; }
 .emo.mine { background: var(--mint); border-color: var(--mint-line); opacity: 1; }
 .emo.real { opacity: 1; box-shadow: 0 0 0 3px var(--green); }
-.emo.real::after { content: '이 마음'; position: absolute; top: -9px; right: -4px; font-size: 11px; color: #fff; background: var(--green); border-radius: 999px; padding: 1px 6px; }
+.emo.real::after { content: var(--t-real, '이 마음'); position: absolute; top: -9px; right: -4px; font-size: 11px; color: #fff; background: var(--green); border-radius: 999px; padding: 1px 6px; }
 .reveal { margin-top: 10px; display: grid; gap: 6px; padding: 10px 12px; border-radius: 12px; background: #fff7f4; border: 1.5px dashed var(--pink-line); }
 .reveal .say { color: var(--ink) !important; }
 .pieces { display: grid; gap: 6px; }
@@ -226,9 +233,9 @@ svg.body [data-part].real.on { fill: #9fe0c2; }
 .stop .sq { margin: 2px 0 6px; font-size: calc(16px * var(--fs)); line-height: 1.35; }
 .alt { display: block; width: 100%; text-align: left; margin-top: 5px; padding: 6px 9px; border: 1.5px dashed var(--line); border-radius: 9px; background: transparent; font-size: calc(14px * var(--fs)); color: var(--ink-2); line-height: 1.35; }
 .alt.mine { border-style: solid; border-color: var(--ink); background: #fff8e1; color: var(--ink); }
-.alt.mine::before { content: '내가 고른 것 · '; font-size: 11px; }
+.alt.mine::before { content: var(--t-mine, '내가 고른 것 · '); font-size: 11px; }
 .alt:not(.mine):hover { border-color: var(--ink); color: var(--ink); }
-.alt:not(.mine)::after { content: '  → 이 길로 가 보기'; font-size: 11px; }
+.alt:not(.mine)::after { content: '  ' var(--t-go, '→ 이 길로 가 보기'); font-size: 11px; }
 .stop.end { background: #fff8e1; }
 /* 책장 */
 .books { display: grid; gap: 8px; }

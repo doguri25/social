@@ -2,7 +2,8 @@
 const canvas = $('#gl');
 let engine;
 try { engine = new BABYLON.Engine(canvas, true, { stencil: true, powerPreference: 'high-performance' }, true); } catch (e) { // WebGL 없음, CDN 막힘
-  $('#loading').textContent = '이 기기나 네트워크에서는 3D 무대를 열 수 없어요. 인터넷 연결을 확인하거나 다른 브라우저로 열어 주세요.';
+  $('#loading').textContent = t('no3d');
+  $('#loading').dataset.err = '1';
   throw e;
 }
 const scene = new BABYLON.Scene(engine);

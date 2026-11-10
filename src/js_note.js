@@ -22,7 +22,8 @@ function notePage(g, title) {
 }
 // 연필 글씨 (왼쪽 맞춤 또는 가운데)
 function hand(g, text, x, y, size, color = '#3b302b', left = false, maxW) {
-  g.font = `${size}px Jua, "Apple SD Gothic Neo", sans-serif`;
+  g.font = `${size}px ${canvasFont()}`;
+  text = noteT(text); // 다른 언어: 수첩 글씨도 그 언어로 (이름 비교는 그리기 전 한국어로 한다)
   g.fillStyle = color;
   g.textAlign = left ? 'left' : 'center';
   g.textBaseline = 'middle';
@@ -95,7 +96,7 @@ const NOTE_PAGES = {
     notePage(g, '현우의 마음 이름표');
     [['귀가 뜨거워요', '서운해요 · 당황했어요'], ['목에 뭔가 걸렸어요', '하고 싶은 말이 있어요'], ['손바닥에 땀이 나요', '화가 나요'], ['다리가 후들거려요', '무서워요']].forEach(([a, b], i) => {
       hand(g, a, 110, 128 + i * 64, 34, '#3b302b', true);
-      hand(g, '→ ' + b, 470, 128 + i * 64, 34, '#e8505b', true);
+      hand(g, noteT('→ ') + noteT(b), 470, 128 + i * 64, 34, '#e8505b', true);
     });
   },
   // 16·17면: 우리 반 작전판. 스물두 명 이름과 현우가 그린 화살표
@@ -111,7 +112,7 @@ const NOTE_PAGES = {
     if (!role) return;
     g.fillStyle = '#fff1b3'; g.strokeStyle = '#3b302b'; g.lineWidth = 3;
     g.beginPath(); g.roundRect(430, 290, 260, 70, 14); g.fill(); g.stroke(); // 상대 코트 빈자리에
-    hand(g, '나 · ' + role, 560, 325, 30, '#3b302b', false, 240);
+    hand(g, noteT('나 · ') + noteT(role), 560, 325, 30, '#3b302b', false, 240);
   },
   // 다른 길에서 일찍 함께 짠 작전 (화살표 없이)
   plan0(g) { NOTE_PAGES.plan(g, false, '다 같이 짠 작전'); },
@@ -126,13 +127,14 @@ const NOTE_PAGES = {
   },
 };
 function noteImg(kind) {
-  if (kind === 'planme') delete noteCache[kind]; // 고른 역할에 따라 다시 그린다
-  if (noteCache[kind]) return noteCache[kind];
+  const key = LANG + ':' + kind; // 언어마다 따로 그린다
+  if (kind === 'planme') delete noteCache[key]; // 고른 역할에 따라 다시 그린다
+  if (noteCache[key]) return noteCache[key];
   const c = document.createElement('canvas');
   c.width = NOTE_W;
   c.height = NOTE_H;
   const g = c.getContext('2d');
   NOTE_PAGES[kind](g);
   g.restore();
-  return (noteCache[kind] = c.toDataURL('image/jpeg', 0.9));
+  return (noteCache[key] = c.toDataURL('image/jpeg', 0.9));
 }
