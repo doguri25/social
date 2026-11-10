@@ -97,9 +97,12 @@ async function callJSON(ai, system, user, schema, ms = 45000) { // ms: 이만큼
     if (!out) throw Object.assign(httpError(502, 'AI 답이 비어 있어요.'), { perStory: true });
     try { return JSON.parse(out); } catch { throw Object.assign(httpError(502, 'AI 답을 읽지 못했어요. 다시 해 주세요.'), { perStory: true }); }
   } catch (e) {
-    if (e.name === 'AbortError') throw httpError(504, 'AI 가 너무 오래 걸려요. 잠시 뒤 다시 해 주세요.');
+    if (e.name === 'AbortError') throw Object.assign(httpError(504, 'AI 가 너무 오래 걸려요. 잠시 뒤 다시 해 주세요.'), { timeout: true });
     if (e.status) throw e;
-    throw httpError(502, `AI 에 닿지 못했어요: ${e.message}`);
+    // 머리글에 넣을 수 없는 글자가 키에 있으면 fetch 오류 글에 키 원문이 그대로 담긴다: 그 글은 화면에 보내지 않는다
+    if (/ByteString|header/i.test(e.message)) throw httpError(400, `${PROVIDERS[ai.provider].label} 키에 쓸 수 없는 글자(한글·띄어쓰기·줄바꿈·따옴표 등)가 섞여 있어요. 설정에서 키만 다시 복사해 넣어 주세요.`);
+    const code = e.cause && e.cause.code; // 「fetch failed」 같은 영어 대신 (ENOTFOUND 등 까닭 번호만 덧붙임)
+    throw httpError(502, `AI 에 닿지 못했어요. 인터넷 연결을 확인하고 잠시 뒤 다시 해 주세요.${code ? ` (${code})` : ''}`);
   } finally { clearTimeout(timer); }
 }
 async function getAI(s, provider = s.provider) {

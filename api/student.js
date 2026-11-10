@@ -43,14 +43,17 @@ function mergeProgress(next, cur, endedIn) {
   next.ended = ended;
   const drop = () => { for (const id of Object.keys(next.resume)) if (ended[id] >= next.resume[id].at) delete next.resume[id]; };
   if (!cur) { drop(); return next; }
+  // 합친 뒤에도 한 번에 받는 만큼(책 12권, 답 100개)만 둔다. 저장할 때마다 새 이름을 보내 한 학생 기록을 끝없이 키우지 못하게 (MongoDB 문서는 16MB 까지)
+  const last = (o, max) => Object.fromEntries(Object.entries(o).slice(-max));
   for (const [id, o] of Object.entries(cur.books || {})) {
+    if (!next.books[id] && Object.keys(next.books).length >= 12) continue;
     const n = next.books[id] || (next.books[id] = { endings: [], feels: {}, acts: {}, role: '' });
     n.endings = [...new Set([...n.endings, ...(o.endings || [])])].slice(0, 20);
-    n.feels = { ...(o.feels || {}), ...n.feels };
-    n.acts = { ...(o.acts || {}), ...n.acts };
+    n.feels = last({ ...(o.feels || {}), ...n.feels }, 100);
+    n.acts = last({ ...(o.acts || {}), ...n.acts }, 100);
     n.role = n.role || o.role || '';
   }
-  for (const [id, r] of Object.entries(cur.resume || {})) if (r && (next.resume[id] ? r.at > next.resume[id].at : !legacy)) next.resume[id] = r;
+  for (const [id, r] of Object.entries(cur.resume || {})) if (r && (next.resume[id] ? r.at > next.resume[id].at : !legacy && Object.keys(next.resume).length < 12)) next.resume[id] = r;
   drop();
   return next;
 }

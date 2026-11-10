@@ -1,7 +1,7 @@
 // 교사 API (POST /api/teacher, { action, … }): 비밀번호 로그인(처음 1324), 명단·코드, 학생 기록, 「이후의 이야기」 채점(교사·AI), 설정
 'use strict';
 const { db, route, httpError, sign, unsign, cookies, setCookie, validPin, makePin, checkPassword, encrypt, newCode, text, int, storyChars } = require('../server/core');
-const { getSettings, publicSettings, getRoster, setRoster, aiGrade, pingAI, PROVIDER_IDS } = require('../server/data');
+const { getSettings, publicSettings, getRoster, setRoster, aiGrade, pingAI, PROVIDERS, PROVIDER_IDS } = require('../server/data');
 const { makeDemo } = require('../server/demo');
 
 const COOKIE = 'maum_t';
@@ -69,13 +69,15 @@ const guarded = {
   // 명단: 한 줄에 「번호 가명」. 같은 번호는 원래 코드를 그대로 쓴다. dropRemoved: 명단에서 빠진 번호의 기록도 지운다
   // wipeNew: 새로 넣는 번호 가운데, 예전 학생 기록이 남아 있어 지우고 시작할 번호 (새 학생이 남의 기록을 물려받지 않게)
   roster: async ({ body }) => {
+    const raw = text(body.text, 6001);
+    if (raw.length > 6000) throw httpError(400, '명단 글이 너무 길어요(6000자까지). 한 줄에 「번호 가명」만 남기고 다시 저장해 주세요.'); // 잘라서 받으면 뒤 학생이 말없이 빠진다
     const old = await getRoster();
     // 예시 학생은 명단 글에 나오지 않고 그대로 남는다. 같은 번호를 적으면 실제 학생이 그 자리를 쓰고 예시 기록은 지운다
     const demo = old.filter(s => s.demo);
     const taken = new Set(old.map(s => s.code));
     const seen = new Set();
     const students = [], skipped = [];
-    for (const line of text(body.text, 6000).split('\n')) {
+    for (const line of raw.split('\n')) {
       const m = ROSTER_LINE.exec(halfDigits(line));
       if (!m) { if (line.trim()) skipped.push(line.trim().slice(0, 30)); continue; }
       const no = Number(m[1]);
@@ -87,9 +89,15 @@ const guarded = {
       students.push({ no, alias: m[2].slice(0, 20), code });
     }
     if (students.length > 60) throw httpError(400, '한 반은 60명까지예요.');
+    const removed = old.filter(s => !s.demo && !seen.has(s.no)).map(s => s.no);
+    // base: 화면이 받아 간 명단 번호. 그 뒤 다른 화면(기기)에서 들어온 학생은, 그 학생을 본 적 없는 옛 화면의 저장으로 빼거나 기록을 지우지 않는다
+    if (Array.isArray(body.base)) {
+      const base = new Set(body.base.map(Number));
+      const unseen = old.filter(s => removed.includes(s.no) && !base.has(s.no));
+      if (unseen.length) throw httpError(409, `그사이 다른 화면에서 명단에 ${unseen.map(s => `「${s.no} ${s.alias}」`).join(', ')} 학생이 들어왔어요. 남기려면 글상자에 그 줄을 넣고, 빼려면 그대로 한 번 더 저장해 주세요.`);
+    }
     for (const d of demo) if (seen.has(d.no)) await wipe(d.no); else students.push(d);
     students.sort((a, b) => a.no - b.no);
-    const removed = old.filter(s => !s.demo && !seen.has(s.no)).map(s => s.no);
     if (body.dropRemoved) for (const no of removed) await wipe(no);
     const fresh = new Set([].concat(body.wipeNew || []).map(Number));
     for (const st of students) if (!st.demo && fresh.has(st.no) && !old.some(o => o.no === st.no)) await wipe(st.no); // 지금 명단에 있던 학생 기록은 건드리지 않는다
@@ -121,9 +129,12 @@ const guarded = {
     const scores = {};
     s.rubric.forEach(r => { if (body.scores && body.scores[r.id] != null) scores[r.id] = int(body.scores[r.id], 1, 3); });
     const { id, ...doc } = y;
-    const at = Date.now();
+    // textAt: 화면이 보고 매긴 글의 때. 그사이 학생이 고쳐 냈으면 읽지 않은 새 글의 채점으로 붙이지 않고, 옛 글의 채점으로 남긴다
+    // (AI 채점과 같게 teacher.at < 글 at 이 되어 화면이 「고친 뒤라 다시 보면 좋아요」를 알린다)
+    const stale = body.textAt != null && Number(body.textAt) < y.at;
+    const at = stale ? y.at - 1 : Date.now();
     await db().set('stories', `s${no}`, { ...doc, teacher: { scores, comment: text(body.comment, 600), at } });
-    return { ok: true, at };
+    return { ok: true, at, stale };
   },
   // AI 채점: 한 명(no) 또는 아직 AI 채점이 없는 글 모두(all). 학생 글만 AI 로 간다
   aiGrade: async ({ body }) => {
@@ -141,6 +152,8 @@ const guarded = {
       if ((done || failed.length) && left < 20000) break;
       let ai;
       try { ai = await aiGrade(s, y.text, y.starter, Math.min(45000, left)); } catch (e) {
+        // 둘째 글부터는 함수 시간 예산(55초) 안에서만 기다린다. 그래서 끊긴 것은 AI 고장이 아니라, 남은 글로 돌려주어 화면이 이어서 부르게 한다
+        if (body.all && e.timeout && (done || failed.length)) break;
         if (!body.all || !e.perStory) throw e; // 키 없음·하루 횟수·연결 실패는 모든 글에 같으니 멈춘다
         failed.push({ no: y.no, error: e.message });
         continue;
@@ -163,14 +176,21 @@ const guarded = {
       if (typeof m === 'string' && /^[\w.:/-]{1,80}$/.test(m.trim())) next.models[p] = m.trim();
       const k = body.keys && body.keys[p];
       if (k === '') delete next.keys[p]; // 빈 글자 = 지우기, 안 보내면 그대로
-      else if (typeof k === 'string' && k.trim()) next.keys[p] = encrypt(k.trim().slice(0, 300));
+      else if (typeof k === 'string' && k.trim()) {
+        const key = k.replace(/[\u200b-\u200d\u2060\ufeff]/g, '').trim(); // 웹·메신저에서 복사할 때 붙는 보이지 않는 글자는 뺀다
+        // 키는 영문·숫자·기호뿐이다. 한글·띄어쓰기·줄바꿈·둥근 따옴표가 섞이면 AI 에 보낼 수 없고, 그 오류에는 키 원문이 그대로 담긴다
+        if (!/^[\x21-\x7e]{1,300}$/.test(key)) throw httpError(400, `${PROVIDERS[p].label} 키에 쓸 수 없는 글자(한글·띄어쓰기·줄바꿈·따옴표 등)가 섞여 있어요. 발급 화면에서 키만 다시 복사해 넣어 주세요.`);
+        next.keys[p] = encrypt(key);
+      }
     }
     const rubric = Array.isArray(body.rubric) ? body.rubric.filter(r => r && typeof r === 'object') : [];
     if (rubric.length) {
       next.rubric = rubric.slice(0, 6).map((r, i) => ({ id: text(r.id || `c${i}`, 20).replace(/[^\w]/g, '') || `c${i}`, name: text(r.name, 30), levels: [0, 1, 2].map(k => text(r.levels && r.levels[k], 200)) }));
     }
-    if (body.minChars != null) next.minChars = int(body.minChars, 50, 2000);
-    if (body.maxChars != null) next.maxChars = int(body.maxChars, next.minChars, 5000);
+    // 어느 칸이 왜 틀렸는지 알려 준다 (「숫자가 맞지 않아요」만으로는 최소·최대 가운데 무엇을 고칠지 모른다)
+    const chars = (v, lo, hi, msg) => { const n = Math.round(Number(v)); if (!(n >= lo && n <= hi)) throw httpError(400, msg); return n; };
+    if (body.minChars != null) next.minChars = chars(body.minChars, 50, 2000, '최소 글자 수는 50~2000자 사이로 해 주세요.');
+    if (body.maxChars != null) next.maxChars = chars(body.maxChars, next.minChars, 5000, `최대 글자 수는 최소 글자 수(${next.minChars}자)부터 5000자 사이로 해 주세요.`);
     if (typeof body.prompt === 'string' && body.prompt.trim()) next.prompt = text(body.prompt.trim(), 500);
     const { id, ...doc } = next;
     await db().set('meta', 'settings', doc);

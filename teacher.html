@@ -76,9 +76,10 @@ async function api(action, data = {}) {
   let r;
   try { r = await fetch('api/teacher', { method: 'POST', headers: { 'content-type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ action, ...data }) }); }
   catch (e) { throw new Error('서버에 닿지 않아요. 인터넷 연결을 확인해 주세요.'); }
-  const j = await r.json().catch(() => ({ error: '서버에 닿지 않아요. 버셀 주소에서 열어 주세요.' }));
+  // JSON 이 아닌 답: 서버가 없는 곳(GitHub Pages 등, 404·405)이거나, 버셀이 함수 대신 낸 오류 화면(시간 초과 504 등)
+  const j = await r.json().catch(() => ({ error: r.status === 404 || r.status === 405 ? '서버에 닿지 않아요. 버셀 주소에서 열어 주세요.' : `서버가 제대로 답하지 못했어요(${r.status}). 잠시 뒤 다시 해 주세요.` }));
   if (r.status === 401 && action !== 'login') { showLogin(j.error); throw Object.assign(new Error(j.error), { relogin: true }); }
-  if (!r.ok) throw new Error(j.error || '문제가 생겼어요.');
+  if (!r.ok) throw Object.assign(new Error(j.error || '문제가 생겼어요.'), { status: r.status });
   return j;
 }
 const BOOKS = [['book1', '1권 너 때문에'], ['book2', '2권 현우'], ['book3', '3권 하준'], ['book4', '4권 보라']];
@@ -149,10 +150,15 @@ function roster() {
         const reused = [...keep].filter(no => (data.orphans || []).includes(no));
         const wipeNew = reused.length && confirm(`${reused.map(n => n + '번').join(', ')}에는 명단에서 뺄 때 남겨 둔 기록이 있어요.\n새 학생이면 [확인]을 눌러 예전 기록을 지우고 시작해요.\n같은 학생을 다시 넣는 거면 [취소]를 눌러 기록을 이어서 써요.`) ? reused : [];
         try {
-          const r = await api('roster', { text: ta.value, dropRemoved, wipeNew });
+          // base: 이 화면이 본 명단. 그사이 다른 화면에서 들어온 학생을 묻지도 않고 빼거나 지우지 않게 서버가 견준다
+          const r = await api('roster', { text: ta.value, dropRemoved, wipeNew, base: data.students.filter(s => !s.demo).map(s => s.no) });
           flash = `${r.students.filter(s => !s.demo).length}명을 저장했어요. 같은 번호는 원래 코드를 그대로 써요.${r.skipped && r.skipped.length ? ` 알아보지 못한 줄(빠짐): ${r.skipped.join(' / ')}` : ''}`;
           await load();
-        } catch (e) { if (!e.relogin) msg.textContent = e.message; }
+        } catch (e) {
+          if (e.relogin) return;
+          msg.textContent = e.message;
+          if (e.status === 409) { try { data = await api('overview'); } catch (e2) { /* 다음 저장 때 다시 */ } } // 글상자는 그대로 두고 명단만 새로 받아, 다시 누르면 새 학생까지 물어본다
+        }
       } } }, '명단 저장'))),
     h('section', { class: 'card no-print' }, h('h2', {}, '예시 학생'), h('p', { class: 'soft' }, `수업 전에 선생님 화면을 미리 둘러볼 수 있게, 읽은 정도가 서로 다른 「예시-」 학생 다섯 명(91번부터)과 답·이후의 이야기를 넣어요. 반 명단 글에는 나오지 않아요.${demos ? ` 지금 ${demos}명이 있어요.` : ''}`),
       h('div', { class: 'row' }, h('button', { class: 'sub', on: { click: safe(async () => { await api('seedDemo'); await load(); }) } }, demos ? '예시 학생 새로 넣기' : '예시 학생 넣기'),
@@ -219,6 +225,9 @@ async function stories() {
     h('p', { class: 'soft' }, `채점 기준 ${rub.length}가지, 기준마다 1~3점. AI 에는 학생 글만 보내고 번호·이름은 보내지 않아요. 지금 AI: ${data.settings.providers[data.settings.provider].label}${testNow() ? ` (키가 없어 시험용, ${data.settings.testAI.until}까지 · 하루 횟수 제한)` : ''}`),
     h('p', { class: 'soft' }, `쓰기 조건 (${data.settings.minChars}~${data.settings.maxChars}자, 띄어쓰기 빼고)`), h('ol', { class: 'soft' }, data.settings.conditions.map(c => h('li', {}, c))));
   const main = $('#main');
+  // 다시 그려도(다른 글의 AI 채점이 끝났을 때 등) 쓰던 한마디 칸의 커서와 화면 위치를 그대로 둔다 (쓰던 글자가 끊기지 않게)
+  const f = document.activeElement, fk = f && f.dataset && f.dataset.k;
+  const fsel = fk && [f.selectionStart, f.selectionEnd], ftop = fk && f.getBoundingClientRect().top;
   main.replaceChildren(sec);
   list.forEach(y => {
     const s = data.students.find(x => x.no === y.no) || { no: y.no, alias: '(명단에 없음)' };
@@ -229,15 +238,22 @@ async function stories() {
       const inp = h('input', { type: 'radio', name: `${y.no}-${r.id}`, value: i + 1, checked: pick[r.id] === i + 1, on: { change: () => { pick[r.id] = i + 1; } } });
       return h('label', {}, inp, ` ${i + 1}점 · ${lv}`);
     }))));
-    const comment = h('textarea', { rows: 2, placeholder: '학생에게 한마디', on: { input: e => { dr.comment = e.target.value; } } }, dr.comment);
+    const comment = h('textarea', { rows: 2, placeholder: '학생에게 한마디', 'data-k': `c${y.no}`, on: { input: e => { dr.comment = e.target.value; } } }, dr.comment);
     const note = h('span', { class: 'soft' }, aiRun.notes[y.no] || '');
     const ai = y.ai ? h('div', { class: 'card', style: 'background:#f6fbff' }, h('b', {}, `AI 채점 (${y.ai.model}${y.ai.test ? ' · 시험용' : ''}${y.ai.instead === 'claude' ? ' · Claude 가 사양해 대신 채점' : ''}) · 합 ${Object.values(y.ai.scores).reduce((a, b) => a + b, 0)}점`), h('div', {}, rub.map(r => `${r.name} ${y.ai.scores[r.id] || '-'}`).join(' · ')), h('p', {}, y.ai.comment), y.ai.at < y.at ? h('p', { class: 'err' }, '학생이 글을 고친 뒤라 다시 채점하면 좋아요.') : '') : '';
     main.append(h('section', { class: 'card' }, h('div', { class: 'row' }, h('h2', { class: 'grow' }, `${s.no} ${nameOf(s)}`), h('span', { class: 'soft' }, `${storyChars(y.text)}자 · ${when(y.at)}${y.versions > 1 ? ` · ${y.versions - 1}번 고쳐 냄` : ''}`)),
       starterOf(y.starter) ? starterBox(starterOf(y.starter)) : '', h('div', { class: 'story' }, y.text), h('h2', { style: 'margin-top:12px' }, '선생님 채점'), form, comment,
+      y.teacher && y.teacher.at < y.at ? h('p', { class: 'err' }, '선생님 채점 뒤에 학생이 글을 고쳐 냈어요. 새 글을 보고 다시 저장하면 좋아요.') : '',
       h('div', { class: 'row', style: 'margin-top:8px' }, note, h('span', { class: 'grow' }),
         h('button', { class: 'sub ai-one', disabled: aiRun.all || aiRun.nos.has(y.no), on: { click: async e => { e.currentTarget.disabled = true; aiRun.nos.add(y.no); note.textContent = aiRun.notes[y.no] = 'AI 채점 중…'; try { await api('aiGrade', { no: y.no }); aiRun.notes[y.no] = ''; } catch (e) { aiRun.notes[y.no] = e.relogin ? '' : e.message; } finally { aiRun.nos.delete(y.no); if (tab === 'stories') await stories(); } } } }, 'AI 채점'),
-        h('button', { class: 'btn', on: { click: async () => { try { const r = await api('grade', { no: y.no, scores: pick, comment: comment.value }); delete drafts[dk]; dk = `${y.no}:${y.at}:${r.at}`; drafts[dk] = dr; note.textContent = '저장했어요.'; } catch (e) { if (!e.relogin) note.textContent = e.message; } } } }, '선생님 채점 저장')), ai));
+        h('button', { class: 'btn', on: { click: async () => { try {
+          const r = await api('grade', { no: y.no, scores: pick, comment: comment.value, textAt: y.at }); // textAt: 어느 글을 보고 매겼는지
+          delete drafts[dk]; dk = `${y.no}:${y.at}:${r.at}`; drafts[dk] = dr; note.textContent = '저장했어요.';
+          if (r.stale && tab === 'stories') await stories(); // 그사이 학생이 고쳐 냄: 새 글과 「고친 뒤라 다시 보면 좋아요」를 보여 준다
+        } catch (e) { if (!e.relogin) note.textContent = e.message; } } } }, '선생님 채점 저장')), ai));
   });
+  const g = fk && main.querySelector(`[data-k="${fk}"]`);
+  if (g) { g.focus({ preventScroll: true }); g.setSelectionRange(...fsel); scrollBy(0, g.getBoundingClientRect().top - ftop); }
 }
 
 // ---- 설정: 비밀번호, AI 키 4종, 채점 기준, 글자 수, 글감, 기록 지우기 ----
@@ -257,7 +273,7 @@ function settings() {
       h('label', { class: 'row' }, h('input', { type: 'radio', name: 'prov', checked: provider === p, style: 'width:auto', on: { change: () => { provider = p; drawProv(); } } }), h('b', {}, info.label), h('span', { class: 'grow' }), h('span', { class: 'soft' }, st.keys[p] ? `저장됨 ${st.keys[p]}` : st.testAI && st.testAI.provider === p ? `키 없음 · 시험용으로 채점 (${st.testAI.until}까지)` : '키 없음')),
       h('span', { class: 'soft' }, 'API 키 · ', h('a', { href: LINKS[p], target: '_blank', rel: 'noreferrer' }, '발급받기')), key, h('span', { class: 'soft' }, '모델'), model,
       h('div', { class: 'row' }, h('button', { class: 'sub', on: { click: async e => { e.currentTarget.disabled = true; out.textContent = '확인 중…'; try { if (keys[p] || models[p] !== st.models[p]) { await saveSettings({ keys: keys[p] ? { [p]: keys[p] } : {}, models: { [p]: models[p] } }); delete keys[p]; } const r = await api('testAI', { provider: p }); outs[p] = `✓ 연결됐어요 (${r.model}${r.test ? ' · 시험용' : ''})`; } catch (e) { if (e.relogin) return; outs[p] = e.message; } drawProv(); } } }, '연결 확인'),
-        st.keys[p] ? h('button', { class: 'sub', on: { click: safe(async () => { if (confirm(`${info.label} 키를 지울까요?`)) { delete keys[p]; await saveSettings({ keys: { [p]: '' } }); await load(); } }) } }, '키 지우기') : '', out));
+        st.keys[p] ? h('button', { class: 'sub', on: { click: safe(async () => { if (confirm(`${info.label} 키를 지울까요?`)) { delete keys[p]; delete outs[p]; await saveSettings({ keys: { [p]: '' } }); drawProv(); } }) } }, '키 지우기') : '', out)); // 이 칸만 다시 그린다 (저장 안 한 채점 기준·글자 수 고침을 지우지 않게)
   }));
   drawProv();
   const rub = st.rubric.map(r => ({ id: r.id, name: h('input', { value: r.name }), levels: r.levels.map(l => h('textarea', { rows: 2 }, l)) }));

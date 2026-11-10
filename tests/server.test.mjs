@@ -135,6 +135,28 @@ try {
   ok((await S('student', 'me')).status === 401, '코드를 새로 만들면 예전 로그인은 풀림');
   await T('teacher', 'clear', { no: 1 });
   ok(!(await T('teacher', 'student', { no: 1 })).body.answers.length, '한 학생 기록 지우기');
+  // 선생님 화면 두 곳: 옛 명단을 든 화면의 저장이 그사이 다른 화면에서 넣은 학생을 빼거나 그 기록을 지우지 않는다
+  const seenNos = (await T('teacher', 'overview')).body.students.filter(s => !s.demo).map(s => s.no);
+  const S4 = client();
+  await S4('student', 'login', { code: (await T('teacher', 'roster', { text: '1 햇살\n2 구름\n3 단풍\n4 바람' })).body.students.find(s => s.no === 4).code });
+  await S4('student', 'save', { progress: { books: { book1: { endings: ['palm'] } } } });
+  const staleRoster = await T('teacher', 'roster', { text: '1 햇살\n2 구름', dropRemoved: true, base: seenNos });
+  ok(staleRoster.status === 409 && /4 바람/.test(staleRoster.body.error) && (await T('teacher', 'overview')).body.students.length === 4 && (await T('teacher', 'student', { no: 4 })).body.progress, '옛 명단 화면의 저장은 그사이 들어온 학생을 빼거나 기록을 지우지 않음');
+  ok((await T('teacher', 'roster', { text: '1 햇살\t' + '메모'.repeat(3100) })).status === 400, '6000자가 넘는 명단은 잘라 받지 않고 알림');
+  for (let k = 0; k < 2; k++) await S4('student', 'save', { progress: { books: { book1: { endings: ['palm'], feels: Object.fromEntries(Array.from({ length: 100 }, (_, i) => [`k${k}-${i}`, 'x'])) } } } });
+  ok(Object.keys((await T('teacher', 'student', { no: 4 })).body.progress.books.book1.feels).length === 100, '진행을 합쳐도 감정 카드 답은 100개까지 (기록이 끝없이 커지지 않음)');
+  // 선생님이 옛 글을 보고 매기는 사이 학생이 고쳐 내면, 그 점수는 고친 글의 채점으로 붙지 않는다
+  await S4('student', 'save', { progress: { books: { book1: { endings: ['palm'] }, book2: { endings: ['x'] }, book3: { endings: ['x'] }, book4: { endings: ['x'] } } } });
+  await S4('student', 'story', { text: '다음 주 월요일 '.repeat(60) });
+  const seenAt = (await T('teacher', 'stories')).body.stories.find(y => y.no === 4).at;
+  await sleep(5);
+  await S4('student', 'story', { text: '고쳐 씀 ' + '다음 주 월요일 '.repeat(60) });
+  const staleGrade = await T('teacher', 'grade', { no: 4, scores: { link: 1 }, comment: '옛 글', textAt: seenAt });
+  const y4 = (await T('teacher', 'stories')).body.stories.find(y => y.no === 4);
+  ok(staleGrade.body.stale && y4.teacher.at < y4.at && y4.teacher.comment === '옛 글', '옛 글을 보고 매긴 선생님 채점은 남기되, 고친 글의 채점으로 붙지 않음');
+  const badKey = await T('teacher', 'settings', { keys: { openai: 'sk-키-1234567890\nsk-zzz' } });
+  ok(badKey.status === 400 && !JSON.stringify(badKey.body).includes('1234567890'), 'AI 키에 한글·줄바꿈이 섞이면 저장하지 않고 한국어로 알림 (키 원문을 돌려주지 않음)');
+  ok(/최대 글자 수는 최소/.test((await T('teacher', 'settings', { minChars: 600, maxChars: 500 })).body.error || ''), '글자 수 설정이 틀리면 어느 칸인지 알려 줌');
   let locked = false;
   for (let i = 0; i < 6; i++) if ((await X('teacher', 'login', { password: '999999' })).status === 429) locked = true;
   ok(locked, '한 기기에서 1분에 5번 넘게 틀리면 잠김');

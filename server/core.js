@@ -113,8 +113,8 @@ const same = (a, b) => { const x = Buffer.from(a), y = Buffer.from(b); return x.
 async function checkPassword(input, pin, req) {
   const got = String(input || '');
   const master = process.env.TEACHER_PASSWORD;
-  if (master && same(master, got)) return { ok: true, master: true };
   const ip = ipOf(req);
+  if (master && same(master, got)) { await forgive(`teacher:${ip}`); return { ok: true, master: true }; } // 잠긴 기기에서 되찾기 비밀번호로 들어와 새 비밀번호를 정한 뒤, 그 비밀번호로 바로 들어갈 수 있게
   for (const [key, max] of [[`teacher:${ip}`, 5], ['teacher:all', 30]]) { // 한 기기는 1분에 5번, 반 전체는 1분에 30번
     const t = await throttle(key, max, 60000);
     if (t.wait) return { ok: false, wait: t.wait };
