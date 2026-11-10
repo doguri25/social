@@ -177,7 +177,7 @@
  "afterLockedToast": "1~4권에서 결말을 하나씩 보면 열려요.",
  "afterPlaceholder": "이야기 시작 바로 다음부터 이어서 써요.",
  "afterLabel": "이후의 이야기",
- "starterBy": "「{title}」 · {who가} 들려주는 이야기",
+ "starterBy": "「{title}」 · {who}가 들려주는 이야기",
  "afterSent": "냈어요! 선생님이 읽어 볼 거예요. 짝과 바꿔 읽은 뒤 고쳐서 다시 낼 수도 있어요.",
  "afterSaved": "이 기기에 저장했어요.",
  "charCount": "{n}자 · {min}~{max}자 (띄어쓰기 빼고)",

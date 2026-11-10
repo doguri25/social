@@ -21,13 +21,13 @@ function notePage(g, title) {
   return g;
 }
 // 연필 글씨 (왼쪽 맞춤 또는 가운데)
-function hand(g, text, x, y, size, color = '#3b302b', left = false, maxW) {
+function hand(g, text, x, y, size, color = '#3b302b', left = false, maxW, fit) { // fit: 다른 언어 글이 길 때만 이 너비로 좁힌다 (한국어 그림은 그대로)
   g.font = `${size}px ${canvasFont()}`;
   text = noteT(text); // 다른 언어: 수첩 글씨도 그 언어로 (이름 비교는 그리기 전 한국어로 한다)
   g.fillStyle = color;
   g.textAlign = left ? 'left' : 'center';
   g.textBaseline = 'middle';
-  g.fillText(text, x, y, maxW);
+  g.fillText(text, x, y, maxW || (LANG !== 'ko' ? fit : undefined));
 }
 // 작은 코트 그림: 왼쪽 반이 우리 반. names 는 [이름, x, y] (코트 안 좌표 0~1)
 function noteCourt(g, x0, y0, w, hh, names, arrow) {
@@ -41,7 +41,7 @@ function noteCourt(g, x0, y0, w, hh, names, arrow) {
     g.fillStyle = n === '수아' || n === '현우' ? '#ffcf3f' : '#ffe9d6';
     g.beginPath(); g.arc(x, y, 15, 0, 7); g.fill();
     g.strokeStyle = '#3b302b'; g.lineWidth = 2; g.stroke();
-    hand(g, n, x, y + 27, 19);
+    hand(g, n, x, y + 27, 19, undefined, false, undefined, 54); // 밖의 두 아이는 56px 떨어져 있다
   });
   if (arrow && at[arrow[0]] && at[arrow[1]]) {
     const [ax, ay] = at[arrow[0]], [bx, by] = at[arrow[1]];
@@ -66,7 +66,7 @@ const NOTE_PAGES = {
   record(g, finger, extra) {
     notePage(g, '월요일 1반 경기 (밖에서 본 것)');
     const rows = ['하준 · 춤추다 맞음', '수아 · 던진 공 잡힘 → 1반 1명 다시 들어옴', '수아 · 던진 공 잡힘 → 1반 1명 다시 들어옴', '수아 · 던진 공 잡힘 → 1반 1명 다시 들어옴', extra || '현우 · 끝까지 피함 · 마지막 공 받으려고 함'];
-    rows.forEach((t, i) => hand(g, t, 110, 128 + i * 52, 33, extra && i === 4 ? '#3b5b8c' : '#3b302b', true));
+    rows.forEach((t, i) => hand(g, t, 110, 128 + i * 52, 33, extra && i === 4 ? '#3b5b8c' : '#3b302b', true, undefined, 700));
     hand(g, '끝까지 남은 사람: 현우.', 420, 440, 44, '#e8505b');
     g.strokeStyle = '#e8505b'; g.lineWidth = 4; g.beginPath(); g.moveTo(205, 470); g.lineTo(635, 470); g.stroke();
     if (finger) { // 수아 줄 세 개 위에 올린 손가락 (두 줄도 다 못 가린다)
@@ -83,7 +83,7 @@ const NOTE_PAGES = {
     notePage(g, '작전 세 줄');
     ['1. 공은 혼자 들고 있지 말고 서로 보내기', '2. 잘 던지는 친구와 잘 피하는 친구가 섞여 서기', '3. 공을 받으면 밖에 있는 친구 부르기'].forEach((t, i) => hand(g, t, 110, 128 + i * 52, 34, '#3b302b', true));
     hand(g, '(1반은 공을 서로 잘 돌린대)', 110, 284, 26, '#7d6f64', true);
-    if (and) hand(g, and, 110, 388, 38, '#e8505b', true);
+    if (and) hand(g, and, 110, 388, 38, '#e8505b', true, undefined, 700);
   },
   plan3b(g) { NOTE_PAGES.plan3(g, '다음에는 끝까지 말하기.'); },
   // 4권: 수첩 맨 뒷장
@@ -95,8 +95,8 @@ const NOTE_PAGES = {
   feels(g) {
     notePage(g, '현우의 마음 이름표');
     [['귀가 뜨거워요', '서운해요 · 당황했어요'], ['목에 뭔가 걸렸어요', '하고 싶은 말이 있어요'], ['손바닥에 땀이 나요', '화가 나요'], ['다리가 후들거려요', '무서워요']].forEach(([a, b], i) => {
-      hand(g, a, 110, 128 + i * 64, 34, '#3b302b', true);
-      hand(g, noteT('→ ') + noteT(b), 470, 128 + i * 64, 34, '#e8505b', true);
+      hand(g, a, 110, 128 + i * 64, 34, '#3b302b', true, undefined, 345);
+      hand(g, noteT('→ ') + noteT(b), 470, 128 + i * 64, 34, '#e8505b', true, undefined, 350);
     });
   },
   // 16·17면: 우리 반 작전판. 스물두 명 이름과 현우가 그린 화살표
