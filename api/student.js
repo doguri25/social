@@ -1,7 +1,7 @@
 // 학생 API (POST /api/student, { action, … })
 // 접속 코드(또는 QR 의 ?c=코드)로 들어오면 서명한 쿠키를 준다. 저장하는 것: 번호, 가명(교사가 정함), 읽은 결말·이어 보기 자리, 고른 답, 「이후의 이야기」
 'use strict';
-const { db, route, httpError, sign, unsign, cookies, setCookie, text, storageReady, ipOf, throttle, blocked } = require('../server/core');
+const { db, route, httpError, sign, unsign, cookies, setCookie, text, storageReady, ipOf, throttle, blocked, storyChars } = require('../server/core');
 const { getRoster, getSettings, unlocked, BOOKS, STARTERS } = require('../server/data');
 
 const COOKIE = 'maum_s';
@@ -109,8 +109,8 @@ module.exports = route({
     const s = await who(req);
     const [prog, set, old] = await Promise.all([db().get('progress', `s${s.no}`), getSettings(), db().get('stories', `s${s.no}`)]);
     if (!unlocked(prog)) throw httpError(403, '1~4권을 모두 끝까지 읽으면 쓸 수 있어요.');
-    const t = text(body.text, 12000).trim(); // 최대 5000자 + 띄어쓰기
-    const n = [...t.replace(/\s/g, '')].length;
+    const t = text(body.text, 24000).trim(); // 최대 5000자 (로마자는 두 배) + 띄어쓰기
+    const n = storyChars(t);
     if (n < set.minChars) throw httpError(400, `${set.minChars}자 넘게 써 주세요.`);
     if (n > set.maxChars) throw httpError(400, `${set.maxChars}자 안으로 줄여 주세요.`);
     const starter = STARTERS.some(x => x.id === body.starter) ? body.starter : null;

@@ -208,4 +208,7 @@ function route(actions) {
 const text = (v, max) => String(v == null ? '' : v).slice(0, max);
 const int = (v, lo, hi) => { const n = Math.round(Number(v)); if (!Number.isFinite(n) || n < lo || n > hi) throw httpError(400, '숫자가 맞지 않아요.'); return n; };
 
-module.exports = { storageReady, httpError, sign, unsign, db, ipOf, throttle, forgive, blocked, validPin, makePin, checkPassword, encrypt, decrypt, mask, newCode, cookies, setCookie, route, text, int };
+// 「이후의 이야기」 글자 수 (띄어쓰기 빼고). 한글·한자는 한 자, 로마자·키릴 문자는 두 자를 한 자로 센다:
+// 같은 분량의 글이 베트남어·러시아어로는 한국어보다 글자가 두 배쯤 많다 (번역한 네 권으로 잰 값 2.05·2.21배, 중국어 0.89배)
+const storyChars = s => Math.round([...String(s || '').replace(/\s/g, '')].reduce((n, c) => n + (/[\p{Script=Latin}\p{Script=Cyrillic}]/u.test(c) ? 0.5 : 1), 0));
+module.exports = { storyChars, storageReady, httpError, sign, unsign, db, ipOf, throttle, forgive, blocked, validPin, makePin, checkPassword, encrypt, decrypt, mask, newCode, cookies, setCookie, route, text, int };

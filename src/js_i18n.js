@@ -18,6 +18,8 @@ const t = (key, v) => {
   if (v) s = s.replace(/\{(\w+)(은|과)?\}/g, (m, k, p) => (v[k] == null ? m : !p || LANG !== 'ko' ? String(v[k]) : p === '은' ? v[k] + topic(v[k]) : withP(v[k])));
   return s;
 };
+// 「이후의 이야기」 글자 수: server/core.js 의 storyChars 와 같게 (로마자·키릴 문자는 두 자를 한 자로)
+const storyChars = s => Math.round([...String(s || '').replace(/\s/g, '')].reduce((n, c) => n + (/[\p{Script=Latin}\p{Script=Cyrillic}]/u.test(c) ? 0.5 : 1), 0));
 // 서버가 보낸 한국어 알림을 고른 언어로 (모르는 알림은 그대로)
 function srvMsg(m) {
   if (LANG === 'ko' || !m) return m;

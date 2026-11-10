@@ -75,6 +75,8 @@ try {
   ok(!(await W('student', 'save', { since: wNew, progress })).body.stale, '다시 받은 뒤에는 저장됨');
   ok((await S('student', 'story', { text: '짧아요' })).status === 400, '200자 안 되면 거절');
   ok((await S('student', 'story', { text: '가'.repeat(501) })).status === 400, '500자 넘으면 거절');
+  ok((await S('student', 'story', { text: 'Thu Hai tuan sau '.repeat(35) })).status === 200 && (await S('student', 'story', { text: 'a'.repeat(900) })).status === 200, '로마자 글은 두 자를 한 자로 (455자 → 228자, 900자 → 450자: 200~500 안)');
+  ok((await S('student', 'story', { text: 'Привет '.repeat(20) })).status === 400 && (await S('student', 'story', { text: 'a'.repeat(1004) })).status === 400, '키릴 문자 120자(60자)는 짧고, 로마자 1004자(502자)는 넘침');
   ok((await S('student', 'story', { text: '다음 주 월요일 '.repeat(40), starter: 3 })).status === 200, '네 권을 다 읽고 200~500자로 쓰면 저장');
   const ov = (await T('teacher', 'overview')).body;
   const s1 = ov.students.find(s => s.no === 1);

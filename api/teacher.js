@@ -1,6 +1,6 @@
 // 교사 API (POST /api/teacher, { action, … }): 비밀번호 로그인(처음 1324), 명단·코드, 학생 기록, 「이후의 이야기」 채점(교사·AI), 설정
 'use strict';
-const { db, route, httpError, sign, unsign, cookies, setCookie, validPin, makePin, checkPassword, encrypt, newCode, text, int } = require('../server/core');
+const { db, route, httpError, sign, unsign, cookies, setCookie, validPin, makePin, checkPassword, encrypt, newCode, text, int, storyChars } = require('../server/core');
 const { getSettings, publicSettings, getRoster, setRoster, aiGrade, pingAI, PROVIDER_IDS } = require('../server/data');
 const { makeDemo } = require('../server/demo');
 
@@ -61,7 +61,7 @@ const guarded = {
         return {
           no: st.no, alias: st.alias, code: st.code, demo: !!st.demo, at: p ? p.at : null, answers: count[st.no] || 0,
           books: Object.fromEntries(Object.entries((p && p.books) || {}).map(([id, b]) => [id, b.endings.length])),
-          story: y ? { chars: [...y.text.replace(/\s/g, '')].length, at: y.at, starter: y.starter, teacher: scoreSum(y.teacher), ai: scoreSum(y.ai) } : null,
+          story: y ? { chars: storyChars(y.text), at: y.at, starter: y.starter, teacher: scoreSum(y.teacher), ai: scoreSum(y.ai) } : null,
         };
       }),
     };

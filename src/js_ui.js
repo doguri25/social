@@ -237,7 +237,7 @@ function openAfter() {
     } catch (e) { toast(e.message); } finally { sending = false; }
   };
   const upd = () => {
-    const n = [...ta.value.replace(/\s/g, '')].length;
+    const n = storyChars(ta.value);
     count.textContent = t('charCount', { n, min, max });
     count.classList.toggle('ok', n >= min && n <= max);
     count.classList.toggle('over', n > max);
