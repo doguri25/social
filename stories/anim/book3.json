@@ -23,7 +23,7 @@
     "1": {"yuna": [[0.3, "throw", "angry", "windup"]], "cam": {"back": 1.25}, "path": {"yuna": [[0.15, 0, -0.4], [0.3, 0, 0.4]]}},
     "3": {"cheer": 1, "yuna": [[0.2, null, "joy", "cheer"]], "jiwoo": [[0.25, null, "joy", "clap"]], "minjun": [[0.2, null, "laugh", "cheer"]], "seoa": [[0.25, null, "joy", "clap"]]},
     "4": {"cheer": 1, "minjun": [[0.15, "dodge", "joy", "dodge"], [0.45, "dance", "laugh", "dance"]], "path": {"minjun": [[0.12, -0.6, 0], [0.25, 0.5, 0], [0.4, 0, 0]]}},
-    "6": {"cheer": 1, "minjun": [[0.08, "dance", "laugh", "dance"]], "yuna": [[0.25, null, "laugh", "laugh"]], "jiwoo": [[0.25, null, "laugh", "laugh"]], "seoa": [[0.3, null, "laugh", "laugh"]], "hit": "minjun", "hitLight": true, "ballFrom": 0.36},
+    "6": {"cheer": 1, "minjun": [[0.08, "dance", "laugh", "dance"]], "yuna": [[0.25, null, "laugh", "laugh"]], "jiwoo": [[0.25, null, "laugh", "laugh"]], "seoa": [[0.3, null, "laugh", "laugh"]], "hit": "minjun", "hitLight": true, "ballFrom": 0.4, "cut": {"shot": "close", "on": "minjun", "angle": 52, "faces": {"minjun": "surprised"}}, "cam": false},
     "7": {"minjun": [[0.12, "dance", "laugh", "dance"], [0.42, "dance", "surprised", "jolt"]], "cam": {"back": 1.2}},
     "9": {"minjun": [[0.45, "down", "shy", "fidget", 0.3]]},
     "10": {"cheer": 0.3, "minjun": [[0.2, "down", "shy", "still"], [0.5, null, "hurt", "sad", 0.35]]}
@@ -183,7 +183,7 @@
   "a03": {
     "0": {"cheer": 1, "yuna": [[0.3, "throw", "angry", "windup"]], "jiwoo": [[0.2, null, "calm", "ready"]], "minjun": [[0.2, null, "laugh", "sway"]], "seoa": [[0.2, null, "calm", "ready"]], "path": {"yuna": [[0.15, 0, -0.4], [0.3, 0, 0.4]]}},
     "2": {"cheer": 1, "minjun": [[0.15, "dodge", "joy", "dodge"], [0.45, "dance", "laugh", "dance"]], "path": {"minjun": [[0.12, -0.6, 0], [0.25, 0.5, 0], [0.4, 0, 0]]}},
-    "4": {"cheer": 1, "minjun": [[0.08, "dance", "laugh", "dance"]], "yuna": [[0.25, null, "laugh", "laugh"]], "jiwoo": [[0.25, null, "laugh", "laugh"]], "seoa": [[0.3, null, "laugh", "laugh"]], "hit": "minjun", "hitLight": true, "ballFrom": 0.36},
+    "4": {"cheer": 1, "minjun": [[0.08, "dance", "laugh", "dance"]], "yuna": [[0.25, null, "laugh", "laugh"]], "jiwoo": [[0.25, null, "laugh", "laugh"]], "seoa": [[0.3, null, "laugh", "laugh"]], "hit": "minjun", "hitLight": true, "ballFrom": 0.4, "cut": {"shot": "close", "on": "minjun", "angle": 52, "faces": {"minjun": "surprised"}}, "cam": false},
     "6": {"yuna": [[0.3, "throw", "angry", "windup"], [0.6, "throw", "surprised", "look"]], "path": {"yuna": [[0.15, 0, -0.4], [0.3, 0, 0.4]]}},
     "9": {"minjun": [[0.25, null, "surprised", "still"], ["end", 0, 0, "fidget"]]}
   },

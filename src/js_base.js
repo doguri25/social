@@ -134,6 +134,6 @@ for (const bk in ANIMS) {
   if (!B) continue;
   for (const key in ANIMS[bk]) {
     const ps = key.startsWith('end:') ? ((B.endings || []).find(e => e.id === key.slice(4)) || {}).panels : (B.scenes[key] || {}).panels;
-    for (const i in ANIMS[bk][key]) if (ps && ps[i]) { ps[i].anim = ANIMS[bk][key][i]; if (ps[i].anim.angle != null) ps[i].angle = ps[i].anim.angle; } // angle: 가까운 컷의 카메라 방향을 바꾼다 (삽화도 그 방향)
+    for (const i in ANIMS[bk][key]) if (ps && ps[i]) { ps[i].anim = ANIMS[bk][key][i]; if (ps[i].anim.angle != null) ps[i].angle = ps[i].anim.angle; if (ps[i].anim.cut) Object.assign(ps[i], ps[i].anim.cut); } // cut: 컷의 구도·표정을 바꾼다 (넓은 컷을 가까운 컷으로 등) // angle: 가까운 컷의 카메라 방향을 바꾼다 (삽화도 그 방향)
   }
 }
