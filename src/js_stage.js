@@ -227,7 +227,7 @@ const BUILD = {
         c.fillStyle = cols[i % 6]; c.beginPath(); c.arc(x + 20, y + 30, 30, 0, 7); c.fill();
         c.fillStyle = '#3b302b'; c.fillRect(x - 6, y + 70, 52, 8);
       }
-    }), 1.85, 1.38, 0.09, 0, b);
+    }), 1.85, 1.38, 0.094, 0, b); // 게시판 앞면(0.09)보다 살짝 앞에 (같은 자리면 각도에 따라 보였다 안 보였다 한다)
     [-1.75, -0.45, 0.85].forEach(x => {
       model('bookcaseOpen', { w: 1.25, h: 0.8, d: 0.36, x, z: 0.26, parent: b, color: { wood: WOOD }, ink: 0.005 });
       model('books', { h: 0.15, x: x - 0.3, y: 0.8, z: 0.26, parent: b, ry: 10 });
