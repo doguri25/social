@@ -43,7 +43,8 @@ dodge(몸을 비킴), call(두 손을 입가에), dance.
 - 진정: breath(깊은 숨), nod(끄덕임), look(두리번), calm(가만히 몸무게 옮기기), still(아무것도 안 함)
 - 놀람·넘어짐: jolt(움찔), tumble(뒤로 엉덩방아), trip(앞으로 휘청)
 - 운동: ready(경기 준비 자세로 좌우 움직임), windup(던지기 직전 힘 모으기), dodge(좌우로 폴짝 피하기), brace(받을 준비), run, walk
-- 생활: write(수첩에 적기 — 오른손에 수첩을 든 인물), eat(먹기), poke(젓가락으로 콕콕), wash(손 씻기), pat(토닥이기), balance, yawn
+- 생활: write(수첩에 적기 — 오른손에 수첩을 든 인물), erase(지우기), close(든 수첩을 덮어 내림), offer(든 것을 조용히 내밂), give(건네고 받기),
+  eat(먹기), poke(젓가락으로 콕콕), wash(손 씻기), pat(토닥이기), bounce(공 튀기기), highfive(손바닥 마주치기), gaze(주인공 쪽을 지그시 봄), balance, yawn
 
 말하는 사람(컷의 `lines` 에 있는 인물)은 따로 적지 않아도 손짓하며 끄덕인다.
 

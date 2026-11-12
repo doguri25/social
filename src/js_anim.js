@@ -187,6 +187,20 @@ Object.assign(MOVES, {
   },
   // 한 바퀴 빙글
   spin(pv, w, s, c, sit, t, dt) { c.root.rotation.y = c.ry0 + easeIO(clamp(dt / 0.25, 0, 1)) * Math.PI * 2; pv.yy += Math.sin(clamp(dt / 0.25, 0, 1) * Math.PI) * 0.05; toward(pv, { aA: [0, 0, -1.4], aB: [0, 0, 1.4] }, w); },
+  // 든 것(수첩)을 천천히 덮어 내린다: 손이 내려가고 고개가 숙여진다
+  close(pv, w, s, c, sit, t, dt) { const j = sstep(0, 0.2, dt) * w; toward(pv, { aA: [-0.35, 0, 0.25], eA: -1.2, aB: [-0.35, 0, -0.25], eB: -1.2 }, j); addV(pv, 'hd', 0, 0.28 * j); },
+  // 든 것을 조용히 내민다
+  offer(pv, w, s, c, sit, t, dt) { const j = sstep(0, 0.15, dt) * w; toward(pv, { aA: [-1.25, 0, 0.05], eA: -0.35 }, j); pv.lean += 0.08 * j; addV(pv, 'hd', 0, 0.1 * j); },
+  // 건네고 받기: 손을 뻗었다가 거둔다
+  give(pv, w, s, c, sit, t, dt) { const j = Math.sin(clamp(dt / 0.3, 0, 1) * Math.PI) * w; toward(pv, { aA: [-1.3, 0, 0.05], eA: -0.25 }, j); pv.lean += 0.1 * j; },
+  // 지우개로 지우기: 수첩 위에서 손을 좌우로 문지른다
+  erase(pv, w, s) { toward(pv, { aA: [-1.05, 0, 0.2], eA: -1.75, aB: [-1.05, 0, -0.5 + Math.sin(s * 9) * 0.12], eB: -1.6 }, w * 0.95); addV(pv, 'hd', 0, 0.28 * w); },
+  // 손바닥 마주치기: 한 손을 높이 들어 짝! 하고 살짝 뛴다
+  highfive(pv, w, s, c, sit, t, dt) { const j = sstep(0, 0.06, dt), hit = Math.sin(clamp(dt / 0.12, 0, 1) * Math.PI); toward(pv, { aB: [-2.3, 0, 0.25], eB: -0.3 }, j * w); pv.yy += hit * (sit ? 0.02 : 0.06) * w; pv.lean += hit * 0.08 * w; },
+  // 공 튀기기: 한 손으로 아래를 툭툭 누르듯 (든 공은 품에 둔 채)
+  bounce(pv, w, s) { const b = Math.sin(s * 5.5) * 0.5 + 0.5; toward(pv, { aB: [-0.55 - b * 0.3, 0, 0.1], eB: -0.5 - b * 0.5 }, w); addV(pv, 'hd', 0, 0.2 * w); pv.yy -= b * 0.012 * w; },
+  // 한쪽을 지그시 바라본다 (주인공 쪽. 주인공이면 정면을 가만히)
+  gaze(pv, w, s, c) { addV(pv, 'hd', 1, (c.gazeY || 0) * w); addV(pv, 'hd', 0, -0.04 * w); },
   // 한 손 흔들기
   wave(pv, w, s) { toward(pv, { aB: [0, 0, 2.5 + Math.sin(s * 6.5) * 0.35], eB: -0.6 }, w); addV(pv, 'hd', 2, 0.08 * w); },
 });
@@ -237,6 +251,7 @@ function cutAnim(p, prev, n = 0) {
     c.held = c.armA.hand.getChildren().some(x => x.isEnabled()) || ['show', 'hold', 'phone', 'throw'].includes(o1 || c.base); // 오른손에 든 것이 있으면 그 팔은 연기에 쓰지 않는다
     let look = 0; // 주인공이 아닌 아이는 주인공 쪽으로 고개를 돌렸다가 돌아온다
     if (star && star !== c) { const d = star.root.position.subtract(c.root.position); look = clamp(Math.atan2(d.x, d.z) - c.ry0, -Math.PI, Math.PI); look = clamp(Math.atan2(Math.sin(look), Math.cos(look)), -0.8, 0.8); }
+    c.gazeY = look;
     acts.push({ c, keys, f1, talk: talkers.has(id), k: focus.has(id) || !star ? 1 : 0.45, look, sit: !!poseVals(c.base, o1).sit });
   }
   // ---- 이동: 앞 컷 뒤로 자리가 바뀐 인물은 그 자리에서 걸어(멀면 뛰어) 온다. 새로 나온 인물은 뒤쪽에서 걸어 들어온다 ----

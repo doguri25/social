@@ -1,0 +1,381 @@
+{
+  "s01": {
+    "0": {"jiwoo": [[0.25, "wave", "joy", "greet"]]},
+    "1": {"cheer": 0.8, "jiwoo": [[0.25, null, "joy", "greet"]], "minjun": [[0.25, null, "laugh", "sway"]], "yuna": [[0.3, null, "joy", "nod"]], "seoa": [[0.3, null, "calm", "nod"]]},
+    "2": {"jiwoo": [[0.3, null, "sad", "sigh"]]}
+  },
+  "s02": {
+    "0": {"cheer": 1, "yuna": [[0.2, null, "joy", "ready"]], "jiwoo": [[0.2, null, "calm", "ready"]], "minjun": [[0.2, null, "laugh", "sway"]], "seoa": [[0.2, null, "calm", "ready"]]},
+    "1": {"yuna": [[0.3, "throw", "angry", "windup"]], "path": {"yuna": [[0.15, 0, -0.4], [0.3, 0, 0.4]]}},
+    "3": {"cheer": 0.8, "yuna": [[0.2, null, "joy", "cheer"]], "jiwoo": [[0.25, null, "joy", "clap"]], "minjun": [[0.2, null, "laugh", "cheer"]], "seoa": [[0.25, null, "joy", "clap"]]},
+    "4": {"jiwoo": [[0.2, "dodge", "calm", "dodge"]], "path": {"jiwoo": [[0.2, -0.7, 0], [0.42, 0.5, 0]]}},
+    "6": {"minjun": [[0.12, "dance", "laugh", "dance"], [0.45, "dance", "surprised", "jolt"]], "hit": "minjun", "hitLight": true},
+    "8": {"cheer": 0.4, "yuna": [[0.2, null, "worried", "look"]], "jiwoo": [[0.25, null, "worried", "look"]], "seoa": [[0.25, null, "worried", "worried"]], "minjun": [[0.5, "down", "sad", "sad", 0.3]]},
+    "9": {"yuna": [[0.25, "throw", "angry", "windup"], [0.6, "throw", "worried", "look"]]},
+    "11": {"yuna": [[0.08, "dodge", "worried", "still"]], "cam": {"back": 1.2}, "hit": "yuna"}
+  },
+  "s03": {
+    "0": {"jiwoo": [[0.2, null, "worried", "worried"]], "cam": {"back": 0.8}},
+    "1": {"jiwoo": [[0.2, null, "worried", "look"]], "yuna": [[0.3, null, "worried", "worried"]], "seoa": [[0.3, null, "worried", "fidget"]], "minjun": [[0.3, "down", "worried", "toe"]], "cam": {"turn": 14}},
+    "3": {"jiwoo": [[0.25, "open", "worried", "brace"]]},
+    "5": {"jiwoo": [[0.12, "open", "worried", "brace"], [0.4, "open", "surprised", "jolt"]]}
+  },
+  "s04": {
+    "0": {"cheer": 0, "yuna": [[0.2, null, "angry", "fist"]], "jiwoo": [[0.6, "down", "hurt", "sad", 0.4]], "minjun": [[0.5, "down", "sad", "sad", 0.3]], "seoa": [[0.3, null, "worried", "sigh"]]},
+    "1": {"cheer": 0, "yuna": [[0.2, "point", "angry", "blame"]], "jiwoo": [[0.2, "open", "worried", "still"]]},
+    "2": {"yuna": [[0.15, "point", "angry", "blame"]], "cam": {"back": 1.25}},
+    "3": {"jiwoo": [[0.2, null, "surprised", "jolt"], [0.5, null, "hurt", "still"]]},
+    "5": {"jiwoo": [[0.25, null, "hurt", "fidget"]]},
+    "7": {"jiwoo": [[0.15, "open", "hurt", "still"], [0.72, "down", "hurt", "sad", 0.5]]}
+  },
+  "s05": {
+    "0": {"jiwoo": [[0.3, "down", "hurt", "fist"], [0.6, "point", "angry", "blame"]]},
+    "1": {"jiwoo": [[0.15, "point", "angry", "blame"]], "minjun": [[0.3, null, "surprised", "jolt"]]},
+    "2": {"jiwoo": [[0.5, "down", "sad", "sigh", 0.35]]},
+    "3": {"minjun": [[0.2, "point", "angry", "blame"]]},
+    "5": {"cheer": 0, "teacher": [[0.3, null, "calm", "nod"]]},
+    "6": {"teacher": [[0.2, null, "calm", "shake"]]},
+    "7": {"teacher": [[0.25, "reach", "calm", "pat"]], "jiwoo": [[0.3, "down", "hurt", "sad"]]},
+    "9": {"cheer": 0, "yuna": [[0.25, "cross", "angry", "away"]], "jiwoo": [[0.3, "down", "hurt", "sad"]], "minjun": [[0.3, "down", "sad", "toe"]], "seoa": [[0.3, null, "worried", "fidget"]], "cam": {"back": 0.85}}
+  },
+  "s06": {
+    "0": {"jiwoo": [[0.25, null, "sad", "poke"]]}
+  },
+  "s06a": {
+    "0": {"jiwoo": [[0.2, null, "calm", "poke"]]},
+    "1": {"jiwoo": [[0.25, null, "sad", "sigh"]]},
+    "2": {"jiwoo": [[0.2, null, "sad", "poke"]]}
+  },
+  "s06h": {
+    "0": {"jiwoo": [[0.2, null, "laugh", "laugh"]]},
+    "1": {"jmom": [[0.2, null, "calm", "nod"], [0.5, null, "worried", "still"]]},
+    "2": {"jiwoo": [[0.25, "hold", "sad", "squeeze"]]},
+    "3": {"jiwoo": [[0.25, null, "hurt", "fidget"]]}
+  },
+  "s06n": {
+    "0": {"jiwoo": [[0.2, null, "hurt", "fidget"]]},
+    "1": {"jmom": [[0.15, null, "calm", "still"], [0.4, null, "worried", "nod"]]},
+    "2": {"jiwoo": [[0.3, null, "cry", "sad"]]},
+    "3": {"jmom": [[0.3, null, "calm", "nod"]]},
+    "5": {"jiwoo": [[0.2, null, "sad", "fidget"], ["end", 0, 0, "breath"]]},
+    "7": {"jiwoo": [[0.2, null, "worried", "fidget"]]},
+    "8": {"jmom": [[0.3, null, "calm", "nod"]]},
+    "9": {"jiwoo": [[0.25, null, "calm", "shake"]]},
+    "10": {"jmom": [[0.25, "reach", "joy", "still"]]},
+    "11": {"jiwoo": [[0.2, null, "calm", "write"]]}
+  },
+  "a07": {
+    "0": {"yuna": [[0.2, "show", "angry", "blame"]]},
+    "1": {"jiwoo": [[0.2, null, "surprised", "jolt"]]},
+    "2": {"jiwoo": [[0.3, "down", "hurt", "sad", 0.3]]},
+    "3": {"jiwoo": [[0.2, null, "hurt", "fidget"]]},
+    "4": {"minjun": [[0.2, null, "angry", "shout"]]},
+    "6": {"cheer": 0.3, "yuna": [[0.3, null, "worried", "look"]], "jiwoo": [["end", 0, 0, "sad"]], "seoa": [[0.35, null, "worried", "fidget"]]}
+  },
+  "a08": {
+    "0": {"cheer": 0.2, "yuna": [[0.25, null, "calm", "squeeze"]], "jiwoo": [[0.3, null, "sad", "sad"]], "cam": {"turn": 14}},
+    "1": {"cheer": 0.3},
+    "2": {"jiwoo": [[0.2, null, "hurt", "fidget"]]},
+    "3": {"jiwoo": [[0.15, null, "calm", "fidget"], [0.42, null, "calm", "write"], ["end", 0, 0, "breath"]]},
+    "6": {"seoa": [[0.3, "show", "worried", "fidget"]]},
+    "8": {"seoa": [[0.45, "down", "sad", "sad", 0.3]]},
+    "9": {"jiwoo": [[0.25, null, "sad", "sigh"]]},
+    "10": {"jiwoo": [[0.2, null, "worried", "write"]]}
+  },
+  "a09": {
+    "0": {"cheer": 0.3, "yuna": [[0.2, null, "calm", "eat"]], "minjun": [[0.2, null, "laugh", "eat"]], "jiwoo": [[0.3, null, "calm", "eat"]]},
+    "2": {"minjun": [[0.2, null, "laugh", "balance"]]},
+    "3": {"yuna": [[0.25, "down", "hurt", "away"]]},
+    "5": {"minjun": [[0.12, null, "laugh", "balance"], [0.35, null, "surprised", "jolt"], [0.6, "down", "sad", "sad", 0.3]]},
+    "6": {"jiwoo": [[0.2, null, "laugh", "laugh"]]},
+    "7": {"jiwoo": [[0.15, null, "laugh", "laugh"], [0.42, null, "worried", "still"]]},
+    "8": {"jiwoo": [[0.2, null, "worried", "fidget"]]},
+    "9": {"jiwoo": [[0.25, null, "shy", "fidget"]]}
+  },
+  "a10": {
+    "0": {"cheer": 0.5, "yuna": [[0.2, null, "angry", "ready"]], "jiwoo": [[0.3, null, "worried", "look"]], "cam": {"turn": 12}},
+    "2": {"cheer": 0.6, "yuna": [[0.15, "dodge", "worried", "dodge"]], "path": {"yuna": [[0.15, -0.9, 0], [0.35, 0.8, 0.3], [0.55, -0.6, -0.2], [0.72, 0.4, 0]]}},
+    "4": {"yuna": [[0.2, null, "worried", "look"]], "cam": {"back": 0.8}},
+    "5": {"cheer": 0.8, "yuna": [[0.3, null, "worried", "look"]]},
+    "7": {"yuna": [[0.3, "throw", "angry", "windup"]], "path": {"yuna": [[0.15, 0, -0.4], [0.3, 0, 0.4]]}},
+    "9": {"yuna": [[0.2, "reach", "surprised", "still"]]},
+    "11": {"yuna": [[0.08, "dodge", "worried", "still"]], "cam": {"back": 1.25}, "hit": "yuna"}
+  },
+  "a11": {
+    "0": {"jiwoo": [[0.2, null, "worried", "fidget"]]},
+    "1": {"jiwoo": [[0.3, null, "sad", "sigh"]]},
+    "3": {"yuna": [[0.2, null, "angry", "fist"], ["end", 0, 0, "sigh"]]},
+    "4": {"jiwoo": [[0.3, "down", "sad", "sad", 0.3]]},
+    "5": {"jiwoo": [[0.2, null, "worried", "fidget"]]},
+    "6": {"jiwoo": [[0.25, null, "worried", "worried"]]}
+  },
+  "a11w": {
+    "0": {"jiwoo": [[0.2, "down", "worried", "write"]]},
+    "1": {"jiwoo": [[0.25, null, "calm", "breath"]]},
+    "3": {"yuna": [["end", 0, 0, "wash"]]},
+    "5": {"seoa": [[0.3, "show", "worried", "fidget"]], "jiwoo": [[0.35, null, "worried", "look"]]}
+  },
+  "a11t": {
+    "0": {"jiwoo": [[0.2, null, "worried", "fidget"]], "minjun": [[0.45, null, "calm", "look"]]},
+    "1": {"minjun": [[0.15, null, "worried", "look"], [0.4, "show", "worried", "still"]]},
+    "2": {"jiwoo": [[0.25, null, "calm", "breath"]]},
+    "4": {"yuna": [["end", 0, 0, "wash"]]},
+    "6": {"seoa": [[0.3, "show", "worried", "fidget"]], "jiwoo": [[0.35, null, "worried", "look"]]}
+  },
+  "a12": {
+    "0": {"jiwoo": [[0.25, "show", "calm", "still"]], "jmom": [[0.45, null, "calm", "nod"]]},
+    "1": {"jmom": [[0.25, null, "joy", "nod"]]},
+    "2": {"jiwoo": [[0.25, null, "shy", "scratch"]]},
+    "3": {"jiwoo": [[0.2, "point", "shy", "still"]]},
+    "4": {"jmom": [[0.3, null, "calm", "nod"]]},
+    "5": {"jiwoo": [[0.25, null, "calm", "nod"]]},
+    "6": {"jiwoo": [[0.2, "hold", "calm", "still"], [0.5, "reach", "calm", "still"]]}
+  },
+  "s07": {
+    "0": {"yuna": [[0.2, "show", "angry", "blame"]]},
+    "1": {"jiwoo": [[0.2, null, "surprised", "jolt"]]},
+    "2": {"jiwoo": [[0.2, null, "hurt", "fidget"]]},
+    "3": {"minjun": [[0.2, null, "angry", "shout"]]},
+    "5": {"cheer": 0.3, "yuna": [[0.3, null, "worried", "look"]], "jiwoo": [["end", 0, 0, "sad"]], "seoa": [[0.35, null, "worried", "fidget"]]}
+  },
+  "s08": {
+    "0": {"cheer": 0.2, "yuna": [[0.25, null, "calm", "squeeze"]], "jiwoo": [[0.3, null, "sad", "sad"]], "cam": {"turn": 14}},
+    "1": {"cheer": 0.3}
+  },
+  "s08a": {
+    "0": {"jiwoo": [[0.25, "down", "sad", "fidget"]]}
+  },
+  "s08b": {
+    "0": {"jiwoo": [[0.25, null, "angry", "nod"]]},
+    "1": {"jiwoo": [[0.2, null, "hurt", "still"], ["end", 0, 0, "sad"]]}
+  },
+  "s08c": {
+    "1": {"cheer": 0.2}
+  },
+  "s08r": {
+    "0": {"jiwoo": [[0.2, null, "hurt", "fidget"]]},
+    "3": {"seoa": [[0.3, "show", "worried", "fidget"]]},
+    "5": {"seoa": [[0.45, "down", "sad", "sad", 0.3]]}
+  },
+  "s08q": {
+    "0": {"jiwoo": [[0.25, null, "sad", "sigh"]]}
+  },
+  "b08": {
+    "0": {"jiwoo": [[0.2, null, "worried", "look"]]},
+    "1": {"seoa": [[0.2, "hold", "sad", "squeeze"]]},
+    "2": {"jiwoo": [[0.25, null, "sad", "sigh"]]},
+    "3": {"jiwoo": [[0.25, null, "sad", "sigh"]]},
+    "4": {"jiwoo": [[0.2, null, "shy", "scratch"]], "seoa": [[0.5, null, "surprised", "still"]]},
+    "5": {"seoa": [[0.1, "hold", "sad", "still"], [0.55, "show", "surprised", "still", 0.4]]},
+    "7": {"jiwoo": [[0.25, null, "joy", "nod"]]},
+    "9": {"seoa": [[0.45, null, "calm", "nod"]]},
+    "10": {"jiwoo": [[0.3, null, "calm", "breath"]]},
+    "11": {"jiwoo": [[0.25, null, "calm", "breath"]], "seoa": [[0.35, null, "calm", "nod"]]}
+  },
+  "b09": {
+    "0": {"cheer": 0.3, "yuna": [[0.2, null, "calm", "eat"]], "minjun": [[0.2, null, "laugh", "eat"]], "jiwoo": [[0.3, null, "calm", "eat"]], "seoa": [[0.3, null, "calm", "eat"]]},
+    "1": {"seoa": [[0.2, null, "calm", "eat"]]},
+    "3": {"minjun": [[0.2, null, "laugh", "balance"]]},
+    "4": {"yuna": [[0.25, "down", "hurt", "away"]]},
+    "6": {"minjun": [[0.12, null, "laugh", "balance"], [0.35, null, "surprised", "jolt"], [0.6, "down", "sad", "sad", 0.3]]},
+    "7": {"jiwoo": [[0.2, null, "laugh", "laugh"]]},
+    "8": {"jiwoo": [[0.15, null, "laugh", "laugh"], [0.42, null, "worried", "still"]]},
+    "9": {"seoa": [[0.3, null, "calm", "nod"]]},
+    "10": {"jiwoo": [[0.3, null, "calm", "breath"]]}
+  },
+  "b10": {
+    "0": {"seoa": [[0.2, "show", "calm", "pump"]]},
+    "2": {"jiwoo": [[0.25, null, "joy", "nod"]]}
+  },
+  "b10g": {
+    "0": {"cheer": 0.5, "yuna": [[0.2, null, "angry", "ready"]], "jiwoo": [[0.3, null, "worried", "look"]], "cam": {"turn": 12}},
+    "2": {"cheer": 0.6, "yuna": [[0.15, "dodge", "worried", "dodge"]], "path": {"yuna": [[0.15, -0.9, 0], [0.35, 0.8, 0.3], [0.55, -0.6, -0.2], [0.72, 0.4, 0]]}},
+    "4": {"yuna": [[0.2, null, "worried", "look"]], "cam": {"back": 0.8}},
+    "5": {"cheer": 0.8, "yuna": [[0.3, null, "worried", "look"]]},
+    "7": {"yuna": [[0.3, "throw", "angry", "windup"]], "path": {"yuna": [[0.15, 0, -0.4], [0.3, 0, 0.4]]}},
+    "9": {"yuna": [[0.2, "reach", "surprised", "still"]]},
+    "11": {"yuna": [[0.08, "dodge", "worried", "still"]], "cam": {"back": 1.25}, "hit": "yuna"}
+  },
+  "b11": {
+    "0": {"jiwoo": [[0.2, null, "worried", "fidget"]]},
+    "1": {"jiwoo": [[0.3, null, "sad", "sigh"]]},
+    "3": {"yuna": [[0.2, null, "angry", "fist"], ["end", 0, 0, "sigh"]]},
+    "4": {"jiwoo": [[0.3, "down", "sad", "sad", 0.3]]},
+    "5": {"jiwoo": [[0.2, null, "worried", "fidget"]]},
+    "7": {"yuna": [["end", 0, 0, "wash"]]},
+    "8": {"seoa": [[0.2, "hold", "worried", "squeeze"]]},
+    "9": {"jiwoo": [[0.25, null, "worried", "look"]]}
+  },
+  "b11p": {
+    "0": {"jiwoo": [[0.25, "reach", "calm", "pat"]], "seoa": [[0.45, null, "surprised", "jolt"]]},
+    "1": {"seoa": [[0.2, null, "calm", "breath"], ["end", 0, 0, "nod"]]},
+    "3": {"seoa": [[0.3, "show", "worried", "fidget"]], "jiwoo": [[0.35, null, "worried", "look"]]},
+    "4": {"jiwoo": [[0.25, "show", "calm", "still"], ["end", 0, 0, "breath"]]}
+  },
+  "b11o": {
+    "0": {"seoa": [[0.4, null, "worried", "look"]]},
+    "1": {"seoa": [[0.15, null, "worried", "still"], [0.35, null, "calm", "shake"]]},
+    "2": {"jiwoo": [[0.25, "clasp", "calm", "nod"]]},
+    "4": {"seoa": [[0.3, "show", "worried", "fidget"]], "jiwoo": [[0.35, null, "worried", "look"]]}
+  },
+  "b12": {
+    "0": {"seoa": [[0.25, "hold", "worried", "squeeze"]], "yuna": [[0.4, null, "calm", "look"]]},
+    "2": {"yuna": [[0.2, null, "calm", "nod"]], "seoa": [[0.55, "show", "calm", "still", 0.3]]},
+    "3": {"jiwoo": [[0.2, null, "worried", "fidget"]]},
+    "4": {"jiwoo": [[0.25, "clasp", "calm", "breath"]]}
+  },
+  "s09": {
+    "0": {"cheer": 0.3, "yuna": [[0.2, null, "calm", "eat"]], "minjun": [[0.2, null, "laugh", "eat"]], "jiwoo": [[0.3, null, "calm", "eat"]]},
+    "2": {"minjun": [[0.2, null, "laugh", "balance"]]},
+    "3": {"yuna": [[0.25, "down", "hurt", "away"]]},
+    "5": {"minjun": [[0.12, null, "laugh", "balance"], [0.35, null, "surprised", "jolt"], [0.6, "down", "sad", "sad", 0.3]]}
+  },
+  "s09a": {
+    "0": {"jiwoo": [[0.2, null, "laugh", "laugh"]]},
+    "1": {"jiwoo": [[0.15, null, "laugh", "laugh"], [0.42, null, "worried", "still"]]}
+  },
+  "s09b": {
+    "0": {"jiwoo": [[0.2, null, "worried", "fidget"]]},
+    "1": {"minjun": [[0.15, null, "sad", "look"], [0.4, "clasp", "sad", "pat"]]},
+    "2": {"jiwoo": [[0.3, null, "shy", "nod"]]}
+  },
+  "s09c": {
+    "0": {"jiwoo": [[0.3, "reach", "calm", "still"]]},
+    "1": {"minjun": [[0.2, "reach", "calm", "still"], ["end", 0, 0, "nod"]]},
+    "2": {"jiwoo": [[0.15, "reach", "calm", "still"], [0.5, null, "worried", "fidget"]]}
+  },
+  "s10": {
+    "0": {"cheer": 0.5, "yuna": [[0.2, null, "angry", "ready"]], "jiwoo": [[0.3, null, "worried", "look"]], "cam": {"turn": 12}},
+    "2": {"cheer": 0.6, "yuna": [[0.15, "dodge", "worried", "dodge"]], "path": {"yuna": [[0.15, -0.9, 0], [0.35, 0.8, 0.3], [0.55, -0.6, -0.2], [0.72, 0.4, 0]]}},
+    "4": {"yuna": [[0.2, null, "worried", "look"]], "cam": {"back": 0.8}},
+    "5": {"cheer": 0.8, "yuna": [[0.3, null, "worried", "look"]]},
+    "7": {"yuna": [[0.3, "throw", "angry", "windup"]], "path": {"yuna": [[0.15, 0, -0.4], [0.3, 0, 0.4]]}},
+    "9": {"yuna": [[0.2, "reach", "surprised", "still"]]},
+    "11": {"yuna": [[0.08, "dodge", "worried", "still"]], "cam": {"back": 1.25}, "hit": "yuna"}
+  },
+  "s11": {
+    "0": {"jiwoo": [[0.2, null, "worried", "fidget"]]},
+    "1": {"jiwoo": [[0.3, null, "sad", "sigh"]]},
+    "3": {"yuna": [[0.2, null, "angry", "fist"], ["end", 0, 0, "sigh"]]},
+    "4": {"jiwoo": [[0.3, "down", "sad", "sad", 0.3]]},
+    "5": {"jiwoo": [[0.2, null, "worried", "fidget"]]}
+  },
+  "s11b": {
+    "0": {"jiwoo": [[0.2, "down", "worried", "breath"]]},
+    "2": {"jiwoo": [[0.2, null, "calm", "breath"]]}
+  },
+  "s11c": {
+    "0": {"jiwoo": [[0.2, "down", "angry", "fist"]]},
+    "1": {"jiwoo": [[0.15, "down", "angry", "fist"], [0.5, null, "hurt", "sad"]]}
+  },
+  "s11r": {
+    "1": {"yuna": [["end", 0, 0, "wash"]]},
+    "3": {"seoa": [[0.3, "show", "worried", "fidget"]], "jiwoo": [[0.35, null, "worried", "look"]]}
+  },
+  "s12": {
+    "0": {"jiwoo": [[0.25, null, "calm", "eat"]]},
+    "2": {"jiwoo": [[0.3, null, "calm", "nod"]]},
+    "3": {"jiwoo": [[0.25, null, "sad", "sigh"]]},
+    "4": {"jiwoo": [[0.2, null, "worried", "fidget"]]}
+  },
+  "s12r": {
+    "0": {"jmom": [[0.25, null, "joy", "nod"]]},
+    "1": {"jiwoo": [[0.25, null, "calm", "breath"]]},
+    "2": {"jmom": [[0.3, null, "calm", "nod"]]},
+    "3": {"jiwoo": [[0.2, null, "worried", "fidget"]]},
+    "4": {"jmom": [[0.3, null, "calm", "nod"]]},
+    "5": {"jiwoo": [[0.2, null, "worried", "fidget"]]},
+    "6": {"jmom": [[0.3, null, "calm", "nod"]]},
+    "7": {"jiwoo": [[0.2, null, "worried", "fidget"]]},
+    "8": {"jiwoo": [[0.4, "down", "hurt", "sad", 0.3]]},
+    "9": {"jmom": [[0.2, "reach", "worried", "pat"]]},
+    "10": {"jiwoo": [[0.25, "hold", "sad", "squeeze"]]}
+  },
+  "s13": {
+    "0": {"yuna": [["end", 0, 0, "fidget"]], "jiwoo": [[0.4, null, "calm", "look"]], "from": {"yuna": [0, -2.2]}},
+    "1": {"jiwoo": [[0.2, null, "worried", "fidget"]]},
+    "2": {"yuna": [[0.2, null, "worried", "fidget"], ["end", 0, 0, "bow"]]},
+    "3": {"jiwoo": [[0.25, null, "shy", "fidget"]]},
+    "5": {"jiwoo": [[0.2, "down", "hurt", "fidget"]]},
+    "6": {"jiwoo": [[0.2, null, "calm", "breath"]], "cam": {"back": 1.15}},
+    "7": {"yuna": [[0.25, null, "calm", "nod"]]}
+  },
+  "s13b": {
+    "0": {"jiwoo": [[0.2, null, "angry", "fist"]]},
+    "1": {"yuna": [[0.25, null, "calm", "breath"]]},
+    "2": {"jiwoo": [[0.2, null, "angry", "fist"], ["end", 0, 0, "sigh"]]},
+    "3": {"jiwoo": [[0.25, null, "calm", "breath"]]},
+    "5": {"jiwoo": [[0.3, null, "shy", "scratch"], ["end", 0, 0, "bow"]], "minjun": [[0.45, null, "surprised", "jolt"]]},
+    "6": {"minjun": [[0.2, null, "shy", "scratch"], ["end", 0, 0, "bow"]]},
+    "8": {"jiwoo": [[0.25, null, "joy", "nod"]]},
+    "9": {"minjun": [[0.25, null, "joy", "scratch"]]},
+    "10": {"jiwoo": [[0.25, "show", "calm", "still"], ["end", 0, 0, "breath"]]}
+  },
+  "s13c": {
+    "0": {"jiwoo": [[0.25, null, "calm", "breath"]]},
+    "2": {"yuna": [[0.5, null, "calm", "look"]]},
+    "4": {"yuna": [[0.3, null, "calm", "nod"]]}
+  },
+  "end:name": {
+    "1": {"jiwoo": [[0.2, null, "calm", "walk"], [0.42, "tug", "calm", "walk"]], "path": {"jiwoo": [[0.2, 0, 0], [0.42, 0, -0.6], [0.7, 0, 0]]}},
+    "3": {"minjun": [["end", 0, 0, "wave"]], "jiwoo": [[0.45, null, "calm", "nod"]]},
+    "4": {"minjun": [[0.2, null, "joy", "look"]]},
+    "5": {"jiwoo": [[0.25, null, "joy", "nod"]]},
+    "7": {"seoa": [[0.2, "show", "joy", "pump"]]},
+    "8": {"jiwoo": [[0.2, null, "shy", "fidget"]]},
+    "9": {"yuna": [[0.25, null, "joy", "nod"]]},
+    "11": {"jiwoo": [[0.25, "open", "calm", "brace"]]},
+    "13": {"cheer": 1, "jiwoo": [[0.12, "open", "calm", "brace"], [0.3, "hold", "surprised", "squeeze"], [0.55, "hold", "joy", "joy"]]},
+    "14": {"cheer": 0.8, "jiwoo": [[0.2, "hold", "joy", "joy"]], "yuna": [[0.25, null, "joy", "clap"]], "minjun": [[0.25, null, "joy", "cheer"]], "seoa": [[0.25, null, "joy", "clap"]]},
+    "17": {"jiwoo": [[0.2, null, "shy", "scratch"], [0.5, null, "joy", "nod"]]},
+    "18": {"jiwoo": [[0.2, null, "calm", "write"]]},
+    "19": {"jiwoo": [[0.3, null, "calm", "nod"]]},
+    "20": {"jiwoo": [[0.3, null, "calm", "nod"]]},
+    "21": {"jiwoo": [[0.25, "show", "joy", "still"]], "jmom": [[0.4, null, "joy", "nod"]]}
+  },
+  "end:seoa": {
+    "1": {"jiwoo": [[0.2, null, "calm", "walk"], [0.42, "tug", "calm", "walk"]], "path": {"jiwoo": [[0.2, 0, 0], [0.42, 0, -0.6], [0.7, 0, 0]]}},
+    "3": {"minjun": [["end", 0, 0, "wave"]], "jiwoo": [[0.45, null, "calm", "nod"]]},
+    "5": {"yuna": [[0.15, null, "shy", "look"], ["end", 0, 0, "bow"]]},
+    "6": {"seoa": [[0.2, "show", "joy", "pump"]]},
+    "7": {"jiwoo": [[0.25, "wave", "joy", "wave"]]},
+    "8": {"seoa": [[0.2, "show", "calm", "write"]]},
+    "9": {"jiwoo": [[0.2, null, "shy", "fidget"]]},
+    "10": {"yuna": [[0.25, null, "joy", "nod"]]},
+    "12": {"jiwoo": [[0.25, null, "calm", "breath"]]},
+    "13": {"jiwoo": [[0.3, null, "calm", "nod"]]},
+    "14": {"seoa": [[0.2, "show", "joy", "pump"]]},
+    "15": {"cheer": 0.6, "jiwoo": [[0.25, null, "joy", "nod"]], "seoa": [[0.25, "show", "joy", "pump"]], "yuna": [[0.3, null, "joy", "clap"]], "minjun": [[0.3, null, "joy", "cheer"]]}
+  },
+  "end:busy": {
+    "1": {"jiwoo": [[0.2, null, "calm", "walk"], [0.42, "tug", "calm", "walk"]], "path": {"jiwoo": [[0.2, 0, 0], [0.42, 0, -0.6], [0.7, 0, 0]]}},
+    "3": {"minjun": [["end", 0, 0, "wave"]], "jiwoo": [[0.45, null, "calm", "nod"]]},
+    "4": {"jiwoo": [[0.25, null, "joy", "breath"]]},
+    "5": {"minjun": [[0.25, null, "joy", "sway"]]},
+    "7": {"cheer": 1, "jiwoo": [[0.25, "wave", "joy", "greet"]], "minjun": [[0.25, null, "laugh", "sway"]], "yuna": [[0.3, null, "joy", "nod"]], "seoa": [[0.3, "show", "calm", "write"]]}
+  },
+  "end:half": {
+    "1": {"jiwoo": [[0.2, null, "calm", "walk"], [0.42, "tug", "calm", "walk"]], "path": {"jiwoo": [[0.2, 0, 0], [0.42, 0, -0.6], [0.7, 0, 0]]}},
+    "3": {"minjun": [["end", 0, 0, "wave"]], "jiwoo": [[0.45, null, "calm", "nod"]]},
+    "5": {"cheer": 0.6, "seoa": [[0.4, "show", "calm", "still", 0.3]], "yuna": [[0.3, null, "calm", "nod"]], "minjun": [[0.3, null, "joy", "sway"]]},
+    "6": {"jiwoo": [[0.2, null, "shy", "fidget"]]},
+    "7": {"yuna": [[0.25, null, "joy", "nod"]]},
+    "8": {"jiwoo": [[0.25, "hold", "worried", "squeeze"]]},
+    "9": {"jiwoo": [[0.2, null, "worried", "fidget"]]},
+    "10": {"jiwoo": [[0.2, null, "worried", "fidget"]]},
+    "11": {"jiwoo": [[0.2, null, "worried", "fidget"]]},
+    "14": {"jiwoo": [[0.25, null, "shy", "scratch"]]},
+    "15": {"jmom": [[0.25, null, "joy", "nod"]]},
+    "16": {"jiwoo": [[0.25, null, "calm", "breath"]]}
+  },
+  "end:tangle": {
+    "1": {"jiwoo": [[0.2, null, "calm", "walk"], [0.42, "tug", "calm", "walk"]], "path": {"jiwoo": [[0.2, 0, 0], [0.42, 0, -0.6], [0.7, 0, 0]]}},
+    "3": {"minjun": [["end", 0, 0, "wave"]], "jiwoo": [[0.45, null, "calm", "nod"]]},
+    "5": {"cheer": 0.5, "seoa": [[0.4, "show", "calm", "still", 0.3]], "yuna": [[0.3, null, "calm", "nod"]]},
+    "6": {"jiwoo": [[0.2, null, "worried", "fidget"]]},
+    "7": {"yuna": [[0.25, null, "joy", "nod"]]},
+    "8": {"jiwoo": [[0.15, null, "laugh", "laugh"], [0.45, "hold", "sad", "squeeze"]]},
+    "11": {"jiwoo": [[0.2, null, "calm", "poke"]]},
+    "12": {"jiwoo": [[0.4, "down", "sad", "sad", 0.3]]}
+  }
+}

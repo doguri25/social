@@ -2,7 +2,7 @@
 """컷 애니메이션 동작 파일(stories/anim/<책>.json) 확인: 자리(장면·컷 번호), 인물, 자세, 표정, 동작 이름이 맞는지.
 쓰는 법: python3 tools/anim_check.py [book2 ...]   (안 적으면 모든 책)"""
 import json, sys, os, glob
-MOVES = ["still", "angry", "away", "balance", "blame", "bow", "brace", "breath", "calm", "cheer", "clap", "cry", "dance", "dodge", "eat", "fidget", "fist", "greet", "jolt", "joy", "laugh", "look", "nod", "pat", "poke", "pump", "ready", "run", "sad", "scratch", "shake", "shout", "shy", "sigh", "spin", "squeeze", "surprised", "sway", "toe", "trip", "tumble", "walk", "wash", "wave", "windup", "worried", "write", "yawn"]
+MOVES = ["still", "close", "offer", "give", "erase", "highfive", "bounce", "gaze", "angry", "away", "balance", "blame", "bow", "brace", "breath", "calm", "cheer", "clap", "cry", "dance", "dodge", "eat", "fidget", "fist", "greet", "jolt", "joy", "laugh", "look", "nod", "pat", "poke", "pump", "ready", "run", "sad", "scratch", "shake", "shout", "shy", "sigh", "spin", "squeeze", "surprised", "sway", "toe", "trip", "tumble", "walk", "wash", "wave", "windup", "worried", "write", "yawn"]
 POSES = ["call", "clasp", "cover", "cross", "dance", "dodge", "down", "hold", "jump", "open", "phone", "point", "reach", "show", "sit", "sitlow", "stand", "throw", "tug", "walk", "wave"]
 FACES = ["calm", "joy", "laugh", "sad", "angry", "worried", "surprised", "shy", "hurt", "yawn", "cry"]
 OPTS = {"cheer", "cam", "path", "from", "run", "hit", "hitLight", "ball", "ballFrom", "enter"}
