@@ -1,32 +1,12 @@
 // ===== 인물: 몸은 기본 도형, 얼굴은 캔버스 그림을 머리에 붙인 무늬, 머리카락은 깎은 껍데기 하나. 배경 아이는 한 자세로 굳혀 합친다 =====
 const SKIN = '#ffe2cc';
-// 인물 재질: 만화 음영(밝은 면과 그늘 두 단계) + 가장자리 빛. StandardMaterial 의 조명 결과(diffuseBase)를 단계로 나눠 다시 칠한다
-class ToonPlugin extends BABYLON.MaterialPluginBase {
-  constructor(m) { super(m, 'Toon', 200, { TOON: false }); this._enable(true); }
-  prepareDefines(d) { d.TOON = true; }
-  getClassName() { return 'ToonPlugin'; }
-  getCustomCode(type) {
-    return type !== 'fragment' ? null : { CUSTOM_FRAGMENT_BEFORE_FRAGCOLOR: `
-#ifdef TOON
-{
-  vec3 tAlb = diffuseColor * baseColor.rgb;
-  vec3 tN = normalize(normalW);
-  float tK = smoothstep(-0.02, 0.05, dot(normalize((view * vec4(tN, 0.0)).xyz), normalize(vec3(-0.5, 0.55, 0.62))));
-  vec3 tEnv = min(diffuseBase * 1.7, vec3(1.0));
-  tEnv = mix(vec3(dot(tEnv, vec3(0.3333))), tEnv, 0.5) * 0.5 + 0.5 * step(0.85, dot(tEnv, vec3(0.3333))) + 0.5 * (1.0 - step(0.85, dot(tEnv, vec3(0.3333)))) * tEnv;
-  vec3 tShade = tAlb * vec3(0.90, 0.80, 0.86) * mix(vec3(1.0), tAlb, 0.15);
-  float tRim = pow(1.0 - max(dot(tN, viewDirectionW), 0.0), 3.0) * tK;
-  color.rgb = mix(tShade, tAlb, tK) * tEnv + tRim * 0.14 * vec3(1.0, 0.95, 0.86);
-}
-#endif` };
-  }
-}
-BABYLON.RegisterClass('BABYLON.ToonPlugin', ToonPlugin);
+// 인물 재질: 무광 + 가장자리가 살짝 밝아지는 테두리 빛(만화 같은 입체감). 살색은 그늘에서도 밝게
 const cmats = {};
-function toon(m) { m.toon = new ToonPlugin(m); return m; }
 function charMat(color) {
   if (cmats[color]) return cmats[color];
-  return (cmats[color] = toon(Object.assign(new BABYLON.StandardMaterial('c' + color, scene), { diffuseColor: C3(color), specularColor: BLACK })));
+  const m = Object.assign(new BABYLON.StandardMaterial('c' + color, scene), { diffuseColor: C3(color), specularColor: BLACK });
+  m.emissiveFresnelParameters = Object.assign(new BABYLON.FresnelParameters(), { bias: 0.2, power: 2.2, leftColor: C3('#fff3e0').scale(0.32), rightColor: color === SKIN ? C3(SKIN).scale(0.22) : BLACK });
+  return (cmats[color] = m);
 }
 // 윤곽선: 같은 모양을 법선 방향으로 조금 부풀려 뒷면만 진하게 그린다 (renderOutline 의 깊이 문제가 없다)
 const inkMat = Object.assign(new BABYLON.StandardMaterial('ink', scene), { diffuseColor: BLACK, specularColor: BLACK, emissiveColor: C3('#3b2a22'), disableLighting: true, cullBackFaces: false });
@@ -44,7 +24,7 @@ function hull(m, w) {
   return h;
 }
 // ---- 몸 비율 (m): 2등신 SD 캐릭터. 아이는 키 약 1.09에 머리 지름 0.54(키의 절반), 어른은 키 약 1.42, 머리 약 2.8개 ----
-const KID = { r: 0.24, hip: 0.27, thigh: 0.13, shin: 0.12, legR: 0.055, sh: 0.5, shX: 0.135, upper: 0.12, fore: 0.11, armR: 0.045, neck: 0.53, torsoY: 0.4, torsoR: 0.13, torsoL: 0.12 };
+const KID = { r: 0.27, hip: 0.27, thigh: 0.13, shin: 0.12, legR: 0.055, sh: 0.5, shX: 0.135, upper: 0.12, fore: 0.11, armR: 0.045, neck: 0.53, torsoY: 0.4, torsoR: 0.13, torsoL: 0.12 };
 const ADULT = { r: 0.25, hip: 0.5, thigh: 0.24, shin: 0.23, legR: 0.065, sh: 0.86, shX: 0.17, upper: 0.2, fore: 0.18, armR: 0.052, neck: 0.9, torsoY: 0.7, torsoR: 0.15, torsoL: 0.22 };
 const SEAT = 0.41; // 앉았을 때 엉덩이 관절 높이 (아이 의자 앉는 면 약 0.36)
 
@@ -95,10 +75,9 @@ function makeChar(d, i, extra) {
     const hip = node('hip', body, x, D.hip, 0);
     const knee = node('knee', hip, 0, -D.thigh, 0);
     limb(D.legR, D.thigh, d.skirt && !d.tall ? SKIN : d.pants, hip);
-    limb(D.legR * 0.9, D.shin, d.skirt || (d.shorts && !d.long) ? SKIN : d.pants, knee); // 반바지면 무릎 아래는 맨살
-    const shoe = part(capsule(D.legR * 1.15, 0.075), d.shoe || '#4a4f63', knee, 0, -D.shin, 0.03);
+    limb(D.legR * 0.9, D.shin, d.skirt || d.shorts ? SKIN : d.pants, knee); // 반바지면 무릎 아래는 맨살
+    const shoe = part(capsule(D.legR * 1.1, 0.07), '#4a4f63', knee, 0, -D.shin, 0.03);
     shoe.rotation.x = Math.PI / 2;
-    if (d.shoe) part(MB.CreateBox('sole', { width: D.legR * 2.2, height: 0.022, depth: 0.2 }, scene), d.sole || '#8fa0b8', knee, 0, -D.shin - D.legR * 0.95, 0.03);
     hip.knee = knee;
     return hip;
   };
@@ -113,23 +92,6 @@ function makeChar(d, i, extra) {
     ? part(MB.CreateCylinder('skirt', { diameterTop: D.torsoR * 1.9, diameterBottom: D.torsoR * 3.2, height: D.hip * 0.36, tessellation: 20 }, scene), d.pants, body, 0, D.hip - D.hip * 0.1, 0)
     : part(capsule(D.torsoR * 0.95, 0.05), d.pants, body, 0, D.hip, 0);
   hips.scaling.z = 0.82;
-  if (d.outfit === 'hoodie') { // 후드티: 목 뒤 모자, 밑단, 앞주머니, 가슴 글자
-    const hood = part(MB.CreateSphere('hood', { diameter: D.torsoR * 2.5, segments: 14 }, scene), d.top, body, 0, D.sh + 0.005, -D.torsoR * 0.62);
-    hood.scaling.set(1, 0.55, 0.72);
-    const hem = part(MB.CreateCylinder('hem', { diameter: D.torsoR * 2.2, height: 0.035, tessellation: 20 }, scene), d.top, body, 0, D.hip + 0.045, 0);
-    hem.scaling.z = 0.84;
-    const pocket = part(capsule(0.04, D.torsoR * 0.9), d.top, body, 0, D.torsoY - D.torsoL * 0.42, D.torsoR * 0.72);
-    pocket.rotation.z = Math.PI / 2; pocket.scaling.z = 0.5;
-    [-1, 1].forEach(x => part(capsule(0.004, 0.045), d.cord || '#ffffff', body, x * 0.022, D.sh - 0.06, D.torsoR * 0.83));
-  }
-  if (d.print) { // 가슴에 찍힌 글자·번호
-    const tex = canvasTex(256, 128, (g, W, H) => { g.clearRect(0, 0, W, H); g.font = '900 104px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = d.printColor || '#3f8f5f'; g.fillText(d.print, W / 2, H / 2 + 6); }, true);
-    const pl = MB.CreateCylinder('print', { diameter: D.torsoR * 2.19, height: 0.085, tessellation: 24, arc: 0.3, enclose: false, cap: BABYLON.Mesh.NO_CAP, sideOrientation: BABYLON.Mesh.DOUBLESIDE }, scene);
-    part(pl, d.top, body, 0, D.torsoY + 0.03, 0);
-    pl.material = toon(texMat(tex, { both: true }));
-    pl.scaling.z = 0.8; pl.rotation.y = Math.PI * (d.printTurn == null ? 0.2 : d.printTurn);
-    pl.noHull = true;
-  }
   part(MB.CreateCylinder('neck', { diameterTop: D.torsoR * 0.8, diameterBottom: D.torsoR * 0.9, height: 0.06, tessellation: 12 }, scene), SKIN, body, 0, D.neck, 0);
 
   const mkArm = x => {
@@ -137,7 +99,6 @@ function makeChar(d, i, extra) {
     const elbow = node('elbow', sh, 0, -D.upper, 0);
     limb(D.armR, D.upper, d.top, sh);
     limb(D.armR * 0.92, D.fore, d.top, elbow);
-    if (d.outfit === 'hoodie') part(MB.CreateCylinder('cuff', { diameter: D.armR * 2.25, height: 0.028, tessellation: 12 }, scene), d.top, elbow, 0, -D.fore + 0.012, 0);
     sh.hand = part(MB.CreateSphere('hand', { diameter: D.armR * 1.9, segments: 12 }, scene), SKIN, elbow, 0, -D.fore - 0.01, 0);
     sh.elbow = elbow;
     return sh;
@@ -147,11 +108,10 @@ function makeChar(d, i, extra) {
   // 머리: 처음에는 원점에서 만들어 얼굴 무늬를 머리 공에 바로 붙인 다음 몸에 단다
   const head = node('head');
   const skull = part(MB.CreateSphere('skull', { diameter: D.r * 2, segments: 32 }, scene), SKIN, head, 0, D.r, 0);
-  [-1, 1].forEach(x => { part(MB.CreateSphere('ear', { diameter: D.r * 0.34, segments: 10 }, scene), SKIN, head, x * D.r * 0.97, D.r * 0.86, -D.r * 0.02).scaling.set(0.55, 1, 0.8); });
   skull.computeWorldMatrix(true);
   const faceTex = new BABYLON.DynamicTexture('face', { width: FACE_TEX, height: FACE_TEX }, scene, true);
   faceTex.hasAlpha = true;
-  const faceMat = toon(new BABYLON.StandardMaterial('face', scene));
+  const faceMat = new BABYLON.StandardMaterial('face', scene);
   // 오른손 좌표계에서는 무늬 삼각형 방향이 뒤집혀 만들어져 뒷면 숨기기를 끈다
   Object.assign(faceMat, { diffuseTexture: faceTex, useAlphaFromDiffuseTexture: true, specularColor: BLACK, backFaceCulling: false });
   const face = MB.CreateDecal('face', skull, { position: V3(0, D.r, D.r), normal: V3(0, 0, 1), size: V3(D.r * 1.9, D.r * 1.9, D.r * 1.2) });
@@ -186,7 +146,7 @@ function makeChar(d, i, extra) {
   c.rope = put(MB.CreateTube('rope', { path, radius: 0.008, tessellation: 6 }, scene), '#e8505b', 0, 0, 0, body);
   meshes.push(c.rope);
   meshes.forEach(m => { m.layerMask = mask; m.isPickable = true; m.metadata = { char: d.id }; });
-  meshes.forEach(m => { if (m !== face && !m.noHull) hull(m, OUT_W); });
+  meshes.forEach(m => { if (m !== face) hull(m, OUT_W); });
   setPose(c, 'stand');
   setFace(c, 'calm');
   root.setEnabled(false);
@@ -199,19 +159,11 @@ const hairMats = {};
 function hairMat(color) {
   if (hairMats[color]) return hairMats[color];
   const tex = canvasTex(256, 256, (g, W, H) => {
-    const n = parseInt(color.slice(1), 16), mix = (k, a) => `rgba(${[n >> 16, (n >> 8) & 255, n & 255].map(v => Math.round(clamp(v * k + (k > 1 ? 40 : 0), 0, 255))).join(',')},${a})`;
-    const gr = g.createLinearGradient(0, 0, 0, H); // 정수리는 밝게, 끝은 조금 짙게
-    gr.addColorStop(0, mix(1.12, 1)); gr.addColorStop(0.45, color); gr.addColorStop(1, mix(0.8, 1));
-    g.fillStyle = gr;
+    g.fillStyle = color;
     g.fillRect(0, 0, W, H);
-    g.fillStyle = mix(1.5, 0.5); // 머리 윤기 띠 (톱니 모양)
-    g.beginPath(); g.moveTo(0, H * 0.27);
-    for (let x = 0; x <= W; x += 8) g.lineTo(x, H * (0.27 + ((x / 8) % 2 ? 0.035 : 0)));
-    for (let x = W; x >= 0; x -= 8) g.lineTo(x, H * (0.215 - ((x / 8) % 2 ? 0.02 : 0)));
-    g.fill();
     for (let i = 0; i < 110; i++) {
       const x = Math.random() * W;
-      g.strokeStyle = Math.random() < 0.5 ? 'rgba(255,236,214,.07)' : 'rgba(20,10,5,.09)';
+      g.strokeStyle = Math.random() < 0.5 ? 'rgba(255,236,214,.16)' : 'rgba(20,10,5,.24)';
       g.lineWidth = 1 + Math.random() * 2.5;
       g.beginPath();
       g.moveTo(x, 0);
@@ -221,7 +173,9 @@ function hairMat(color) {
   });
   tex.wrapU = BABYLON.Texture.WRAP_ADDRESSMODE;
   tex.uScale = 3;
-  const m = toon(Object.assign(new BABYLON.StandardMaterial('hair' + color, scene), { specularColor: BLACK, diffuseTexture: tex }));
+  const m = charMat(color).clone('hair' + color);
+  m.diffuseColor = BABYLON.Color3.White();
+  m.diffuseTexture = tex;
   return (hairMats[color] = m);
 }
 // 머리카락 껍데기: 머리보다 조금 큰 공 하나를 깎는다. 얼굴 쪽(앞머리 선 아래)과 머리 길이 아래는 머리 속으로 넣어 감춘다.
@@ -246,31 +200,7 @@ function hairShell(r, o) {
   m.refreshBoundingInfo();
   return m;
 }
-// 머리 가닥: 머리 공 위 (az 좌우 각, el 높이 각) 자리에 길쭉한 덩어리를 붙인다. 값은 머리 반지름 r 단위.
-// out: 0 이면 머리를 따라 아래로 흐르고 1 이면 바깥으로 뻗는다. twist: 흐르는 방향을 옆으로 튼다
-function hairLock(r, az, el, len, w, t, out = 0, twist = 0, lift = 1.0) {
-  const m = MB.CreateSphere('lock', { diameter: 1, segments: 10 }, scene);
-  const pos = m.getVerticesData(BABYLON.VertexBuffer.PositionKind), nor = []; // 끝이 뾰족한 물방울 모양으로
-  for (let i = 0; i < pos.length; i += 3) if (pos[i + 1] < 0) { const f = 1 - 0.8 * Math.pow(-pos[i + 1] * 2, 1.6); pos[i] *= f; pos[i + 2] *= f; }
-  m.setVerticesData(BABYLON.VertexBuffer.PositionKind, pos);
-  BABYLON.VertexData.ComputeNormals(pos, m.getIndices(), nor);
-  m.setVerticesData(BABYLON.VertexBuffer.NormalKind, nor);
-  const n = V3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el));
-  const down = V3(Math.sin(az) * Math.sin(el), -Math.cos(el), Math.cos(az) * Math.sin(el));
-  const side = V3(Math.cos(az), 0, -Math.sin(az));
-  const d = down.scale(1 - out).add(n.scale(out)).add(side.scale(twist)).normalize();
-  const x = BABYLON.Vector3.Cross(d, n).normalize(), z = BABYLON.Vector3.Cross(x, d).normalize();
-  m.scaling.set(w * r, len * r, t * r);
-  m.rotationQuaternion = BABYLON.Quaternion.RotationQuaternionFromAxis(x, d, z);
-  m.position = V3(0, r, 0).add(n.scale(r * lift)).add(d.scale(len * r * 0.36));
-  return m;
-}
 const HAIR = {
-  // 동화책 인물: 물결 단발(수아), 삐죽 솜털 머리(하준), 단정한 짧은 머리(현우), 높이 묶은 머리(보라)
-  wavy: { hl: 0.36, scallop: 0.0, side: 0.86, bottom: z => -0.35 + 0.1 * z },
-  fluffy: { hl: 0.46, scallop: 0.05, side: 0.9, bottom: z => -0.2 - 0.3 * Math.max(0, -z), curl: 0.08 },
-  neat: { hl: 0.44, scallop: 0.05, side: 0.9, bottom: z => -0.2 - 0.32 * Math.max(0, -z) },
-  pony: { hl: 0.38, scallop: 0.04, side: 0.86, bottom: z => -0.42 + 0.3 * z },
   bob: { hl: 0.33, scallop: 0.1, side: 0.8, bottom: z => -0.52 + 0.08 * z },
   long: { hl: 0.33, scallop: 0.08, side: 0.82, bottom: () => -0.4 },
   bun: { hl: 0.36, scallop: 0.06, side: 0.88, bottom: z => -0.5 + 0.3 * z },
@@ -281,40 +211,6 @@ function addHair(d, r, part) {
   const hm = hairMat(d.hairColor);
   const add = (m, x = 0, y = 0, z = 0) => { part(m, d.hairColor, x, y, z); m.material = hm; return m; };
   add(hairShell(r, HAIR[d.hair] || HAIR.bob));
-  const L = (...a) => { const m = hairLock(r, ...a), q = m.position; return add(m, q.x, q.y, q.z); };
-  if (d.hair === 'wavy') {
-    [[-0.85, -0.1], [-0.6, 0.3], [-0.36, 0.1], [-0.12, 0.34], [0.12, 0.12], [0.36, 0.36], [0.6, 0.1], [0.84, 0.3]].forEach(([az, tw]) => L(az, 0.6, 0.72, 0.36, 0.1, 0.04, tw, 1.01)); // 옆으로 넘긴 앞머리
-    for (let i = 0; i < 11; i++) { // 옆과 뒤로 어깨까지 내려오는 물결
-      const az = 1.12 + i * (Math.PI * 2 - 2.24) / 10;
-      L(az, 0.02, 1.18, 0.5, 0.36, i % 2 ? 0.2 : 0.06, 0, 0.96);
-      const f = add(MB.CreateSphere('flip', { diameter: r * 0.32, segments: 8 }, scene), Math.sin(az) * r * (i % 2 ? 1.18 : 1.08), r * 0.02, Math.cos(az) * r * (i % 2 ? 1.18 : 1.08)); // 끝이 바깥으로 말린다
-      f.scaling.y = 0.8;
-    }
-  }
-  if (d.hair === 'fluffy') {
-    [-0.75, -0.4, -0.05, 0.3, 0.68].forEach((az, i) => L(az, 0.6, 0.5, 0.34, 0.15, 0.1, i % 2 ? 0.3 : -0.25));
-    for (let k = 0; k < 3; k++) for (let i = 0; i < 9 - k * 2; i++) { // 삐죽삐죽 솟은 가닥
-      const az = (i + (k % 2) * 0.5) * Math.PI * 2 / (9 - k * 2), el = 0.35 + k * 0.42;
-      if (el < 0.5 && Math.abs(Math.atan2(Math.sin(az), Math.cos(az))) < 0.9) continue; // 얼굴 앞은 비운다
-      L(az, el, 0.5, 0.36, 0.3, 0.72, (i % 2 ? 0.35 : -0.35), 0.92).scaling.z *= 1;
-    }
-    L(0, 1.45, 0.4, 0.34, 0.3, 0.9, 0.2, 0.95);
-  }
-  if (d.hair === 'neat') {
-    [-0.78, -0.45, -0.12, 0.2, 0.52, 0.82].forEach((az, i) => L(az, 0.6, 0.52, 0.34, 0.14, 0.05, 0.3)); // 한쪽으로 빗은 앞머리
-    [[-0.5, 1.1], [0.6, 1.2], [2.6, 0.9], [-2.4, 1.0], [3.14, 0.4], [1.9, 0.5], [-1.9, 0.5]].forEach(([az, el]) => L(az, el, 0.42, 0.4, 0.26, 0.45, 0.4, 0.93));
-  }
-  if (d.hair === 'pony') {
-    [-0.6, -0.22, 0.16, 0.54].forEach((az, i) => L(az, 0.56, 0.5, 0.36, 0.14, 0.05, i < 2 ? 0.25 : -0.25));
-    [-1.12, 1.12].forEach(az => L(az, 0.12, 0.95, 0.2, 0.15, 0.02, 0, 0.99)); // 귀 앞 옆머리
-    const tie = part(MB.CreateTorus('tie', { diameter: 0.5 * r, thickness: 0.2 * r, tessellation: 20 }, scene), d.tie || '#9b6fd0', 0, r + 0.86 * r, -0.72 * r);
-    tie.rotation.x = -0.95;
-    [[1.98, -1.12, 0.62, 0.3], [1.66, -1.42, 0.66, 0.9], [1.22, -1.56, 0.6, 1.35], [0.8, -1.52, 0.48, 1.6], [0.46, -1.42, 0.32, 1.75]].forEach(([y, z, w, rx]) => { // 묶은 머리 꼬리: 위에서 뒤로 휘어 내려온다
-      const m = add(MB.CreateSphere('tail', { diameter: 1, segments: 10 }, scene), 0, y * r, z * r);
-      m.scaling.set(w * r, w * r * 1.35, w * r * 0.9);
-      m.rotation.x = rx;
-    });
-  }
   if (d.hair === 'long') { // 어깨까지 내려오는 뒷머리: 위가 좁고 아래가 살짝 퍼지는 반쪽 원통
     const back = add(MB.CreateCylinder('hairBack', { height: 1.3 * r, diameterTop: 1.9 * r, diameterBottom: 2.15 * r, tessellation: 32, arc: 0.5, enclose: false, cap: BABYLON.Mesh.NO_CAP, sideOrientation: BABYLON.Mesh.DOUBLESIDE }, scene), 0, 0.1 * r, -0.04 * r);
   }
@@ -329,6 +225,7 @@ function addHair(d, r, part) {
   }
 }
 // name: 무대에서 정한 자세, over: 컷 하나에서만 바꾸는 자세 (앉아 있으면 다리와 높이는 앉은 채로)
+// 자세 값 구하기와 넣기를 나눈다 (컷 애니메이션이 두 자세 사이를 섞는다)
 function poseVals(name, over) {
   const base = Object.assign({}, POSE0, POSES[name]);
   let p = base;
@@ -363,7 +260,7 @@ function paintFace(c, closed) {
   const g = c.faceTex.getContext();
   g.save();
   g.scale(FACE_TEX / FACE_W, FACE_TEX / FACE_W);
-  drawFace(g, c.face, closed, { eye: c.d.eye, brow: c.d.brow || c.d.hairColor, talk: c.talk });
+  drawFace(g, c.face, closed);
   g.restore();
   c.faceTex.update();
 }
@@ -423,7 +320,7 @@ function faceMatOf(kind) {
   drawFace(g, kind, false);
   g.restore();
   t.update();
-  return (faceMats[kind] = Object.assign(toon(new BABYLON.StandardMaterial('faceX', scene)), { diffuseTexture: t, useAlphaFromDiffuseTexture: true, specularColor: BLACK, backFaceCulling: false }));
+  return (faceMats[kind] = Object.assign(new BABYLON.StandardMaterial('faceX', scene), { diffuseTexture: t, useAlphaFromDiffuseTexture: true, specularColor: BLACK, backFaceCulling: false }));
 }
 const EXTRA_TOPS = ['#f6a5a5', '#ffd98a', '#f4a259', '#f2a7c9', '#e9b4e0', '#fbe39a', '#ff8f7a', '#c8e07a']; // 살색과 헷갈리지 않는 밝은 색
 const TEAM_TOPS = { b1: '#7da7e0', b3: '#6c86b8' }; // 다른 반은 푸른 옷으로 한눈에

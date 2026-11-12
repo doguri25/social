@@ -1,5 +1,5 @@
-// ===== 컷 애니메이션: 컷마다 인물이 움직이고 카메라가 다가간 뒤, 지금의 멈춘 삽화와 같은 장면에서 끝난다 =====
-// 영상은 미리 만들어 assets/cuts/<책>/<장면>-<컷 번호>.mp4 로 둔다 (tools/cuts.mjs 가 이 창구로 한 장씩 찍는다).
+// ===== 컷 애니메이션: 컷이 처음 나올 때 한 번, 인물이 움직이고 카메라가 다가간 뒤 멈춘 삽화가 된다 =====
+// 그림은 무대 그대로다 (컷 카메라로 작게 여러 장 찍어 이어 보여 주고, 끝나면 원래 크기의 삽화 한 장으로 바꾼다).
 // 컷의 anim: { 인물 id: [[때(0~1), 자세, 표정], ...], cam: { turn 도, back 배, up m }, cheer: 반 아이들이 들썩이는 정도 }
 const easeIO = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 const sstep = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
@@ -14,13 +14,12 @@ function mixPose(c, a, b, t) {
 // 컷 p 의 움직임을 준비한다. prev: 앞 컷 (없으면 무대에서 정한 자세·표정에서 시작). 돌려주는 함수에 0~1 을 넣으면 그때의 장면이 된다
 function cutAnim(p, prev) {
   applyCut(p);
-  scene.render();
+  for (const id in CH) if (shown(CH[id])) [CH[id].root, ...CH[id].root.getChildTransformNodes(false)].forEach(n => n.computeWorldMatrix(true)); // 그리지 않고 끝 자세의 자리만 계산 (무대가 깜빡이지 않게)
   placeShot(p);
   const end = { pos: shotCam.position.clone(), look: shotCam.getTarget().clone(), fov: shotCam.fov };
   const A = p.anim || {}, cm = Object.assign({ turn: p.shot === 'wide' || !p.shot ? 12 : 7, back: p.shot === 'wide' || !p.shot ? 1.1 : 1.32, up: 0.06 }, A.cam);
   const off = end.pos.subtract(end.look);
   const start = { pos: end.look.add(turnY(off, cm.turn).scale(cm.back)).add(V3(0, cm.up, 0)), look: end.look.add(V3(0, cm.up * 0.4, 0)), fov: end.fov * 1.04 };
-  const talkers = new Set(asList(p.lines).map(l => l.who));
   const acts = [];
   for (const id in CH) {
     const c = CH[id];
@@ -29,7 +28,7 @@ function cutAnim(p, prev) {
     const f0 = prev ? (prev.faces && prev.faces[id]) || c.face0 : c.face0, o0 = prev && prev.poses && prev.poses[id];
     // 열쇠 장면: [때, 자세 값, 표정]. 마지막은 늘 이 컷의 자세·표정
     const keys = [[0, poseVals(c.base, o0), f0], ...asList(A[id]).map(([t, pose, face]) => [t, poseVals(c.base, pose), face]), [A[id] ? 0.8 : 0.5, poseVals(c.base, o1), f1]];
-    acts.push({ c, keys, talk: talkers.has(id), hd: poseVals(c.base, o1).hd });
+    acts.push({ c, keys });
   }
   const kids = (stageNow.kids || []).map((n, i) => ({ n, y: n.position.y, rz: n.rotation.z, ph: i * 2.4 }));
   const cheer = A.cheer == null ? 0.25 : A.cheer;
@@ -54,8 +53,7 @@ function cutAnim(p, prev) {
       applyPose(c, pv);
       const face = (u > 0.5 ? K[i][2] : K[i - 1][2]) || K[i - 1][2] || c.face0;
       const blink = live > 0.5 && ((sec + c.phase * 0.37) % 2.3) < 0.12;
-      const talk = a.talk ? Math.abs(Math.sin(sec * 11 + c.phase)) * sstep(0.2, 0.3, t) * (1 - sstep(0.82, 0.92, t)) : 0;
-      if (face !== c.face || blink !== c.blinking || Math.abs(talk - (c.talk || 0)) > 0.05) { c.face = face; c.blinking = blink; c.talk = talk; paintFace(c, blink); }
+      if (face !== c.face || blink !== c.blinking) { c.face = face; c.blinking = blink; paintFace(c, blink); }
     }
     kids.forEach(o => { // 배경 아이들: 들썩이고 살짝 기웃거린다
       o.n.position.y = o.y + Math.abs(Math.sin(sec * 3.1 + o.ph)) * 0.035 * cheer * live;
@@ -63,32 +61,57 @@ function cutAnim(p, prev) {
     });
   };
 }
-// 영상 찍기 창구 (?rec): 밖(tools/cuts.mjs)에서 한 장씩 불러 간다
-if (ARGS.has('rec')) {
-  window.__rec = {
-    ready: () => !!(stageNow && stageNow.name) && !capBusy,
-    panels: id => BOOK.scenes[id].panels.map((p, i) => ({ i, video: p.text == null && !p.phone && !p.note })),
-    // 컷 i 의 영상 장면들을 차례로 찍어 onFrame(jpeg 주소) 에 넘긴다
-    async cut(id, i, { fps = 24, sec = 3.6, w = 900 } = {}, onFrame = window.__frame) {
-      const ps = BOOK.scenes[id].panels, p = ps[i], hh = Math.round(w / 1.6), n = Math.round(fps * sec);
-      await serial(async () => {
-        const at = cutAnim(p, ps[i - 1]);
-        wallsForShot(shotCam.position);
-        const cv = document.createElement('canvas');
-        cv.width = w; cv.height = hh;
-        const g = cv.getContext('2d', { willReadFrequently: true });
-        try {
-          for (let f = 0; f <= n; f++) {
-            at(f / n, f / fps);
-            scene.render();
-            g.drawImage(await loadImg(await snap(shotCam, w, hh)), 0, 0);
-            screentone(g, w, hh);
-            await onFrame(cv.toDataURL('image/jpeg', 0.93));
-          }
-        } finally { restoreWalls(); hiddenKids.forEach(k => k.setEnabled(true)); hiddenKids = []; for (const k in CH) CH[k].talk = 0; applyCut(p); }
-      });
-    },
-    snapP: (p, w = 900) => { applyCut(p); return shoot(p, w, Math.round(w / 1.6)); },
-    still: (id, i, w = 900) => { const p = BOOK.scenes[id].panels[i]; applyCut(p); return shoot(p, w, Math.round(w / 1.6)); },
-  };
+const CUT_SEC = 2.6, CUT_W = 520; // 움직이는 시간, 움직이는 동안 찍는 그림 너비 (작게 찍어야 느린 기기에서도 끊기지 않는다)
+const canAnim = p => !REDUCED && save.set.anim !== false && p.text == null && !p.phone && !p.note;
+let skipCut = false; // 그림을 누르면 바로 끝 장면으로
+storyEl.addEventListener('click', e => { if (e.target.closest('.pic.playing')) skipCut = true; });
+// 컷 e 를 옆 칸의 캔버스에 한 번 재생한다. 끝나면 인물·카메라는 삽화와 같은 자리에 있다
+function playCut(e, prev, my) {
+  return serial(async () => {
+    const cv = storyEl.querySelector('.pic > canvas');
+    if (!cv || my !== runId) return;
+    const w = CUT_W, hh = Math.round(w / 1.6), g = cv.getContext('2d', { willReadFrequently: true });
+    cv.width = w; cv.height = hh;
+    const at = cutAnim(e.p, prev);
+    wallsForShot(shotCam.position);
+    skipCut = false;
+    cv.parentElement.classList.add('playing');
+    const t0 = performance.now();
+    try {
+      for (;;) {
+        const sec = (performance.now() - t0) / 1000, t = skipCut ? 1 : Math.min(1, sec / CUT_SEC);
+        at(t, sec);
+        if (t >= 1) break;
+        scene.render();
+        const img = await loadImg(await snap(shotCam, w, hh));
+        if (my !== runId || !cv.isConnected) break;
+        g.drawImage(img, 0, 0);
+        screentone(g, w, hh);
+      }
+    } finally {
+      at(1, CUT_SEC);
+      restoreWalls(); hiddenKids.forEach(k => k.setEnabled(true)); hiddenKids = [];
+      for (const k in CH) if (CH[k].blinking) setFace(CH[k], CH[k].face);
+      cv.parentElement.classList.remove('playing');
+    }
+  });
 }
+// 시험·소개 영상용 창구 (?rec): 컷 하나의 움직임을 정해진 장수로 찍어 넘긴다 (느린 기기에서도 매끄러운 영상을 만들 수 있게)
+if (ARGS.has('rec')) window.__rec = {
+  ready: () => !!(stageNow && stageNow.name) && !capBusy,
+  cut: (id, i, fps = 24, w = 900) => serial(async () => {
+    const ps = BOOK.scenes[id].panels, p = ps[i], hh = Math.round(w / 1.6), n = Math.round(fps * CUT_SEC);
+    const cv = Object.assign(document.createElement('canvas'), { width: w, height: hh }), g = cv.getContext('2d', { willReadFrequently: true });
+    const at = cutAnim(p, ps[i - 1]);
+    wallsForShot(shotCam.position);
+    try {
+      for (let f = 0; f <= n; f++) {
+        at(f / n, f / fps);
+        scene.render();
+        g.drawImage(await loadImg(await snap(shotCam, w, hh)), 0, 0);
+        screentone(g, w, hh);
+        await window.__frame(cv.toDataURL('image/jpeg', 0.93));
+      }
+    } finally { restoreWalls(); hiddenKids.forEach(k => k.setEnabled(true)); hiddenKids = []; applyCut(p); }
+  }),
+};

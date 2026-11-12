@@ -29,33 +29,57 @@ $('#btnPrev').addEventListener('click', e => { if (e.detail > 0) e.currentTarget
 // ---- 컷 만들기: 무대를 찍고, 말하는 사람 얼굴 사진을 붙인다 ----
 const panelW = () => Math.round(clamp(storyEl.clientWidth * 2, 560, 900));
 const stageKey = () => stageNow.name + JSON.stringify(curSet);
-async function makeEntry(p, my) {
+async function makeEntry(p, my, anim) {
   const e = { p, stage: stageNow.name, set: curSet, key: stageKey(), img: null, photo: null, lines: [] };
   applyCut(p);
   const ph = p.phone && p.phone.profile && p.phone.profile.photo;
   if (ph) { applyCut(ph); e.photo = await shoot(ph, 320, 320, my); chk(my); applyCut(p); }
   if (p.note) e.img = noteImg(p.note);
-  else if (p.text == null && !p.phone) { const w = panelW(); e.img = await shoot(p, w, Math.round(w / 1.6), my); }
+  else if (p.text == null && !p.phone && !anim) { const w = panelW(); e.img = await shoot(p, w, Math.round(w / 1.6), my); }
+  e.lines = await makeLines(p, my);
+  return e;
+}
+async function makeLines(p, my) {
+  const out = [];
   for (const l of asList(p.lines)) {
     const kind = ['shout', 'think', 'whisper', 'say'].find(k => l[k]);
     const c = l.who && CH[l.who];
-    e.lines.push({ who: l.who, kind, text: l[kind], ko: l['~' + kind], img: c ? (shown(c) && await portrait(c, undefined, my)) || cardPic[c.id] || null : null });
+    out.push({ who: l.who, kind, text: l[kind], ko: l['~' + kind], img: c ? (shown(c) && await portrait(c, undefined, my)) || cardPic[c.id] || null : null });
   }
-  return e;
+  return out;
 }
 async function showPanel(p, my) {
   if (hi < hist.length - 1) { hi = hist.length - 1; renderEntry(); } // 지난 컷을 보는 사이 흐름이 이어지면(숨 고르기가 저절로 끝남) 지금 무대로 돌아와서 찍는다
   making++;
   renderFoot();
   let e;
-  try { e = await makeEntry(p, my); } finally { making--; renderFoot(); }
+  const anim = canAnim(p), last = hist[hist.length - 1];
+  const prev = anim && last && last.key === stageKey() ? last.p : null; // 같은 무대의 앞 컷에서 이어서 움직인다
+  try {
+    if (anim) { // 처음 한 번은 움직이는 컷으로: 앞 컷의 자세에서 시작해 이 컷의 삽화에서 멈춘다
+      e = { p, stage: stageNow.name, set: curSet, key: stageKey(), img: null, photo: null,
+        lines: asList(p.lines).map(l => { const kind = ['shout', 'think', 'whisper', 'say'].find(k => l[k]); return { who: l.who, kind, text: l[kind], ko: l['~' + kind], img: (l.who && cardPic[l.who]) || null }; }) }; // 얼굴 사진은 움직임이 끝난 뒤에 이 컷의 표정으로 찍는다
+      if (my !== runId) throw CANCEL;
+      hist.push(e);
+      hi = hist.length - 1;
+      storyEl.replaceChildren(...panelNodes(e, false));
+      rise(); renderAsk(); renderFoot();
+      sfx('page');
+      speak(readText(p));
+      await playCut(e, prev, my);
+      chk(my);
+      applyCut(p);
+      const w = panelW();
+      e.img = await shoot(p, w, Math.round(w / 1.6), my);
+      e.lines = await makeLines(p, my);
+    } else e = await makeEntry(p, my);
+  } finally { making--; renderFoot(); }
   if (my !== runId) throw CANCEL;
-  hist.push(e);
+  if (!anim) hist.push(e);
   hi = hist.length - 1;
   renderEntry();
   shownAt = performance.now();
-  sfx('page');
-  speak(readText(p));
+  if (!anim) { sfx('page'); speak(readText(p)); }
 }
 function rise() { storyEl.classList.remove('rise'); void storyEl.offsetWidth; storyEl.classList.add('rise'); }
 function renderEntry() {
@@ -99,10 +123,8 @@ function panelNodes(e, past) {
   const pic = h('div', 'pic' + (p.tone ? ' ' + p.tone : '') + (p.phone ? ' phonepic' : ''));
   if (p.phone) pic.appendChild(device(p.phone, e.photo));
   else {
-    const img = new Image();
-    img.src = e.img;
-    img.alt = '';
-    pic.appendChild(img);
+    if (e.img) { const img = new Image(); img.src = e.img; img.alt = ''; pic.appendChild(img); }
+    else pic.appendChild(h('canvas')); // 움직이는 동안은 캔버스, 끝나면 삽화로 바뀐다
   }
   if (p.tone === 'memory') pic.appendChild(h('span', 'tag', t('tagThen')));
   if (p.tone === 'whatif') pic.appendChild(h('span', 'tag', t('tagWhatif')));
