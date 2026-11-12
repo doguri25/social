@@ -1,5 +1,5 @@
 // ===== 기본 도구: 저장, 주소, 소리, 읽어 주기, 기다리기 =====
-const VERSION = '0.10.2'; // 올릴 때 CHANGELOG.md 와 함께 바꾼다
+const VERSION = '0.10.3'; // 올릴 때 CHANGELOG.md 와 함께 바꾼다
 const $ = (s, r = document) => r.querySelector(s);
 const h = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -134,6 +134,6 @@ for (const bk in ANIMS) {
   if (!B) continue;
   for (const key in ANIMS[bk]) {
     const ps = key.startsWith('end:') ? ((B.endings || []).find(e => e.id === key.slice(4)) || {}).panels : (B.scenes[key] || {}).panels;
-    for (const i in ANIMS[bk][key]) if (ps && ps[i]) ps[i].anim = ANIMS[bk][key][i];
+    for (const i in ANIMS[bk][key]) if (ps && ps[i]) { ps[i].anim = ANIMS[bk][key][i]; if (ps[i].anim.angle != null) ps[i].angle = ps[i].anim.angle; } // angle: 가까운 컷의 카메라 방향을 바꾼다 (삽화도 그 방향)
   }
 }

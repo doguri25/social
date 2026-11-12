@@ -5,7 +5,7 @@ import json, sys, os, glob
 MOVES = ["still", "nudge", "close", "offer", "give", "erase", "highfive", "bounce", "gaze", "angry", "away", "balance", "blame", "bow", "brace", "breath", "calm", "cheer", "clap", "cry", "dance", "dodge", "eat", "fidget", "fist", "greet", "jolt", "joy", "laugh", "look", "nod", "pat", "poke", "pump", "ready", "run", "sad", "scratch", "shake", "shout", "shy", "sigh", "spin", "squeeze", "surprised", "sway", "toe", "trip", "tumble", "walk", "wash", "wave", "windup", "worried", "write", "yawn"]
 POSES = ["call", "clasp", "cover", "cross", "dance", "dodge", "down", "hold", "jump", "open", "phone", "point", "reach", "show", "sit", "sitlow", "stand", "throw", "tug", "walk", "wave"]
 FACES = ["calm", "joy", "laugh", "sad", "angry", "worried", "surprised", "shy", "hurt", "yawn", "cry"]
-OPTS = {"cheer", "cam", "path", "from", "run", "hit", "hitLight", "ball", "ballFrom", "ballIn", "enter"}
+OPTS = {"cheer", "cam", "path", "from", "run", "hit", "hitLight", "ball", "ballFrom", "ballIn", "enter", "angle"}
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 books = sys.argv[1:] or [os.path.basename(f)[:-5] for f in sorted(glob.glob(root + "/stories/anim/*.json"))]
 bad = 0
