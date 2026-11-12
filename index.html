@@ -18135,8 +18135,10 @@ function playCut(e, prev, my) {
 // 시험·소개 영상용 창구 (?rec): 장면을 처음부터 따라가며 고른 컷의 움직임을 정해진 장수로 찍어 넘긴다 (느린 기기에서도 매끄러운 영상을 만들 수 있게)
 if (ARGS.has('rec')) window.__rec = {
   ready: () => !!(stageNow && stageNow.name) && !capBusy,
+  keys: () => [...Object.keys(BOOK.scenes), ...BOOK.endings.map(e => 'end:' + e.id)],
   run: (id, cuts, fps = 24, w = 900) => serial(async () => {
-    const ps = BOOK.scenes[id].panels, hh = Math.round(w / 1.6), n = Math.round(fps * CUT_SEC);
+    const ps = id.startsWith('end:') ? BOOK.endings.find(e => e.id === id.slice(4)).panels : BOOK.scenes[id].panels, hh = Math.round(w / 1.6), n = Math.round(fps * CUT_SEC);
+    if (!id.startsWith('end:')) applySet(BOOK.scenes[id].stage, BOOK.scenes[id].set || {}, false);
     const cv = Object.assign(document.createElement('canvas'), { width: w, height: hh }), g = cv.getContext('2d', { willReadFrequently: true });
     let prev = null;
     saveSpots();
@@ -18144,7 +18146,7 @@ if (ARGS.has('rec')) window.__rec = {
       const p = ps[i];
       if (p.stage || p.set) { applyItemSet(p); continue; }
       if (!p.shot) continue;
-      if (cuts.includes(i)) {
+      if (!cuts || cuts.includes(i)) {
         await window.__cut(i);
         const at = cutAnim(p, prev);
         wallsForShot(shotCam.position);
