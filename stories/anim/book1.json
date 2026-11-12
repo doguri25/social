@@ -32,7 +32,7 @@
   "s04": {
     "0": {"yuna": [[0.3, "throw", "angry", "windup"]], "path": {"yuna": [[0.15, 0, -0.4], [0.3, 0, 0.4]]}},
     "3": {"yuna": [[0.2, null, "surprised", "jolt"]]},
-    "5": {"yuna": [[0.15, "dodge", "worried", "dodge"], [0.4, "dodge", "surprised", "tumble"]], "cam": {"back": 1.2}, "path": {"yuna": [[0.15, -0.5, 0], [0.36, 0.3, -0.35]]}},
+    "5": {"yuna": [[0.15, "dodge", "worried", "dodge"], [0.33, "dodge", "surprised", "tumble"], [0.64, "dodge", "surprised", "still", 0.06]], "cam": {"back": 1.2}, "path": {"yuna": [[0.15, -0.5, 0], [0.36, 0.3, -0.35]]}},
     "7": {"jiwoo": [[0.2, null, "worried", "look"]], "cam": {"back": 0.8}},
     "9": {"jiwoo": [[0.25, "open", "worried", "brace"]]},
     "11": {"jiwoo": [[0.2, "open", "surprised", "trip"]]}

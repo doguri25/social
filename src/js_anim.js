@@ -169,7 +169,7 @@ Object.assign(MOVES, {
   // 손 씻기: 내민 두 손을 비빈다
   wash(pv, w, s) { const b = Math.sin(s * 10); toward(pv, { aA: [-1.15 + b * 0.08, 0, 0.3], eA: -0.4, aB: [-1.15 - b * 0.08, 0, -0.3], eB: -0.4 }, w); addV(pv, 'hd', 0, 0.25 * w); pv.lean += 0.1 * w; },
   // 손을 만지작거린다
-  fidget(pv, w, s) { const b = Math.sin(s * 6); toward(pv, { aA: [-0.45, 0, 0.34 + b * 0.05], eA: -1.75 + b * 0.12, aB: [-0.45, 0, -0.34 + b * 0.05], eB: -1.75 - b * 0.12 }, w * (c.held ? 0 : 0.9)); addV(pv, 'hd', 0, 0.14 * w); addV(pv, 'hd', 1, Math.sin(s * 1.9) * 0.12 * w); },
+  fidget(pv, w, s, c) { const b = Math.sin(s * 6); toward(pv, { aA: [-0.45, 0, 0.34 + b * 0.05], eA: -1.75 + b * 0.12, aB: [-0.45, 0, -0.34 + b * 0.05], eB: -1.75 - b * 0.12 }, w * (c.held ? 0 : 0.9)); addV(pv, 'hd', 0, 0.14 * w); addV(pv, 'hd', 1, Math.sin(s * 1.9) * 0.12 * w); },
   // 크게 외친다: 몸을 내밀며 힘을 준다
   shout(pv, w, s) { const b = Math.max(0, Math.sin(s * 6)); pv.lean += b * 0.18 * w; pv.yy += b * 0.02 * w; addV(pv, 'hd', 0, -b * 0.12 * w); },
   // 엉덩방아: 뒤로 벌렁 넘어져 주저앉았다가 일어난다
