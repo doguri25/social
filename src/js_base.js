@@ -127,3 +127,13 @@ function waitFor(setup) {
   });
 }
 function cancelFlow() { const ws = waiters; waiters = []; ws.forEach(w => w.stop()); }
+
+// 컷 애니메이션 동작(stories/anim)을 이야기의 컷에 붙인다 (번역이 컷을 베끼기 전에)
+for (const bk in ANIMS) {
+  const B = STORIES[bk];
+  if (!B) continue;
+  for (const key in ANIMS[bk]) {
+    const ps = key.startsWith('end:') ? ((B.endings || []).find(e => e.id === key.slice(4)) || {}).panels : (B.scenes[key] || {}).panels;
+    for (const i in ANIMS[bk][key]) if (ps && ps[i]) ps[i].anim = ANIMS[bk][key][i];
+  }
+}

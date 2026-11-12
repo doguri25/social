@@ -800,10 +800,10 @@ const STORIES = {
       },
       "explore": [{"on": "yuna", "text": "수아. 이 이야기 속 ‘나’예요. 공을 제일 세게 던져요."}, {"on": "board", "text": "칠판에 피구 대회 날짜가 적혀 있어요."}],
       "panels": [
-        {"shot": "wide", "anim": {"cheer": 1, "jiwoo": [[0.25, "wave", "laugh", "greet"]], "minjun": [[0.25, "sit", "laugh", "sway"]], "seoa": [[0.25, "sit", "calm", "nod"]], "yuna": [[0.3, "show", "joy", "pump"]]}, "cap": "우리 반은 3학년 2반, 스물두 명이에요."},
-        {"shot": "close", "on": "yuna", "faces": {"yuna": "joy"}, "poses": {"yuna": "show"}, "anim": {"yuna": [[0.25, "show", "joy", "pump"]]}, "cap": "나는 수아예요. 우리 반에서 공을 제일 세게 던지는 아이지요."},
+        {"shot": "wide", "cap": "우리 반은 3학년 2반, 스물두 명이에요."},
+        {"shot": "close", "on": "yuna", "faces": {"yuna": "joy"}, "poses": {"yuna": "show"}, "cap": "나는 수아예요. 우리 반에서 공을 제일 세게 던지는 아이지요."},
         {"shot": "item", "on": "board", "cap": "이번 주에는 3학년 피구 대회가 열려요. 월요일에는 1반과, 금요일에는 3반과 겨뤄요. 시간이 끝났을 때 코트 안에 더 많이 남은 반이 이겨요."},
-        {"shot": "close", "on": "yuna", "angle": -20, "faces": {"yuna": "laugh"}, "anim": {"yuna": [[0.25, "stand", "laugh", "cheer"]]}, "fx": "sparkle", "cap": "나는 두 번 다 이길 거라고 생각했어요. 내가 있으니까요."}
+        {"shot": "close", "on": "yuna", "angle": -20, "faces": {"yuna": "laugh"}, "fx": "sparkle", "cap": "나는 두 번 다 이길 거라고 생각했어요. 내가 있으니까요."}
       ],
       "go": "s02"
     },
@@ -819,15 +819,14 @@ const STORIES = {
       },
       "explore": [{"on": "seoa", "text": "보라. 뭐든지 수첩에 꼼꼼히 적어요."}, {"on": "minjun", "text": "하준이. 웃기는 걸 제일 잘해요."}, {"on": "jiwoo", "text": "현우. 누구하고나 잘 어울려요."}],
       "panels": [
-        {"shot": "group", "on": ["yuna", "seoa", "jiwoo", "minjun"], "anim": {"cheer": 1, "yuna": [[0.25, "sit", "joy", "look"]], "seoa": [[0.25, "sit", "calm", "nod"]], "jiwoo": [[0.25, "wave", "joy", "greet"]], "minjun": [[0.25, "sit", "laugh", "sway"]]}, "cap": "우리 반에는 재미있는 친구가 많아요."},
-        {"shot": "close", "on": "minjun", "faces": {"minjun": "laugh"}, "poses": {"minjun": "dance"}, "anim": {"cheer": 1, "minjun": [[0.2, "dance", "laugh", "dance"]], "yuna": [[0.3, "sit", "laugh", "laugh"]], "jiwoo": [[0.3, "sit", "laugh", "clap"]], "seoa": [[0.35, "sit", "joy", "laugh"]]}, "cap": "하준이는 웃기는 걸 제일 잘하고,"},
-        {"shot": "close", "on": "seoa", "poses": {"seoa": "show"}, "anim": {"seoa": [[0.2, "show", "calm", "write"]]}, "cap": "보라는 뭐든지 수첩에 꼼꼼히 적어요."},
-        {"shot": "close", "on": "jiwoo", "faces": {"jiwoo": "joy"}, "anim": {"cheer": 1.2, "jiwoo": [[0.2, "sit", "joy", "greet"]], "minjun": [[0.3, "wave", "laugh", "sway"]], "yuna": [[0.3, "wave", "joy"]]}, "cap": "현우는 누구하고나 잘 어울려서, 현우 옆은 늘 북적거리지요."},
+        {"shot": "group", "on": ["yuna", "seoa", "jiwoo", "minjun"], "cap": "우리 반에는 재미있는 친구가 많아요."},
+        {"shot": "close", "on": "minjun", "faces": {"minjun": "laugh"}, "poses": {"minjun": "dance"}, "cap": "하준이는 웃기는 걸 제일 잘하고,"},
+        {"shot": "close", "on": "seoa", "poses": {"seoa": "show"}, "cap": "보라는 뭐든지 수첩에 꼼꼼히 적어요."},
+        {"shot": "close", "on": "jiwoo", "faces": {"jiwoo": "joy"}, "cap": "현우는 누구하고나 잘 어울려서, 현우 옆은 늘 북적거리지요."},
         {
           "shot": "over",
           "on": ["yuna", "seoa"],
           "poses": {"seoa": "show"},
-          "anim": {"seoa": [[0.2, "show", "calm", "write"]], "yuna": [[0.3, "sit", "joy", "nod"]]},
           "lines": [{"who": "seoa", "say": "작전은 어떻게 짤까?"}],
           "cap": "보라가 수첩을 펴며 물었어요."
         }
@@ -14942,6 +14941,323 @@ const STORY_I18N = {
 },
 },
 };
+const ANIMS = {
+"book1": {
+  "s01": {
+    "0": {"cheer": 1, "jiwoo": [[0.25, "wave", "laugh", "greet"]], "minjun": [[0.25, null, "laugh", "sway"]], "seoa": [[0.25, null, "calm", "nod"]], "yuna": [[0.3, "show", "joy", "pump"]]},
+    "1": {"yuna": [[0.25, "show", "joy", "pump"]]},
+    "3": {"yuna": [[0.25, null, "laugh", "cheer"]]}
+  },
+  "s02": {
+    "0": {"cheer": 1, "yuna": [[0.25, null, "joy", "look"]], "seoa": [[0.25, null, "calm", "nod"]], "jiwoo": [[0.25, "wave", "joy", "greet"]], "minjun": [[0.25, null, "laugh", "sway"]]},
+    "1": {"cheer": 1, "minjun": [[0.2, "dance", "laugh", "dance"]], "yuna": [[0.3, null, "laugh", "laugh"]], "jiwoo": [[0.3, null, "laugh", "clap"]], "seoa": [[0.35, null, "joy", "laugh"]]},
+    "2": {"seoa": [[0.2, "show", "calm", "write"]]},
+    "3": {"cheer": 1.2, "jiwoo": [[0.2, null, "joy", "greet"]], "minjun": [[0.3, "wave", "laugh", "sway"]], "yuna": [[0.3, "wave", "joy", "wave"]]},
+    "4": {"seoa": [[0.2, "show", "calm", "write"]], "yuna": [[0.3, null, "joy", "nod"]]}
+  },
+  "s02a": {
+    "1": {"yuna": [[0.2, null, "calm", "nod"]], "seoa": [[0.2, "show", "calm", "write"]]},
+    "2": {"cheer": 0.8, "yuna": [[0.2, "show", "surprised", "look"], [0.5, "show", "joy", "pump"]]}
+  },
+  "s02b": {
+    "0": {"yuna": [[0.2, "show", "laugh", "pump"]]},
+    "1": {"seoa": [[0.15, "show", "calm", "nod"], [0.45, null, "surprised", "jolt"]], "yuna": [[0.2, "show", "joy", "pump"]]}
+  },
+  "s03": {
+    "0": {"cheer": 1, "yuna": [[0.2, "show", "joy", "pump"]], "jiwoo": [[0.2, null, "calm", "ready"]], "minjun": [[0.2, null, "laugh", "sway"]], "seoa": [[0.2, null, "calm", "ready"]]},
+    "1": {"yuna": [[0.3, "throw", "angry", "windup"]], "cam": {"back": 1.25}},
+    "3": {"cheer": 1, "yuna": [[0.2, null, "joy", "cheer"]], "jiwoo": [[0.25, null, "joy", "clap"]], "minjun": [[0.2, null, "laugh", "cheer"]], "seoa": [[0.25, null, "joy", "clap"]]},
+    "4": {"yuna": [[0.2, null, "laugh", "cheer"]]},
+    "5": {"minjun": [[0.15, "dodge", "joy", "dodge"], [0.45, "dance", "laugh", "dance"]]},
+    "7": {"cheer": 1, "minjun": [[0.1, "dance", "laugh", "dance"]], "yuna": [[0.25, null, "laugh", "laugh"]], "jiwoo": [[0.25, null, "laugh", "laugh"]], "seoa": [[0.3, null, "laugh", "laugh"]]},
+    "8": {"minjun": [[0.12, "dance", "laugh", "dance"], [0.42, "dance", "surprised", "jolt"]], "cam": {"back": 1.2}},
+    "10": {"cheer": 0.4, "yuna": [[0.2, null, "worried", "look"]], "jiwoo": [[0.2, null, "worried", "dodge"]], "seoa": [[0.25, null, "worried", "dodge"]]}
+  },
+  "s04": {
+    "0": {"yuna": [[0.3, "throw", "angry", "windup"]]},
+    "3": {"yuna": [[0.2, null, "surprised", "jolt"]]},
+    "5": {"yuna": [[0.15, "dodge", "worried", "dodge"], [0.45, "dodge", "surprised", "jolt"]], "cam": {"back": 1.2}},
+    "7": {"jiwoo": [[0.2, null, "worried", "look"]], "cam": {"back": 0.8}},
+    "9": {"jiwoo": [[0.25, "open", "worried", "brace"]]},
+    "11": {"jiwoo": [[0.2, "open", "surprised", "jolt"]]}
+  },
+  "s05": {
+    "0": {"cheer": 0, "yuna": [[0.2, null, "angry", "fist"]], "jiwoo": [[0.6, "down", "hurt", "sad", 0.4]], "minjun": [[0.5, "down", "sad", "sad", 0.3]], "seoa": [[0.3, null, "worried", "sigh"]]},
+    "1": {"yuna": [[0.2, null, "angry", "fist"]], "cam": {"back": 1.2}}
+  },
+  "s05a": {
+    "0": {"yuna": [[0.15, null, "angry", "fist"], ["end", 0, 0, "breath"]]},
+    "1": {"jiwoo": [[0.2, "down", "hurt", "sad"], [0.55, null, "worried", "look"]]},
+    "2": {"jiwoo": [[0.25, null, "surprised", "jolt"]]},
+    "3": {"yuna": [[0.2, null, "worried", "look"], ["end", 0, 0, "scratch"]], "cam": {"back": 1.15}},
+    "4": {"yuna": [["end", 0, 0, "bow"]], "jiwoo": [[0.35, null, "calm", "nod"]]},
+    "5": {"minjun": [[0.25, null, "shy", "scratch"], ["end", 0, 0, "bow"]]},
+    "7": {"teacher": [[0.25, null, "joy", "clap"]]}
+  },
+  "s06e": {
+    "0": {"cheer": 0.5, "yuna": [[0.25, null, "calm", "nod"]], "seoa": [[0.2, "show", "calm", "write"]], "jiwoo": [[0.3, null, "joy", "nod"]], "minjun": [[0.25, null, "laugh", "sway"]]},
+    "1": {"seoa": [[0.2, "show", "calm", "write"]]},
+    "3": {"cheer": 1, "minjun": [[0.2, "dance", "laugh", "dance"]], "yuna": [[0.3, null, "laugh", "laugh"]], "jiwoo": [[0.3, null, "laugh", "clap"]]}
+  },
+  "s07e": {
+    "0": {"yuna": [[0.2, null, "laugh", "clap"]], "minjun": [[0.35, null, "joy", "cheer"]]},
+    "1": {"jiwoo": [[0.2, null, "shy", "scratch"]]},
+    "2": {"yuna": [[0.25, null, "joy", "nod"]], "jiwoo": [[0.4, null, "joy", "cheer"]]}
+  },
+  "s07f": {
+    "0": {"cheer": 0, "yuna": [[0.15, null, "angry", "blame"]], "minjun": [[0.3, null, "surprised", "jolt"]], "cam": {"back": 1.15}},
+    "1": {"cheer": 0, "minjun": [[0.5, "down", "hurt", "sad", 0.35]]},
+    "2": {"yuna": [[0.2, null, "shy", "scratch"], ["end", 0, 0, "bow"]]},
+    "3": {"minjun": [[0.15, "down", "hurt", "still"], [0.4, null, "joy", "cheer"]]}
+  },
+  "s10e": {
+    "0": {"cheer": 1, "yuna": [[0.2, null, "joy", "ready"]], "jiwoo": [[0.2, null, "calm", "ready"]], "minjun": [[0.2, null, "joy", "greet"]], "seoa": [[0.2, null, "calm", "ready"]]},
+    "1": {"yuna": [[0.25, "throw", "angry", "windup"], [0.6, "throw", "surprised", "look"]]},
+    "3": {"yuna": [[0.3, "reach", "joy", "still"]]},
+    "4": {"minjun": [[0.2, "call", "joy", "shout"]]},
+    "5": {"jiwoo": [[0.2, "dodge", "surprised", "dodge"]]},
+    "6": {"cheer": 0.8, "yuna": [[0.25, null, "joy", "clap"]], "jiwoo": [[0.25, null, "joy", "clap"]], "minjun": [[0.25, null, "laugh", "cheer"]], "seoa": [[0.25, null, "joy", "clap"]]},
+    "7": {"seoa": [[0.2, "show", "joy", "pump"]], "yuna": [[0.45, null, "joy", "cheer"]], "jiwoo": [[0.45, null, "joy", "cheer"]], "minjun": [[0.4, null, "laugh", "cheer"]]}
+  },
+  "s05b": {
+    "0": {"cheer": 0, "yuna": [[0.2, "point", "angry", "blame"]], "jiwoo": [[0.2, "open", "worried", "still"]]},
+    "1": {"yuna": [[0.15, "point", "angry", "blame"]], "cam": {"back": 1.25}},
+    "2": {"cheer": 0, "jiwoo": [[0.15, "open", "hurt", "still"], [0.72, "down", "hurt", "sad", 0.5]]}
+  },
+  "s06": {
+    "0": {"jiwoo": [[0.3, "down", "hurt", "fist"], [0.6, "point", "angry", "blame"]]},
+    "1": {"jiwoo": [[0.15, "point", "angry", "blame"]], "minjun": [[0.3, null, "surprised", "jolt"]]},
+    "2": {"minjun": [[0.2, "point", "angry", "blame"]]},
+    "3": {"yuna": [[0.25, null, "surprised", "jolt"]], "cam": {"back": 1.3}},
+    "5": {"cheer": 0, "teacher": [[0.3, null, "calm", "nod"]]},
+    "6": {"teacher": [[0.2, null, "calm", "shake"]]},
+    "7": {"teacher": [[0.25, "reach", "calm", "pat"]], "jiwoo": [[0.3, "down", "hurt", "sad"]]},
+    "9": {"cheer": 0, "yuna": [[0.2, "down", "sad", "toe"]]}
+  },
+  "s07": {
+    "0": {"yuna": [[0.2, "show", "angry", "blame"]]},
+    "1": {"jiwoo": [[0.2, null, "surprised", "jolt"]]},
+    "4": {"cheer": 0.4, "jiwoo": [[0.1, null, "sad", "walk"]], "minjun": [[0.1, null, "angry", "walk"]], "yuna": [[0.3, null, "worried", "look"]]},
+    "6": {"yuna": [[0.25, "hold", "hurt", "squeeze"]]}
+  },
+  "s08": {
+    "0": {"cheer": 0.2, "yuna": [[0.25, null, "calm", "squeeze"]], "cam": {"turn": 14}},
+    "1": {"cheer": 0.3},
+    "2": {"yuna": [[0.2, "hold", "hurt", "squeeze"]]},
+    "4": {"seoa": [[0.2, "show", "worried", "walk"], ["end", 0, 0, "fidget"]], "yuna": [[0.3, "hold", "hurt", "still"]]}
+  },
+  "s08a": {
+    "0": {"yuna": [[0.25, null, "calm", "look"]]},
+    "1": {"seoa": [[0.2, "show", "calm", "pump"]], "yuna": [[0.4, null, "calm", "nod"]]},
+    "3": {"yuna": [[0.2, null, "surprised", "jolt"]], "cam": {"back": 1.15}},
+    "5": {"yuna": [["end", 0, 0, "bow"]], "seoa": [[0.4, null, "joy", "nod"]]}
+  },
+  "s09t": {
+    "0": {"cheer": 0.3, "yuna": [[0.1, null, "worried", "walk"], ["end", 0, 0, "fidget"]], "minjun": [[0.2, null, "calm", "eat"]], "jiwoo": [[0.25, null, "calm", "eat"]]},
+    "1": {"yuna": [[0.2, null, "worried", "fidget"], ["end", 0, 0, "bow"]], "jiwoo": [[0.3, null, "surprised", "jolt"]]},
+    "2": {"jiwoo": [[0.5, "down", "hurt", "sad", 0.35]]},
+    "3": {"yuna": [[0.2, null, "worried", "fidget"], ["end", 0, 0, "breath"]]},
+    "4": {"jiwoo": [[0.25, null, "calm", "nod"]]},
+    "6": {"minjun": [[0.2, null, "laugh", "balance"]]},
+    "7": {"yuna": [[0.2, null, "surprised", "still"], [0.42, null, "laugh", "laugh"]], "jiwoo": [[0.35, null, "laugh", "laugh"]]}
+  },
+  "s10t": {
+    "0": {"cheer": 1, "yuna": [[0.2, null, "joy", "greet"]], "minjun": [[0.2, null, "joy", "greet"]], "jiwoo": [[0.2, null, "calm", "ready"]], "seoa": [[0.25, null, "joy", "clap"]]},
+    "1": {"yuna": [[0.25, "throw", "angry", "windup"], [0.6, "throw", "surprised", "look"]]},
+    "3": {"yuna": [[0.3, "reach", "joy", "still"]]},
+    "4": {"minjun": [[0.2, "call", "joy", "shout"]]},
+    "5": {"cheer": 0.8, "yuna": [[0.25, null, "joy", "clap"]], "jiwoo": [[0.25, null, "joy", "clap"]], "minjun": [[0.25, null, "laugh", "cheer"]], "seoa": [[0.25, "show", "joy", "pump"]]}
+  },
+  "s08b": {
+    "0": {"yuna": [[0.2, "hold", "angry", "shake"]]},
+    "1": {"seoa": [[0.2, "show", "worried", "still"], [0.72, "down", "sad", "sad", 0.4]]}
+  },
+  "s09": {
+    "0": {"cheer": 0.3, "yuna": [[0.2, null, "calm", "eat"]], "minjun": [[0.2, null, "laugh", "eat"]], "jiwoo": [[0.3, null, "calm", "eat"]]},
+    "2": {"minjun": [[0.2, null, "laugh", "balance"]]},
+    "3": {"yuna": [[0.25, null, "joy", "laugh"], [0.55, "cover", "shy", "still"]]},
+    "4": {"minjun": [[0.25, null, "laugh", "balance"], [0.5, null, "surprised", "jolt"]]},
+    "6": {"yuna": [[0.25, "down", "hurt", "away"]]},
+    "8": {"mom": [[0.3, null, "worried", "look"]]},
+    "9": {"yuna": [[0.3, null, "sad", "sad"]]},
+    "10": {"yuna": [[0.2, null, "angry", "shake"]]},
+    "11": {"yuna": [[0.2, null, "sad", "poke"]]}
+  },
+  "s10": {
+    "0": {"cheer": 0.5, "yuna": [[0.2, null, "angry", "ready"]]},
+    "2": {"yuna": [[0.25, null, "surprised", "look"]]},
+    "3": {"yuna": [[0.2, "show", "angry", "pump"]]},
+    "5": {"cheer": 1, "yuna": [[0.15, "dodge", "worried", "dodge"]]}
+  },
+  "s11": {
+    "0": {"cheer": 0.3},
+    "1": {"yuna": [[0.2, null, "worried", "look"]], "cam": {"back": 0.8}},
+    "2": {"cheer": 0.8, "yuna": [[0.3, null, "worried", "look"]]},
+    "4": {"yuna": [[0.3, "throw", "angry", "windup"]]},
+    "6": {"yuna": [[0.2, "reach", "surprised", "still"]]},
+    "7": {"yuna": [[0.2, null, "worried", "look"]]},
+    "9": {"yuna": [[0.25, "dodge", "surprised", "jolt"]], "cam": {"back": 1.25}}
+  },
+  "s12": {
+    "0": {"yuna": [[0.2, null, "angry", "blame"]]},
+    "1": {"yuna": [[0.2, null, "angry", "fist"]], "cam": {"back": 1.2}},
+    "2": {"cheer": 0},
+    "3": {"jiwoo": [[0.3, "down", "sad", "sad"]]}
+  },
+  "s12a": {
+    "0": {"yuna": [[0.1, null, "angry", "walk"], [0.45, "reach", "angry", "wash"]]},
+    "2": {"yuna": [[0.2, null, "calm", "breath"]]},
+    "3": {"yuna": [[0.2, null, "calm", "breath"]]}
+  },
+  "s12b": {
+    "0": {"yuna": [[0.15, "point", "angry", "blame"]], "cam": {"back": 1.25}},
+    "1": {"cheer": 0, "jiwoo": [[0.5, "down", "sad", "sad", 0.35]]},
+    "3": {"yuna": [[0.25, null, "angry", "fist"]]},
+    "5": {"yuna": [[0.2, "reach", "hurt", "wash"]]},
+    "7": {"yuna": [[0.2, null, "sad", "breath"]]}
+  },
+  "s12c": {
+    "1": {"yuna": [[0.2, "throw", "angry", "still"], [0.4, "reach", "angry", "still"], [0.62, null, "angry", "walk"]]},
+    "5": {"yuna": [[0.2, "cover", "hurt", "shake"]]},
+    "7": {"yuna": [[0.2, null, "calm", "breath"]]}
+  },
+  "s13": {
+    "0": {"seoa": [[0.2, "show", "worried", "fidget"]], "yuna": [[0.3, null, "calm", "look"]]},
+    "1": {"seoa": [[0.2, "show", "worried", "fidget"]]},
+    "2": {"yuna": [[0.3, "down", "calm", "nod"]]},
+    "4": {"seoa": [[0.2, "show", "calm", "pump"]], "yuna": [[0.35, null, "calm", "nod"]]}
+  },
+  "s14": {
+    "1": {"yuna": [[0.2, "down", "worried", "fidget"]]},
+    "3": {"yuna": [[0.2, null, "worried", "fidget"]]},
+    "4": {"yuna": [[0.2, null, "worried", "look"]], "cam": {"back": 1.2}},
+    "5": {"yuna": [["end", 0, 0, "bow"]], "seoa": [[0.4, null, "calm", "nod"]]},
+    "6": {"yuna": [["end", 0, 0, "bow"]], "seoa": [[0.4, null, "calm", "nod"]]},
+    "7": {"seoa": [[0.2, null, "calm", "fidget"]]}
+  },
+  "s15": {
+    "0": {"yuna": [[0.2, null, "worried", "fidget"]], "cam": {"back": 1.15}},
+    "2": {"yuna": [[0.2, null, "calm", "breath"]]},
+    "4": {"yuna": [[0.1, null, "worried", "walk"], ["end", 0, 0, "fidget"]], "jiwoo": [[0.4, null, "calm", "look"]]}
+  },
+  "s15r": {
+    "0": {"jiwoo": [[0.2, "down", "hurt", "fidget"]]},
+    "2": {"yuna": [[0.3, null, "calm", "nod"]]},
+    "3": {"jiwoo": [[0.2, null, "angry", "fist"]]},
+    "4": {"yuna": [[0.2, null, "calm", "breath"]]},
+    "5": {"jiwoo": [[0.2, null, "angry", "fist"], ["end", 0, 0, "sigh"]]},
+    "6": {"yuna": [[0.3, "down", "calm", "nod"]]},
+    "8": {"jiwoo": [[0.2, null, "angry", "blame"]]},
+    "9": {"jiwoo": [[0.3, "cross", "hurt", "away"]]},
+    "10": {"yuna": [[0.2, null, "hurt", "fidget"]]}
+  },
+  "s16": {
+    "0": {"jiwoo": [[0.1, null, "worried", "walk"], ["end", 0, 0, "bow"]], "minjun": [[0.4, null, "surprised", "jolt"]]},
+    "1": {"minjun": [[0.2, null, "shy", "scratch"], ["end", 0, 0, "bow"]]},
+    "3": {"yuna": [[0.4, null, "calm", "look"]]}
+  },
+  "s16a": {
+    "0": {"yuna": [[0.25, null, "calm", "nod"]]},
+    "2": {"jiwoo": [[0.2, "tug", "calm", "walk"]], "minjun": [[0.2, null, "joy", "walk"], ["end", 0, 0, "wave"]]},
+    "4": {"cheer": 1, "yuna": [[0.2, null, "calm", "wave"]], "seoa": [[0.25, null, "calm", "nod"]], "jiwoo": [[0.2, null, "calm", "wave"]], "minjun": [[0.2, null, "joy", "cheer"]]},
+    "5": {"yuna": [[0.2, null, "shy", "scratch"], ["end", 0, 0, "bow"]]},
+    "6": {"seoa": [[0.2, "show", "joy", "pump"]]},
+    "7": {"yuna": [[0.3, null, "calm", "nod"]], "seoa": [[0.3, null, "joy", "nod"]]}
+  },
+  "s17": {
+    "0": {"seoa": [[0.2, "show", "calm", "pump"]]},
+    "1": {"minjun": [[0.2, null, "laugh", "cheer"]]},
+    "2": {"jiwoo": [[0.2, null, "shy", "scratch"]]},
+    "3": {"yuna": [[0.25, null, "joy", "nod"]], "jiwoo": [[0.4, null, "joy", "cheer"]]},
+    "4": {"cheer": 1.2, "yuna": [[0.2, null, "joy", "wave"]], "seoa": [[0.2, "show", "calm", "write"]], "jiwoo": [[0.25, null, "joy", "clap"]], "minjun": [[0.2, null, "laugh", "cheer"]]}
+  },
+  "s16b": {
+    "0": {"yuna": [[0.2, "show", "joy", "pump"]]},
+    "2": {"jiwoo": [[0.25, null, "hurt", "sigh"]]},
+    "4": {"cheer": 0, "jiwoo": [[0.1, null, "sad", "walk"]], "yuna": [[0.3, null, "worried", "look"]]},
+    "5": {"seoa": [[0.2, "show", "worried", "still"], [0.72, "down", "sad", "sad", 0.4]]},
+    "6": {"cheer": 0, "yuna": [[0.2, null, "worried", "look"]]}
+  },
+  "s16c": {
+    "0": {"yuna": [[0.3, "cross", "hurt", "away"]]},
+    "3": {"cheer": 0.8, "seoa": [[0.2, null, "calm", "wave"]], "minjun": [[0.2, null, "joy", "wave"]], "yuna": [[0.2, "hold", "hurt", "squeeze"]]},
+    "5": {"yuna": [[0.2, "hold", "hurt", "squeeze"]]}
+  },
+  "end:start": {
+    "1": {"cheer": 1, "yuna": [[0.2, null, "joy", "ready"]], "jiwoo": [[0.2, null, "calm", "ready"]], "minjun": [[0.2, null, "joy", "greet"]], "seoa": [[0.2, null, "calm", "ready"]]},
+    "2": {"yuna": [[0.25, "throw", "calm", "windup"], [0.6, "throw", "calm", "look"]]},
+    "4": {"minjun": [[0.2, "call", "joy", "shout"]]},
+    "6": {"jiwoo": [[0.25, "open", "calm", "brace"]]},
+    "7": {"yuna": [[0.2, "call", "joy", "shout"]]},
+    "9": {"jiwoo": [[0.2, "hold", "surprised", "jolt"], ["end", 0, 0, "squeeze"]], "cam": {"back": 1.2}},
+    "10": {"cheer": 0.8, "jiwoo": [[0.25, null, "joy", "cheer"]], "yuna": [[0.25, null, "joy", "cheer"]], "minjun": [[0.3, null, "joy", "clap"]], "seoa": [[0.3, null, "joy", "clap"]]},
+    "12": {"cheer": 1, "yuna": [[0.3, "reach", "joy", "still"], ["end", 0, 0, "cheer"]], "seoa": [[0.33, "reach", "joy", "still"], ["end", 0, 0, "cheer"]], "jiwoo": [[0.36, "reach", "joy", "still"], ["end", 0, 0, "cheer"]], "minjun": [[0.3, "reach", "laugh", "still"], ["end", 0, 0, "cheer"]]},
+    "13": {"yuna": [[0.25, null, "joy", "nod"]]}
+  },
+  "end:thu": {
+    "1": {"cheer": 1, "yuna": [[0.2, null, "joy", "ready"]], "jiwoo": [[0.2, null, "calm", "ready"]], "minjun": [[0.2, null, "joy", "greet"]], "seoa": [[0.2, null, "calm", "ready"]]},
+    "2": {"jiwoo": [[0.3, "reach", "worried", "still"], [0.5, "reach", "surprised", "jolt"]]},
+    "3": {"yuna": [[0.25, null, "joy", "wave"]]},
+    "5": {"jiwoo": [[0.25, "open", "worried", "brace"]]},
+    "6": {"yuna": [[0.2, "call", "calm", "shout"]]},
+    "8": {"jiwoo": [[0.2, "hold", "surprised", "jolt"], ["end", 0, 0, "squeeze"]], "cam": {"back": 1.2}},
+    "9": {"cheer": 0.8, "jiwoo": [[0.25, null, "joy", "cheer"]], "yuna": [[0.25, null, "joy", "cheer"]], "minjun": [[0.3, null, "joy", "clap"]], "seoa": [[0.3, null, "joy", "clap"]]},
+    "11": {"jiwoo": [[0.3, null, "joy", "nod"]], "yuna": [[0.4, null, "joy", "nod"]]},
+    "12": {"seoa": [[0.25, null, "joy", "nod"]]},
+    "13": {"cheer": 1, "yuna": [[0.3, "reach", "joy", "still"], ["end", 0, 0, "cheer"]], "seoa": [[0.33, "reach", "joy", "still"], ["end", 0, 0, "cheer"]], "jiwoo": [[0.36, "reach", "joy", "still"], ["end", 0, 0, "cheer"]], "minjun": [[0.3, "reach", "laugh", "still"], ["end", 0, 0, "cheer"]]}
+  },
+  "end:palm": {
+    "1": {"cheer": 1, "yuna": [[0.2, null, "joy", "ready"]], "jiwoo": [[0.2, null, "calm", "ready"]], "minjun": [[0.2, null, "joy", "greet"]], "seoa": [[0.2, null, "calm", "ready"]]},
+    "2": {"jiwoo": [[0.3, "reach", "worried", "still"], [0.5, "reach", "surprised", "jolt"]]},
+    "3": {"yuna": [[0.25, null, "joy", "wave"]]},
+    "5": {"minjun": [[0.2, "call", "surprised", "shout"]]},
+    "6": {"yuna": [[0.2, "dodge", "surprised", "dodge"]]},
+    "8": {"yuna": [[0.25, "throw", "angry", "windup"], [0.6, "throw", "surprised", "look"]]},
+    "10": {"yuna": [[0.3, "reach", "calm", "still"]]},
+    "12": {"yuna": [[0.2, "wave", "joy", "wave"]]},
+    "14": {"jiwoo": [[0.2, null, "worried", "look"]], "cam": {"back": 0.8}},
+    "15": {"jiwoo": [[0.25, "open", "worried", "brace"]]},
+    "16": {"yuna": [[0.2, "call", "calm", "shout"]]},
+    "18": {"jiwoo": [[0.2, "hold", "surprised", "jolt"], ["end", 0, 0, "squeeze"]], "cam": {"back": 1.2}},
+    "19": {"jiwoo": [[0.2, "hold", "laugh", "cheer"]]},
+    "20": {"jiwoo": [[0.3, "reach", "joy", "still"]]},
+    "22": {"cheer": 1, "yuna": [[0.1, null, "joy", "run"]], "jiwoo": [[0.3, null, "joy", "wave"]]},
+    "23": {"cheer": 0.8, "jiwoo": [[0.25, null, "joy", "cheer"]], "yuna": [[0.25, null, "joy", "cheer"]], "minjun": [[0.3, null, "joy", "clap"]], "seoa": [[0.3, null, "joy", "clap"]]},
+    "25": {"yuna": [[0.3, null, "joy", "nod"]], "jiwoo": [[0.45, null, "shy", "scratch"]]},
+    "26": {"jiwoo": [[0.3, null, "joy", "nod"]], "minjun": [[0.4, null, "laugh", "cheer"]]},
+    "27": {"seoa": [[0.25, null, "joy", "nod"]]},
+    "28": {"cheer": 1, "yuna": [[0.3, "reach", "joy", "still"], ["end", 0, 0, "cheer"]], "seoa": [[0.33, "reach", "joy", "still"], ["end", 0, 0, "cheer"]], "jiwoo": [[0.36, "reach", "joy", "still"], ["end", 0, 0, "cheer"]], "minjun": [[0.3, "reach", "laugh", "still"], ["end", 0, 0, "cheer"]]},
+    "29": {"cheer": 1, "yuna": [[0.2, null, "joy", "wave"]], "jiwoo": [[0.2, null, "joy", "wave"]], "minjun": [[0.2, null, "joy", "cheer"]], "seoa": [[0.2, null, "joy", "wave"]]}
+  },
+  "end:pass": {
+    "1": {"cheer": 0.4, "yuna": [[0.2, null, "joy", "ready"]], "jiwoo": [[0.2, null, "calm", "look"]], "seoa": [[0.25, null, "calm", "look"]], "minjun": [[0.2, null, "joy", "ready"]]},
+    "2": {"jiwoo": [[0.3, "reach", "worried", "still"], [0.5, "reach", "surprised", "jolt"]]},
+    "3": {"yuna": [[0.2, null, "worried", "fidget"]]},
+    "5": {"yuna": [[0.25, "throw", "calm", "windup"], [0.6, "throw", "worried", "look"]]},
+    "7": {"yuna": [[0.25, "wave", "worried", "still"], [0.6, "cross", "worried", "sigh"]]},
+    "9": {"jiwoo": [[0.25, "open", "worried", "brace"]]},
+    "10": {"yuna": [[0.2, null, "worried", "look"]]},
+    "12": {"jiwoo": [[0.2, "dodge", "surprised", "dodge"]]},
+    "13": {"cheer": 0.4, "jiwoo": [[0.3, null, "calm", "sigh"]]},
+    "15": {"yuna": [[0.2, null, "shy", "scratch"]], "jiwoo": [[0.4, null, "calm", "nod"]]},
+    "16": {"yuna": [[0.2, null, "calm", "breath"]]},
+    "17": {"yuna": [[0.2, null, "calm", "breath"]]},
+    "18": {"cheer": 0.5}
+  },
+  "end:finger": {
+    "1": {"cheer": 0.4, "yuna": [[0.2, null, "joy", "ready"]], "jiwoo": [[0.3, null, "calm", "sigh"]]},
+    "2": {"jiwoo": [[0.3, "reach", "worried", "still"], [0.5, "reach", "surprised", "jolt"]]},
+    "3": {"yuna": [[0.2, null, "angry", "fist"]], "cam": {"back": 1.15}},
+    "5": {"yuna": [[0.3, "throw", "angry", "windup"]]},
+    "7": {"jiwoo": [[0.2, "dodge", "worried", "dodge"]]},
+    "9": {"cheer": 0},
+    "11": {"cheer": 0, "yuna": [[0.3, "hold", "sad", "squeeze"]]},
+    "12": {"jiwoo": [[0.3, null, "hurt", "away"]]},
+    "13": {"yuna": [[0.2, null, "worried", "fidget"]], "cam": {"back": 1.2}}
+  }
+}
+,
+};
 const UI_KO = {
  "appTitle": "마음 극장",
  "appSub": "사회정서 그림책 놀이",
@@ -15411,6 +15727,16 @@ function waitFor(setup) {
   });
 }
 function cancelFlow() { const ws = waiters; waiters = []; ws.forEach(w => w.stop()); }
+
+// 컷 애니메이션 동작(stories/anim)을 이야기의 컷에 붙인다 (번역이 컷을 베끼기 전에)
+for (const bk in ANIMS) {
+  const B = STORIES[bk];
+  if (!B) continue;
+  for (const key in ANIMS[bk]) {
+    const ps = key.startsWith('end:') ? ((B.endings || []).find(e => e.id === key.slice(4)) || {}).panels : (B.scenes[key] || {}).panels;
+    for (const i in ANIMS[bk][key]) if (ps && ps[i]) ps[i].anim = ANIMS[bk][key][i];
+  }
+}
 // ===== 언어: 첫 화면·설정에서 고른다. 고르면 화면 글자와 이야기 글이 그 언어로 =====
 // 화면 글자: data/ui.json(한국어) → UI.ko. 번역은 stories/i18n/<언어>/ui.json → UI[언어] (빠진 열쇠는 한국어)
 // 이야기 글: stories/i18n/<언어>/<책>.json 의 { "JSON 경로": "번역" } 을 책을 열 때 덮어쓴다.
@@ -17469,14 +17795,8 @@ const MOVES = {
     pv.tilt += Math.sin(s * 1.3) * 0.05 * w;
     addV(pv, 'aA', 2, 0.12 * w); addV(pv, 'aB', 2, -0.12 * w);
   },
-  // 놀람: 움찔 뒤로 물러서며 팔을 벌린다
-  surprised(pv, w, s, c, sit, t) {
-    const jolt = Math.exp(-Math.max(0, t - 0.12) * 9) * sstep(0.06, 0.14, t);
-    pv.lean -= 0.22 * jolt;
-    pv.yy += 0.06 * jolt * (sit ? 0.3 : 1);
-    toward(pv, { aA: [-0.3, 0, -1.0], eA: -0.6, aB: [-0.3, 0, 1.0], eB: -0.6 }, Math.min(1, jolt * 1.3 + w * 0.25));
-    addV(pv, 'hd', 0, -0.15 * jolt);
-  },
+  // 놀람: 움찔 뒤로 물러서며 팔을 벌린다 (아래 jolt)
+  surprised(...a) { MOVES.jolt(...a); },
   // 걱정: 두리번거리고 손을 모았다 놓는다
   worried(pv, w, s) {
     addV(pv, 'hd', 1, Math.sin(s * 2.8) * 0.4 * w);
@@ -17515,7 +17835,7 @@ Object.assign(MOVES, {
   // 적기: 한 손에 든 수첩에 다른 손으로 또박또박 적고, 가끔 고개를 들어 본다
   write(pv, w, s) {
     const look = sstep(0.75, 0.9, Math.sin(s * 1.7));
-    toward(pv, { aB: [-0.85, 0, -0.42 + Math.sin(s * 14) * 0.05], eB: -1.75 + Math.sin(s * 9) * 0.08 }, w * 0.95);
+    toward(pv, { aA: [-1.05, 0, 0.2], eA: -1.75, aB: [-1.05, 0, -0.5 + Math.sin(s * 14) * 0.06], eB: -1.6 + Math.sin(s * 9) * 0.1 }, w * 0.95); // 수첩과 적는 손을 얼굴 가까이 올려 가까운 컷에서도 보이게
     addV(pv, 'hd', 0, (0.3 - look * 0.3) * w);
     addV(pv, 'hd', 1, Math.sin(s * 14) * 0.02 * w);
   },
@@ -17553,6 +17873,55 @@ Object.assign(MOVES, {
   run(pv, w, s) { const b = Math.sin(s * 13); addV(pv, 'lA', 0, b * 0.8 * w); addV(pv, 'lB', 0, -b * 0.8 * w); pv.kA += Math.max(0, -b) * 1.0 * w; pv.kB += Math.max(0, b) * 1.0 * w; toward(pv, { aA: [-b * 0.9, 0, -0.1], eA: -1.4, aB: [b * 0.9, 0, 0.1], eB: -1.4 }, w); pv.lean += 0.18 * w; pv.yy += Math.abs(b) * 0.02 * w; },
   // 가만히 (자동 동작을 끈다)
   still() {},
+  // 움찔 (dt: 이 동작이 시작되고 지난 때)
+  jolt(pv, w, s, c, sit, t, dt) {
+    const j = Math.exp(-Math.max(0, dt) * 11);
+    pv.lean -= 0.22 * j; pv.yy += 0.06 * j * (sit ? 0.3 : 1);
+    toward(pv, { aA: [-0.3, 0, -1.0], eA: -0.6, aB: [-0.3, 0, 1.0], eB: -0.6 }, Math.min(1, j * 1.2) * (c.held ? 0.3 : 1));
+    addV(pv, 'hd', 0, -0.15 * j);
+  },
+  // 경기 준비: 무릎을 굽혔다 폈다 하며 좌우로 움직인다
+  ready(pv, w, s) { const b = Math.sin(s * 5); pv.kA += (0.35 + b * 0.15) * w; pv.kB += (0.35 - b * 0.15) * w; addV(pv, 'lA', 0, -0.2 * w); addV(pv, 'lB', 0, -0.2 * w); pv.tilt += b * 0.1 * w; pv.yy -= 0.02 * w; pv.lean += 0.08 * w; },
+  // 던지기 직전: 팔을 젖힌 채 힘을 모아 떤다
+  windup(pv, w, s) { pv.lean += (0.06 + Math.sin(s * 3) * 0.05) * w; addV(pv, 'aA', 0, Math.sin(s * 21) * 0.05 * w); pv.tilt += Math.sin(s * 3) * 0.06 * w; pv.kB += 0.15 * w; },
+  // 공 피하기: 좌우로 폴짝 비킨다
+  dodge(pv, w, s) { const b = Math.sin(s * 6); pv.tilt += b * 0.3 * w; pv.yy += Math.abs(b) * 0.04 * w; addV(pv, 'aA', 2, -Math.abs(b) * 0.5 * w); addV(pv, 'aB', 2, Math.abs(b) * 0.5 * w); pv.kA += Math.max(0, b) * 0.5 * w; pv.kB += Math.max(0, -b) * 0.5 * w; },
+  // 받을 준비: 팔을 벌린 채 무릎을 굽혔다 편다
+  brace(pv, w, s) { const b = Math.sin(s * 7); pv.kA += b * 0.2 * w; pv.kB += b * 0.2 * w; pv.yy -= (0.5 + b * 0.5) * 0.02 * w; addV(pv, 'aA', 2, b * 0.12 * w); addV(pv, 'aB', 2, -b * 0.12 * w); },
+  // 주먹을 꼭 쥐고 부르르 (발은 구르지 않는다)
+  fist(pv, w, s) { toward(pv, { aA: [0.1, 0, -0.35 + Math.sin(s * 25) * 0.05], eA: -0.6, aB: [0.1, 0, 0.35 - Math.sin(s * 25) * 0.05], eB: -0.6 }, w * 0.85); addV(pv, 'hd', 0, 0.12 * w); pv.yy += Math.sin(s * 25) * 0.003 * w; },
+  // 깊은 숨: 어깨가 천천히 오르내린다
+  breath(pv, w, s) { const b = Math.sin(s * 2.2); pv.yy += b * 0.018 * w; pv.lean -= b * 0.05 * w; addV(pv, 'aA', 2, -b * 0.08 * w); addV(pv, 'aB', 2, b * 0.08 * w); addV(pv, 'hd', 0, -b * 0.06 * w); },
+  // 한숨: 어깨가 툭 떨어진다
+  sigh(pv, w, s, c, sit, t, dt) { const j = sstep(0, 0.15, dt); pv.yy -= 0.02 * j * w; addV(pv, 'hd', 0, 0.2 * j * w); addV(pv, 'aA', 2, 0.1 * w); addV(pv, 'aB', 2, -0.1 * w); },
+  // 머쓱하게 뒷머리를 긁는다
+  scratch(pv, w, s) { toward(pv, { aB: [-0.3, 0, 2.6], eB: -2.2 + Math.sin(s * 11) * 0.15 }, w); addV(pv, 'hd', 2, 0.15 * w); addV(pv, 'hd', 0, 0.1 * w); },
+  // 꾸벅 (사과·인사)
+  bow(pv, w, s, c, sit, t, dt) { const b = Math.sin(clamp(dt / 0.22, 0, 1) * Math.PI); pv.lean += 0.4 * b * w; addV(pv, 'hd', 0, 0.3 * b * w); },
+  // 발끝으로 바닥을 꾹꾹
+  toe(pv, w, s) { const b = Math.max(0, Math.sin(s * 5)); addV(pv, 'lB', 0, (-0.35 + b * 0.2) * w); pv.kB += (0.5 - b * 0.3) * w; addV(pv, 'hd', 0, 0.1 * w); },
+  // 어깨 토닥이기
+  pat(pv, w, s) { addV(pv, 'aA', 0, Math.sin(s * 9) * 0.14 * w); pv.eA += Math.sin(s * 9) * 0.2 * w; addV(pv, 'hd', 0, 0.1 * w); },
+  // 품에 안은 것을 꽉 쥔다
+  squeeze(pv, w, s) { const b = Math.sin(s * 4) * 0.5 + 0.5; addV(pv, 'aA', 2, 0.14 * b * w); addV(pv, 'aB', 2, -0.14 * b * w); pv.eA -= 0.2 * b * w; pv.eB -= 0.2 * b * w; addV(pv, 'hd', 0, 0.16 * w); pv.yy -= 0.008 * b * w; },
+  // 걷기 (제자리)
+  walk(pv, w, s) { const b = Math.sin(s * 7); addV(pv, 'lA', 0, b * 0.5 * w); addV(pv, 'lB', 0, -b * 0.5 * w); pv.kA += Math.max(0, -b) * 0.6 * w; pv.kB += Math.max(0, b) * 0.6 * w; addV(pv, 'aA', 0, -b * 0.35 * w); addV(pv, 'aB', 0, b * 0.35 * w); pv.yy += Math.abs(b) * 0.012 * w; },
+  // 먹기: 한 손을 입으로 가져갔다 내린다
+  eat(pv, w, s) { const b = Math.sin(s * 3.2) * 0.5 + 0.5; toward(pv, { aA: [-0.7 - b * 0.35, 0, 0.25], eA: -1.3 - b * 0.9 }, w); addV(pv, 'hd', 0, (1 - b) * 0.15 * w); },
+  // 코에 붙인 숟가락이 떨어지지 않게 고개를 젖히고 팔로 균형을 잡는다
+  balance(pv, w, s) { addV(pv, 'hd', 0, -0.25 * w); addV(pv, 'hd', 2, Math.sin(s * 5) * 0.14 * w); toward(pv, { aA: [0, 0, -1.3 + Math.sin(s * 5) * 0.3], eA: -0.3, aB: [0, 0, 1.3 + Math.sin(s * 5) * 0.3], eB: -0.3 }, w * 0.9); pv.tilt += Math.sin(s * 5) * 0.07 * w; },
+  // 고개를 돌려 외면한다 (끝에 돌아온다)
+  away(pv, w, s) { addV(pv, 'hd', 1, -0.75 * w); addV(pv, 'hd', 0, 0.1 * w); },
+  // 젓가락으로 콕콕
+  poke(pv, w, s) { const b = Math.max(0, Math.sin(s * 6)); toward(pv, { aA: [-0.95, 0, 0.1], eA: -0.9 + b * 0.35 }, w); addV(pv, 'hd', 0, 0.25 * w); },
+  // 손 씻기: 내민 두 손을 비빈다
+  wash(pv, w, s) { const b = Math.sin(s * 10); toward(pv, { aA: [-1.15 + b * 0.08, 0, 0.3], eA: -0.4, aB: [-1.15 - b * 0.08, 0, -0.3], eB: -0.4 }, w); addV(pv, 'hd', 0, 0.25 * w); pv.lean += 0.1 * w; },
+  // 손을 만지작거린다
+  fidget(pv, w, s) { const b = Math.sin(s * 6); toward(pv, { aA: [-0.45, 0, 0.34 + b * 0.05], eA: -1.75 + b * 0.12, aB: [-0.45, 0, -0.34 + b * 0.05], eB: -1.75 - b * 0.12 }, w * (c.held ? 0 : 0.9)); addV(pv, 'hd', 0, 0.14 * w); addV(pv, 'hd', 1, Math.sin(s * 1.9) * 0.12 * w); },
+  // 크게 외친다: 몸을 내밀며 힘을 준다
+  shout(pv, w, s) { const b = Math.max(0, Math.sin(s * 6)); pv.lean += b * 0.18 * w; pv.yy += b * 0.02 * w; addV(pv, 'hd', 0, -b * 0.12 * w); },
+  // 한 손 흔들기
+  wave(pv, w, s) { toward(pv, { aB: [0, 0, 2.5 + Math.sin(s * 10) * 0.35], eB: -0.6 }, w); addV(pv, 'hd', 2, 0.08 * w); },
 });
 // 말하는 사람: 한 손으로 박자를 맞추고 고개를 끄덕인다
 function talkAct(pv, w, s, c) {
@@ -17584,8 +17953,10 @@ function cutAnim(p, prev, n = 0) {
     const f0 = prev ? (prev.faces && prev.faces[id]) || c.face0 : c.face0, o0 = prev && prev.poses && prev.poses[id];
     // 열쇠 장면: [때, 자세 값, 표정]. 마지막은 늘 이 컷의 자세·표정
     // anim 의 한 줄: [때, 자세, 표정, 동작] — 그때까지 그 자세가 되고, 다음 줄로 넘어가기 전까지 그 동작을 한다
-    const au = asList(A[id]), endT = au.length ? Math.min(0.84, au[au.length - 1][0] + 0.34) : 0.3;
-    const keys = [[0, poseVals(c.base, o0), f0], ...au.map(([t, pose, face, mv]) => [t, poseVals(c.base, pose || o1), face, mv]), [endT, poseVals(c.base, o1), f1]];
+    // 다섯째 값: 그 자세로 바뀌는 데 걸리는 때 (천천히 바꿀 때). ['end', 0, 0, 동작]: 마지막 자세가 된 뒤의 동작
+    const all = asList(A[id]), au = all.filter(k => k[0] !== 'end'), endMv = (all.find(k => k[0] === 'end') || [])[3];
+    const endT = au.length ? Math.min(0.84, au[au.length - 1][0] + 0.34) : 0.3;
+    const keys = [[0, poseVals(c.base, o0), f0], ...au.map(([t, pose, face, mv, dur]) => [t, poseVals(c.base, pose || o1), face || f1, mv, dur]), [endT, poseVals(c.base, o1), f1, endMv]];
     c.ry0 = c.root.rotation.y;
     c.held = c.armA.hand.getChildren().some(x => x.isEnabled()) || ['show', 'hold', 'phone', 'throw'].includes(o1 || c.base); // 오른손에 든 것이 있으면 그 팔은 연기에 쓰지 않는다
     let look = 0; // 주인공이 아닌 아이는 주인공 쪽으로 고개를 돌렸다가 돌아온다
@@ -17593,7 +17964,7 @@ function cutAnim(p, prev, n = 0) {
     acts.push({ c, keys, f1, talk: talkers.has(id), k: focus.has(id) || !star ? 1 : 0.45, look, sit: !!poseVals(c.base, o1).sit });
   }
   const kids = (stageNow.kids || []).map((nd, i) => ({ n: nd, y: nd.position.y, rz: nd.rotation.z, ry: nd.rotation.y, ph: i * 2.4 }));
-  const cheer = A.cheer == null ? 0.5 : A.cheer;
+  const cheer = A.cheer == null ? 0.15 : A.cheer;
   return function at(t, sec) { // t: 0~1, sec: 지난 초
     const live = 1 - sstep(0.82, 0.97, t); // 끝에서는 움직임이 멎어 멈춘 삽화와 같아진다
     const k = easeIO(clamp(t / 0.9, 0, 1));
@@ -17604,7 +17975,7 @@ function cutAnim(p, prev, n = 0) {
       const c = a.c, K = a.keys;
       let i = 1;
       while (i < K.length - 1 && t > K[i][0]) i++;
-      const t0 = Math.max(K[i - 1][0], K[i][0] - 0.2), u = clamp((t - t0) / Math.max(0.01, K[i][0] - t0), 0, 1);
+      const t0 = Math.max(K[i - 1][0], K[i][0] - (K[i][4] || 0.2)), u = clamp((t - t0) / Math.max(0.01, K[i][0] - t0), 0, 1);
       const e = u < 1 ? easeIO(u) + Math.sin(u * Math.PI) * 0.08 : 1; // 살짝 지나쳤다 돌아온다
       const pv = mixPose(c, K[i - 1][1], K[i][1], e);
       const s = sec + c.phase * 0.3;
@@ -17614,7 +17985,7 @@ function cutAnim(p, prev, n = 0) {
       const last = t >= K[K.length - 1][0], j = last ? K.length - 1 : i - 1;
       const mvName = K[j][3] || (j === K.length - 1 ? a.f1 : K[j][2] || face);
       const w = sstep(K[j][0], K[j][0] + 0.07, t) * (last ? live : 1 - sstep(t0 - 0.05, t0 + 0.03, t)) * (K[j][3] ? 1 : a.k);
-      (MOVES[mvName] || MOVES.calm)(pv, w, s, c, a.sit, t);
+      (MOVES[mvName] || MOVES.calm)(pv, w, s, c, a.sit, t, t - K[j][0]);
       if (a.talk) talkAct(pv, sstep(0.15, 0.3, t) * live, s, c);
       if (a.look) addV(pv, 'hd', 1, a.look * sstep(0.05, 0.25, t) * live);
       pv.yy += Math.sin(s * 2.9) * 0.005 * live;

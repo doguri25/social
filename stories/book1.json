@@ -89,10 +89,10 @@
       },
       "explore": [{"on": "yuna", "text": "수아. 이 이야기 속 ‘나’예요. 공을 제일 세게 던져요."}, {"on": "board", "text": "칠판에 피구 대회 날짜가 적혀 있어요."}],
       "panels": [
-        {"shot": "wide", "anim": {"cheer": 1, "jiwoo": [[0.25, "wave", "laugh", "greet"]], "minjun": [[0.25, "sit", "laugh", "sway"]], "seoa": [[0.25, "sit", "calm", "nod"]], "yuna": [[0.3, "show", "joy", "pump"]]}, "cap": "우리 반은 3학년 2반, 스물두 명이에요."},
-        {"shot": "close", "on": "yuna", "faces": {"yuna": "joy"}, "poses": {"yuna": "show"}, "anim": {"yuna": [[0.25, "show", "joy", "pump"]]}, "cap": "나는 수아예요. 우리 반에서 공을 제일 세게 던지는 아이지요."},
+        {"shot": "wide", "cap": "우리 반은 3학년 2반, 스물두 명이에요."},
+        {"shot": "close", "on": "yuna", "faces": {"yuna": "joy"}, "poses": {"yuna": "show"}, "cap": "나는 수아예요. 우리 반에서 공을 제일 세게 던지는 아이지요."},
         {"shot": "item", "on": "board", "cap": "이번 주에는 3학년 피구 대회가 열려요. 월요일에는 1반과, 금요일에는 3반과 겨뤄요. 시간이 끝났을 때 코트 안에 더 많이 남은 반이 이겨요."},
-        {"shot": "close", "on": "yuna", "angle": -20, "faces": {"yuna": "laugh"}, "anim": {"yuna": [[0.25, "stand", "laugh", "cheer"]]}, "fx": "sparkle", "cap": "나는 두 번 다 이길 거라고 생각했어요. 내가 있으니까요."}
+        {"shot": "close", "on": "yuna", "angle": -20, "faces": {"yuna": "laugh"}, "fx": "sparkle", "cap": "나는 두 번 다 이길 거라고 생각했어요. 내가 있으니까요."}
       ],
       "go": "s02"
     },
@@ -108,15 +108,14 @@
       },
       "explore": [{"on": "seoa", "text": "보라. 뭐든지 수첩에 꼼꼼히 적어요."}, {"on": "minjun", "text": "하준이. 웃기는 걸 제일 잘해요."}, {"on": "jiwoo", "text": "현우. 누구하고나 잘 어울려요."}],
       "panels": [
-        {"shot": "group", "on": ["yuna", "seoa", "jiwoo", "minjun"], "anim": {"cheer": 1, "yuna": [[0.25, "sit", "joy", "look"]], "seoa": [[0.25, "sit", "calm", "nod"]], "jiwoo": [[0.25, "wave", "joy", "greet"]], "minjun": [[0.25, "sit", "laugh", "sway"]]}, "cap": "우리 반에는 재미있는 친구가 많아요."},
-        {"shot": "close", "on": "minjun", "faces": {"minjun": "laugh"}, "poses": {"minjun": "dance"}, "anim": {"cheer": 1, "minjun": [[0.2, "dance", "laugh", "dance"]], "yuna": [[0.3, "sit", "laugh", "laugh"]], "jiwoo": [[0.3, "sit", "laugh", "clap"]], "seoa": [[0.35, "sit", "joy", "laugh"]]}, "cap": "하준이는 웃기는 걸 제일 잘하고,"},
-        {"shot": "close", "on": "seoa", "poses": {"seoa": "show"}, "anim": {"seoa": [[0.2, "show", "calm", "write"]]}, "cap": "보라는 뭐든지 수첩에 꼼꼼히 적어요."},
-        {"shot": "close", "on": "jiwoo", "faces": {"jiwoo": "joy"}, "anim": {"cheer": 1.2, "jiwoo": [[0.2, "sit", "joy", "greet"]], "minjun": [[0.3, "wave", "laugh", "sway"]], "yuna": [[0.3, "wave", "joy"]]}, "cap": "현우는 누구하고나 잘 어울려서, 현우 옆은 늘 북적거리지요."},
+        {"shot": "group", "on": ["yuna", "seoa", "jiwoo", "minjun"], "cap": "우리 반에는 재미있는 친구가 많아요."},
+        {"shot": "close", "on": "minjun", "faces": {"minjun": "laugh"}, "poses": {"minjun": "dance"}, "cap": "하준이는 웃기는 걸 제일 잘하고,"},
+        {"shot": "close", "on": "seoa", "poses": {"seoa": "show"}, "cap": "보라는 뭐든지 수첩에 꼼꼼히 적어요."},
+        {"shot": "close", "on": "jiwoo", "faces": {"jiwoo": "joy"}, "cap": "현우는 누구하고나 잘 어울려서, 현우 옆은 늘 북적거리지요."},
         {
           "shot": "over",
           "on": ["yuna", "seoa"],
           "poses": {"seoa": "show"},
-          "anim": {"seoa": [[0.2, "show", "calm", "write"]], "yuna": [[0.3, "sit", "joy", "nod"]]},
           "lines": [{"who": "seoa", "say": "작전은 어떻게 짤까?"}],
           "cap": "보라가 수첩을 펴며 물었어요."
         }

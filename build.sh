@@ -4,6 +4,7 @@
 #   dist/artifact.html  Claude 아티팩트에 게시하는 본문 조각 (doctype, html, body 없음)
 # 모든 js 조각은 하나의 모듈 스크립트 안에 이어지므로 순서를 바꾸면 안 된다.
 # @defs 자리에는 data/defs.json, @stories 자리에는 stories/*.json, @ui 자리에는 data/ui.json(화면 글자),
+# @anim 자리에는 stories/anim/*.json (컷마다 인물이 하는 동작),
 # @models 자리에는 MODEL_LIST 에 든 3D 모델(Kenney CC0)과 집 색 지도가 base64 로 들어간다.
 set -e
 cd "$(dirname "$0")"
@@ -36,6 +37,10 @@ pack() {
           printf '},\n' >> "$out"
         done
         printf '};\n' >> "$out" ;;
+      @anim) # 컷 애니메이션 동작: stories/anim/<책>.json → ANIMS[책][장면 또는 end:결말][컷 번호]
+        printf 'const ANIMS = {\n' >> "$out"
+        for f in stories/anim/*.json; do [ -f "$f" ] && { printf '"%s": ' "$(basename "$f" .json)"; cat "$f"; printf ',\n'; } >> "$out"; done
+        printf '};\n' >> "$out" ;;
       @models)
         printf 'const MODELS = {\n' >> "$out"
         for m in $MODEL_LIST; do
@@ -64,7 +69,7 @@ check() {
 }
 
 MODEL_LIST=$(for f in assets/models/*.glb; do basename "$f" .glb; done)
-pack dist/artifact.html head.html @defs @stories @i18n @ui @starters @models js_base.js js_i18n.js js_net.js js_face.js js_note.js js_world.js js_char.js js_stage.js js_shot.js js_panel.js js_anim.js js_sheet.js js_story.js js_ui.js
+pack dist/artifact.html head.html @defs @stories @i18n @anim @ui @starters @models js_base.js js_i18n.js js_net.js js_face.js js_note.js js_world.js js_char.js js_stage.js js_shot.js js_panel.js js_anim.js js_sheet.js js_story.js js_ui.js
 page dist/artifact.html index.html
 check dist/artifact.html
 
