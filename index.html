@@ -14969,14 +14969,14 @@ const ANIMS = {
     "3": {"cheer": 1, "yuna": [[0.2, null, "joy", "cheer"]], "jiwoo": [[0.25, null, "joy", "clap"]], "minjun": [[0.2, null, "laugh", "cheer"]], "seoa": [[0.25, null, "joy", "clap"]]},
     "4": {"yuna": [[0.2, null, "laugh", "cheer"]]},
     "5": {"minjun": [[0.15, "dodge", "joy", "dodge"], [0.45, "dance", "laugh", "dance"]], "path": {"minjun": [[0.12, -0.6, 0], [0.25, 0.5, 0], [0.4, 0, 0]]}},
-    "7": {"cheer": 1, "minjun": [[0.1, "dance", "laugh", "dance"]], "yuna": [[0.25, null, "laugh", "laugh"]], "jiwoo": [[0.25, null, "laugh", "laugh"]], "seoa": [[0.3, null, "laugh", "laugh"]]},
+    "7": {"cheer": 1, "minjun": [[0.1, "dance", "laugh", "dance"]], "yuna": [[0.25, null, "laugh", "laugh"]], "jiwoo": [[0.25, null, "laugh", "laugh"]], "seoa": [[0.3, null, "laugh", "laugh"]], "hit": "light"},
     "8": {"minjun": [[0.12, "dance", "laugh", "dance"], [0.42, "dance", "surprised", "jolt"]], "cam": {"back": 1.2}},
     "10": {"cheer": 0.4, "yuna": [[0.2, null, "worried", "look"]], "jiwoo": [[0.2, null, "worried", "dodge"]], "seoa": [[0.25, null, "worried", "dodge"]], "path": {"jiwoo": [[0.2, -0.7, 0], [0.45, 0.6, 0.3], [0.65, -0.3, 0]], "seoa": [[0.25, 0.6, 0], [0.5, -0.5, 0]], "yuna": [[0.2, 0.5, 0], [0.5, -0.5, 0.2]]}}
   },
   "s04": {
     "0": {"yuna": [[0.3, "throw", "angry", "windup"]], "path": {"yuna": [[0.15, 0, -0.4], [0.3, 0, 0.4]]}},
     "3": {"yuna": [[0.2, null, "surprised", "jolt"]]},
-    "5": {"yuna": [[0.15, "dodge", "worried", "dodge"], [0.33, "dodge", "surprised", "tumble"], [0.64, "dodge", "surprised", "still", 0.06]], "cam": {"back": 1.2}, "path": {"yuna": [[0.15, -0.5, 0], [0.36, 0.3, -0.35]]}},
+    "5": {"yuna": [[0.08, "dodge", "worried", "still"]], "cam": {"back": 1.2}},
     "7": {"jiwoo": [[0.2, null, "worried", "look"]], "cam": {"back": 0.8}},
     "9": {"jiwoo": [[0.25, "open", "worried", "brace"]]},
     "11": {"jiwoo": [[0.2, "open", "surprised", "trip"]]}
@@ -15096,7 +15096,7 @@ const ANIMS = {
     "4": {"yuna": [[0.3, "throw", "angry", "windup"]], "path": {"yuna": [[0.15, 0, -0.4], [0.3, 0, 0.4]]}},
     "6": {"yuna": [[0.2, "reach", "surprised", "still"]]},
     "7": {"yuna": [[0.2, null, "worried", "look"]]},
-    "9": {"yuna": [[0.3, "dodge", "surprised", "trip"]], "cam": {"back": 1.25}}
+    "9": {"cam": {"back": 1.25}}
   },
   "s12": {
     "0": {"yuna": [[0.2, null, "angry", "blame"]]},
@@ -17769,24 +17769,24 @@ const MOVES = {
     const hop = Math.abs(Math.sin(s * 5.2));
     pv.yy += hop * (sit ? 0.02 : 0.075) * w;
     if (!sit) { pv.kA += (1 - hop) * 0.5 * w; pv.kB += (1 - hop) * 0.5 * w; addV(pv, 'lA', 0, -(1 - hop) * 0.25 * w); addV(pv, 'lB', 0, -(1 - hop) * 0.25 * w); }
-    toward(pv, { aB: [0, 0, 2.5 + Math.sin(s * 9) * 0.35], eB: -0.5 - Math.sin(s * 9) * 0.3 }, w * 0.9);
+    toward(pv, { aB: [0, 0, 2.5 + Math.sin(s * 6.5) * 0.3], eB: -0.5 - Math.sin(s * 6.5) * 0.25 }, w * 0.9);
     addV(pv, 'hd', 2, Math.sin(s * 5.2) * 0.1 * w);
   },
   // 웃음: 몸을 젖히고 어깨를 들썩인다
   laugh(pv, w, s, c, sit) {
-    pv.yy += Math.abs(Math.sin(s * 11)) * 0.014 * w;
+    pv.yy += (Math.sin(s * 7) * 0.5 + 0.5) * 0.012 * w;
     pv.lean -= (0.1 + Math.sin(s * 2.6) * 0.06) * w;
-    addV(pv, 'hd', 0, (-0.16 + Math.sin(s * 11) * 0.05) * w);
+    addV(pv, 'hd', 0, (-0.16 + Math.sin(s * 7) * 0.04) * w);
     toward(pv, { aA: [-0.5, 0, 0.3], eA: -1.7, aB: [-0.5, 0, -0.3], eB: -1.7 }, w * (c.held ? 0 : 0.7));
     pv.tilt += Math.sin(s * 3.1) * 0.08 * w;
   },
   // 화남: 몸을 내밀고 주먹 쥔 팔을 떨며 발을 구른다
   angry(pv, w, s, c, sit) {
     pv.lean += 0.14 * w;
-    const st = Math.max(0, Math.sin(s * 6.5));
+    const st = Math.max(0, Math.sin(s * 5));
     if (!sit) { addV(pv, 'lA', 0, -st * 0.55 * w); pv.kA += st * 0.8 * w; pv.yy += (st < 0.1 ? -0.008 : 0) * w; }
-    toward(pv, { aA: [0.1, 0, -0.5 + Math.sin(s * 23) * 0.06], eA: -0.5, aB: [0.1, 0, 0.5 - Math.sin(s * 23) * 0.06], eB: -0.5 }, w * 0.8);
-    addV(pv, 'hd', 1, Math.sin(s * 13) * 0.07 * w);
+    toward(pv, { aA: [0.1, 0, -0.5], eA: -0.5, aB: [0.1, 0, 0.5], eB: -0.5 }, w * 0.8);
+    addV(pv, 'hd', 0, 0.08 * w);
   },
   // 슬픔·속상함: 고개와 어깨가 처지고 천천히 흔들린다, 가끔 훌쩍
   sad(pv, w, s) {
@@ -17813,7 +17813,7 @@ const MOVES = {
   },
   // 하품·울음
   yawn(pv, w, s) { toward(pv, { aA: [0, 0, -2.6], eA: -0.9, aB: [-0.6, 0, -0.3], eB: -2.2 }, w * 0.9); pv.lean -= 0.1 * w; addV(pv, 'hd', 0, -0.2 * w); },
-  cry(pv, w, s) { toward(pv, { aA: [-0.55, 0, 0.35], eA: -2.35, aB: [-0.55, 0, -0.35], eB: -2.35 }, w * 0.9); addV(pv, 'hd', 0, (0.2 + Math.abs(Math.sin(s * 7)) * 0.08) * w); pv.yy += Math.abs(Math.sin(s * 7)) * 0.012 * w; },
+  cry(pv, w, s) { toward(pv, { aA: [-0.55, 0, 0.35], eA: -2.35, aB: [-0.55, 0, -0.35], eB: -2.35 }, w * 0.9); addV(pv, 'hd', 0, (0.2 + (Math.sin(s * 5) * 0.5 + 0.5) * 0.08) * w); pv.yy += (Math.sin(s * 5) * 0.5 + 0.5) * 0.01 * w; },
   // 평온: 몸무게를 옮기며 고개를 끄덕인다
   calm(pv, w, s, c, sit) {
     pv.tilt += Math.sin(s * 1.9) * 0.05 * w;
@@ -17826,9 +17826,9 @@ MOVES.hurt = MOVES.sad;
 Object.assign(MOVES, {
   // 엉덩이춤: 엉덩이를 좌우로 씰룩이며 두 팔을 번갈아 든다
   dance(pv, w, s, c) {
-    const b = Math.sin(s * 8);
+    const b = Math.sin(s * 6.5);
     pv.tilt += b * 0.3 * w; pv.yy += Math.abs(b) * 0.03 * w;
-    c.root.rotation.y = c.ry0 + Math.sin(s * 4) * 0.5 * w;
+    c.root.rotation.y = c.ry0 + Math.sin(s * 3.25) * 0.5 * w;
     toward(pv, { aA: [0, 0, -2.2 - b * 0.5], eA: -0.6, aB: [0, 0, 2.2 - b * 0.5], eB: -0.6 }, w * 0.9);
     addV(pv, 'hd', 2, -b * 0.2 * w);
     pv.kA += Math.max(0, b) * 0.5 * w; pv.kB += Math.max(0, -b) * 0.5 * w;
@@ -17836,16 +17836,16 @@ Object.assign(MOVES, {
   // 적기: 한 손에 든 수첩에 다른 손으로 또박또박 적고, 가끔 고개를 들어 본다
   write(pv, w, s) {
     const look = sstep(0.75, 0.9, Math.sin(s * 1.7));
-    toward(pv, { aA: [-1.05, 0, 0.2], eA: -1.75, aB: [-1.05, 0, -0.5 + Math.sin(s * 14) * 0.06], eB: -1.6 + Math.sin(s * 9) * 0.1 }, w * 0.95); // 수첩과 적는 손을 얼굴 가까이 올려 가까운 컷에서도 보이게
+    toward(pv, { aA: [-1.05, 0, 0.2], eA: -1.75, aB: [-1.05, 0, -0.5 + Math.sin(s * 8) * 0.05], eB: -1.6 + Math.sin(s * 4) * 0.08 }, w * 0.95); // 수첩과 적는 손을 얼굴 가까이 올려 가까운 컷에서도 보이게
     addV(pv, 'hd', 0, (0.3 - look * 0.3) * w);
-    addV(pv, 'hd', 1, Math.sin(s * 14) * 0.02 * w);
+    
   },
   // 여럿과 인사: 이쪽저쪽을 보며 손을 흔든다
   greet(pv, w, s) {
     const side = Math.sin(s * 2.6);
     addV(pv, 'hd', 1, side * 0.55 * w);
-    toward(pv, { aB: [0, 0, 2.5 + Math.sin(s * 10) * 0.3], eB: -0.6 }, w * sstep(-0.2, 0.3, side));
-    toward(pv, { aA: [0, 0, -2.5 - Math.sin(s * 10) * 0.3], eA: -0.6 }, w * sstep(-0.2, 0.3, -side));
+    toward(pv, { aB: [0, 0, 2.5 + Math.sin(s * 6.5) * 0.3], eB: -0.6 }, w * sstep(-0.2, 0.3, side));
+    toward(pv, { aA: [0, 0, -2.5 - Math.sin(s * 6.5) * 0.3], eA: -0.6 }, w * sstep(-0.2, 0.3, -side));
     pv.yy += Math.abs(Math.sin(s * 5.2)) * 0.02 * w;
   },
   // 든 것을 번쩍번쩍 들어 올린다 (공 자랑)
@@ -17862,16 +17862,16 @@ Object.assign(MOVES, {
     if (!sit) { pv.kA += (1 - hop) * 0.5 * w; pv.kB += (1 - hop) * 0.5 * w; }
   },
   // 손뼉
-  clap(pv, w, s) { const b = Math.sin(s * 12) * 0.5 + 0.5; toward(pv, { aA: [-0.9, 0, 0.3 + b * 0.25], eA: -1.5, aB: [-0.9, 0, -0.3 - b * 0.25], eB: -1.5 }, w); pv.yy += b * 0.008 * w; },
+  clap(pv, w, s) { const b = Math.sin(s * 8) * 0.5 + 0.5; toward(pv, { aA: [-0.9, 0, 0.3 + b * 0.25], eA: -1.5, aB: [-0.9, 0, -0.3 - b * 0.25], eB: -1.5 }, w); pv.yy += b * 0.008 * w; },
   // 끄덕임, 고개 젓기, 두리번, 몸 흔들기
   nod(pv, w, s) { addV(pv, 'hd', 0, Math.max(0, Math.sin(s * 6)) * 0.3 * w); },
-  shake(pv, w, s) { addV(pv, 'hd', 1, Math.sin(s * 7) * 0.45 * w); },
+  shake(pv, w, s) { addV(pv, 'hd', 1, Math.sin(s * 5) * 0.45 * w); },
   look(pv, w, s) { addV(pv, 'hd', 1, Math.sin(s * 2.4) * 0.6 * w); },
   sway(pv, w, s) { pv.tilt += Math.sin(s * 3) * 0.14 * w; addV(pv, 'hd', 2, -Math.sin(s * 3) * 0.1 * w); },
   // 손가락질하며 따진다
-  blame(pv, w, s) { const b = Math.sin(s * 9); toward(pv, { aB: [-1.4 + b * 0.12, 0, -0.1], eB: -0.1 }, w); pv.lean += 0.12 * w; addV(pv, 'hd', 0, Math.max(0, b) * 0.08 * w); },
+  blame(pv, w, s) { const b = Math.sin(s * 5.5); toward(pv, { aB: [-1.4 + b * 0.12, 0, -0.1], eB: -0.1 }, w); pv.lean += 0.12 * w; addV(pv, 'hd', 0, Math.max(0, b) * 0.08 * w); },
   // 달리기 (제자리): 팔다리를 빠르게 젓는다
-  run(pv, w, s) { const b = Math.sin(s * 13); addV(pv, 'lA', 0, b * 0.8 * w); addV(pv, 'lB', 0, -b * 0.8 * w); pv.kA += Math.max(0, -b) * 1.0 * w; pv.kB += Math.max(0, b) * 1.0 * w; toward(pv, { aA: [-b * 0.9, 0, -0.1], eA: -1.4, aB: [b * 0.9, 0, 0.1], eB: -1.4 }, w); pv.lean += 0.18 * w; pv.yy += Math.abs(b) * 0.02 * w; },
+  run(pv, w, s) { const b = Math.sin(s * 10); addV(pv, 'lA', 0, b * 0.8 * w); addV(pv, 'lB', 0, -b * 0.8 * w); pv.kA += Math.max(0, -b) * 1.0 * w; pv.kB += Math.max(0, b) * 1.0 * w; toward(pv, { aA: [-b * 0.9, 0, -0.1], eA: -1.4, aB: [b * 0.9, 0, 0.1], eB: -1.4 }, w); pv.lean += 0.18 * w; pv.yy += Math.abs(b) * 0.02 * w; },
   // 가만히 (자동 동작을 끈다)
   still() {},
   // 움찔 (dt: 이 동작이 시작되고 지난 때)
@@ -17884,25 +17884,25 @@ Object.assign(MOVES, {
   // 경기 준비: 무릎을 굽혔다 폈다 하며 좌우로 움직인다
   ready(pv, w, s) { const b = Math.sin(s * 5); pv.kA += (0.35 + b * 0.15) * w; pv.kB += (0.35 - b * 0.15) * w; addV(pv, 'lA', 0, -0.2 * w); addV(pv, 'lB', 0, -0.2 * w); pv.tilt += b * 0.1 * w; pv.yy -= 0.02 * w; pv.lean += 0.08 * w; },
   // 던지기 직전: 팔을 젖힌 채 힘을 모아 떤다
-  windup(pv, w, s) { pv.lean += (0.06 + Math.sin(s * 3) * 0.05) * w; addV(pv, 'aA', 0, Math.sin(s * 21) * 0.05 * w); pv.tilt += Math.sin(s * 3) * 0.06 * w; pv.kB += 0.15 * w; },
+  windup(pv, w, s) { pv.lean += (0.06 + Math.sin(s * 3) * 0.05) * w; pv.tilt += Math.sin(s * 3) * 0.06 * w; pv.kB += 0.15 * w; },
   // 공 피하기: 좌우로 폴짝 비킨다
   dodge(pv, w, s) { const b = Math.sin(s * 6); pv.tilt += b * 0.3 * w; pv.yy += Math.abs(b) * 0.04 * w; addV(pv, 'aA', 2, -Math.abs(b) * 0.5 * w); addV(pv, 'aB', 2, Math.abs(b) * 0.5 * w); pv.kA += Math.max(0, b) * 0.5 * w; pv.kB += Math.max(0, -b) * 0.5 * w; },
   // 받을 준비: 팔을 벌린 채 무릎을 굽혔다 편다
-  brace(pv, w, s) { const b = Math.sin(s * 7); pv.kA += b * 0.2 * w; pv.kB += b * 0.2 * w; pv.yy -= (0.5 + b * 0.5) * 0.02 * w; addV(pv, 'aA', 2, b * 0.12 * w); addV(pv, 'aB', 2, -b * 0.12 * w); },
+  brace(pv, w, s) { const b = Math.sin(s * 4.5); pv.kA += b * 0.2 * w; pv.kB += b * 0.2 * w; pv.yy -= (0.5 + b * 0.5) * 0.02 * w; addV(pv, 'aA', 2, b * 0.12 * w); addV(pv, 'aB', 2, -b * 0.12 * w); },
   // 주먹을 꼭 쥐고 부르르 (발은 구르지 않는다)
-  fist(pv, w, s) { toward(pv, { aA: [0.1, 0, -0.35 + Math.sin(s * 25) * 0.05], eA: -0.6, aB: [0.1, 0, 0.35 - Math.sin(s * 25) * 0.05], eB: -0.6 }, w * 0.85); addV(pv, 'hd', 0, 0.12 * w); pv.yy += Math.sin(s * 25) * 0.003 * w; },
+  fist(pv, w, s) { toward(pv, { aA: [0.1, 0, -0.35], eA: -0.6 - (Math.sin(s * 2.5) * 0.5 + 0.5) * 0.25, aB: [0.1, 0, 0.35], eB: -0.6 - (Math.sin(s * 2.5) * 0.5 + 0.5) * 0.25 }, w * 0.85); addV(pv, 'hd', 0, 0.12 * w); },
   // 깊은 숨: 어깨가 천천히 오르내린다
   breath(pv, w, s) { const b = Math.sin(s * 2.2); pv.yy += b * 0.018 * w; pv.lean -= b * 0.05 * w; addV(pv, 'aA', 2, -b * 0.08 * w); addV(pv, 'aB', 2, b * 0.08 * w); addV(pv, 'hd', 0, -b * 0.06 * w); },
   // 한숨: 어깨가 툭 떨어진다
   sigh(pv, w, s, c, sit, t, dt) { const j = sstep(0, 0.15, dt); pv.yy -= 0.02 * j * w; addV(pv, 'hd', 0, 0.2 * j * w); addV(pv, 'aA', 2, 0.1 * w); addV(pv, 'aB', 2, -0.1 * w); },
   // 머쓱하게 뒷머리를 긁는다
-  scratch(pv, w, s) { toward(pv, { aB: [-0.3, 0, 2.6], eB: -2.2 + Math.sin(s * 11) * 0.15 }, w); addV(pv, 'hd', 2, 0.15 * w); addV(pv, 'hd', 0, 0.1 * w); },
+  scratch(pv, w, s) { toward(pv, { aB: [-0.3, 0, 2.6], eB: -2.2 + Math.sin(s * 6) * 0.15 }, w); addV(pv, 'hd', 2, 0.15 * w); addV(pv, 'hd', 0, 0.1 * w); },
   // 꾸벅 (사과·인사)
   bow(pv, w, s, c, sit, t, dt) { const b = Math.sin(clamp(dt / 0.22, 0, 1) * Math.PI); pv.lean += 0.4 * b * w; addV(pv, 'hd', 0, 0.3 * b * w); },
   // 발끝으로 바닥을 꾹꾹
   toe(pv, w, s) { const b = Math.max(0, Math.sin(s * 5)); addV(pv, 'lB', 0, (-0.35 + b * 0.2) * w); pv.kB += (0.5 - b * 0.3) * w; addV(pv, 'hd', 0, 0.1 * w); },
   // 어깨 토닥이기
-  pat(pv, w, s) { addV(pv, 'aA', 0, Math.sin(s * 9) * 0.14 * w); pv.eA += Math.sin(s * 9) * 0.2 * w; addV(pv, 'hd', 0, 0.1 * w); },
+  pat(pv, w, s) { addV(pv, 'aA', 0, Math.sin(s * 6) * 0.14 * w); pv.eA += Math.sin(s * 6) * 0.2 * w; addV(pv, 'hd', 0, 0.1 * w); },
   // 품에 안은 것을 꽉 쥔다
   squeeze(pv, w, s) { const b = Math.sin(s * 4) * 0.5 + 0.5; addV(pv, 'aA', 2, 0.14 * b * w); addV(pv, 'aB', 2, -0.14 * b * w); pv.eA -= 0.2 * b * w; pv.eB -= 0.2 * b * w; addV(pv, 'hd', 0, 0.16 * w); pv.yy -= 0.008 * b * w; },
   // 걷기 (제자리)
@@ -17914,34 +17914,34 @@ Object.assign(MOVES, {
   // 고개를 돌려 외면한다 (끝에 돌아온다)
   away(pv, w, s) { addV(pv, 'hd', 1, -0.75 * w); addV(pv, 'hd', 0, 0.1 * w); },
   // 젓가락으로 콕콕
-  poke(pv, w, s) { const b = Math.max(0, Math.sin(s * 6)); toward(pv, { aA: [-0.95, 0, 0.1], eA: -0.9 + b * 0.35 }, w); addV(pv, 'hd', 0, 0.25 * w); },
+  poke(pv, w, s) { const b = Math.max(0, Math.sin(s * 4.5)); toward(pv, { aA: [-0.95, 0, 0.1], eA: -0.9 + b * 0.35 }, w); addV(pv, 'hd', 0, 0.25 * w); },
   // 손 씻기: 내민 두 손을 비빈다
-  wash(pv, w, s) { const b = Math.sin(s * 10); toward(pv, { aA: [-1.15 + b * 0.08, 0, 0.3], eA: -0.4, aB: [-1.15 - b * 0.08, 0, -0.3], eB: -0.4 }, w); addV(pv, 'hd', 0, 0.25 * w); pv.lean += 0.1 * w; },
+  wash(pv, w, s) { const b = Math.sin(s * 6.5); toward(pv, { aA: [-1.15 + b * 0.08, 0, 0.3], eA: -0.4, aB: [-1.15 - b * 0.08, 0, -0.3], eB: -0.4 }, w); addV(pv, 'hd', 0, 0.25 * w); pv.lean += 0.1 * w; },
   // 손을 만지작거린다
-  fidget(pv, w, s, c) { const b = Math.sin(s * 6); toward(pv, { aA: [-0.45, 0, 0.34 + b * 0.05], eA: -1.75 + b * 0.12, aB: [-0.45, 0, -0.34 + b * 0.05], eB: -1.75 - b * 0.12 }, w * (c.held ? 0 : 0.9)); addV(pv, 'hd', 0, 0.14 * w); addV(pv, 'hd', 1, Math.sin(s * 1.9) * 0.12 * w); },
+  fidget(pv, w, s, c) { const b = Math.sin(s * 3.5); toward(pv, { aA: [-0.45, 0, 0.34 + b * 0.05], eA: -1.75 + b * 0.12, aB: [-0.45, 0, -0.34 + b * 0.05], eB: -1.75 - b * 0.12 }, w * (c.held ? 0 : 0.9)); addV(pv, 'hd', 0, 0.14 * w); addV(pv, 'hd', 1, Math.sin(s * 1.9) * 0.12 * w); },
   // 크게 외친다: 몸을 내밀며 힘을 준다
   shout(pv, w, s) { const b = Math.max(0, Math.sin(s * 6)); pv.lean += b * 0.18 * w; pv.yy += b * 0.02 * w; addV(pv, 'hd', 0, -b * 0.12 * w); },
   // 엉덩방아: 뒤로 벌렁 넘어져 주저앉았다가 일어난다
   tumble(pv, w, s, c, sit, t, dt) {
-    const j = sstep(0, 0.07, dt) * w;
-    pv.lean -= 1.25 * j; pv.yy += 0.1 * j;
-    toward(pv, { lA: [-1.2, 0, 0.25], lB: [-1.2, 0, -0.25], kA: 0.5, kB: 0.5, aA: [0.6, 0, -0.9 + Math.sin(s * 14) * 0.3 * (1 - j)], eA: -0.3, aB: [0.6, 0, 0.9], eB: -0.3 }, j);
+    const j = Math.pow(sstep(0, 0.13, dt), 2) * w; // 처음엔 천천히, 갈수록 빨리 쓰러진다
+    pv.lean -= 1.3 * j; pv.yy += 0.1 * j + Math.sin(clamp((dt - 0.13) / 0.06, 0, 1) * Math.PI) * 0.03 * w; // 바닥에 닿으며 살짝 튄다
+    toward(pv, { lA: [-1.2, 0, 0.25], lB: [-1.2, 0, -0.25], kA: 0.5, kB: 0.5, aA: [0.5, 0, -1.0], eA: -0.3, aB: [0.5, 0, 1.0], eB: -0.3 }, j);
     addV(pv, 'hd', 0, 0.5 * j);
   },
   // 앞으로 고꾸라질 뻔: 크게 휘청하고 팔을 허우적댄다
   trip(pv, w, s, c, sit, t, dt) {
-    const j = Math.exp(-Math.max(0, dt) * 5) * sstep(0, 0.04, dt);
-    pv.lean += 0.95 * j; pv.yy -= 0.04 * j;
-    toward(pv, { aA: [-2.4 + Math.sin(s * 16) * 0.5, 0, -0.5], eA: -0.3, aB: [-2.0 - Math.sin(s * 16) * 0.5, 0, 0.5], eB: -0.3, lA: [0.7, 0, 0], kA: 0.9 }, Math.min(1, j * 1.3));
+    const j = sstep(0, 0.05, dt) * Math.exp(-Math.max(0, dt - 0.05) * 4.5); // 밀려 숙였다가 천천히 몸을 세운다
+    pv.lean += 0.9 * j; pv.yy -= 0.04 * j;
+    toward(pv, { aA: [-2.2, 0, -0.6], eA: -0.3, aB: [-2.0, 0, 0.6], eB: -0.3, lA: [0.6, 0, 0], kA: 0.8 }, Math.min(1, j * 1.2));
   },
   // 한 바퀴 빙글
   spin(pv, w, s, c, sit, t, dt) { c.root.rotation.y = c.ry0 + easeIO(clamp(dt / 0.25, 0, 1)) * Math.PI * 2; pv.yy += Math.sin(clamp(dt / 0.25, 0, 1) * Math.PI) * 0.05; toward(pv, { aA: [0, 0, -1.4], aB: [0, 0, 1.4] }, w); },
   // 한 손 흔들기
-  wave(pv, w, s) { toward(pv, { aB: [0, 0, 2.5 + Math.sin(s * 10) * 0.35], eB: -0.6 }, w); addV(pv, 'hd', 2, 0.08 * w); },
+  wave(pv, w, s) { toward(pv, { aB: [0, 0, 2.5 + Math.sin(s * 6.5) * 0.35], eB: -0.6 }, w); addV(pv, 'hd', 2, 0.08 * w); },
 });
 // 말하는 사람: 한 손으로 박자를 맞추고 고개를 끄덕인다
 function talkAct(pv, w, s, c) {
-  const b = Math.sin(s * 7.5);
+  const b = Math.sin(s * 5);
   if (!c.held) toward(pv, { aA: [-0.9 + b * 0.18, 0, -0.15], eA: -1.3 - b * 0.35 }, w * 0.85);
   else toward(pv, { aB: [-0.9 + b * 0.18, 0, 0.15], eB: -1.3 - b * 0.35 }, w * 0.85);
   addV(pv, 'hd', 0, Math.max(0, b) * 0.1 * w);
@@ -17994,7 +17994,9 @@ function cutAnim(p, prev, n = 0) {
     }
     a.path = A.path && A.path[c.id]; // [[때, 오른쪽, 앞], ...] 제자리에서 벗어났다 돌아오는 길
   }
-  // ---- 공: 앞 컷 뒤로 자리가 바뀌었으면 그 자리에서 날아온다 (던진 공, 날아와 맞는 공, 품에 안기는 공) ----
+  // ---- 공: 앞 컷 뒤로 자리가 바뀌었으면 그 자리에서 날아온다. 중력을 받는 포물선으로 날고,
+  // 사람 몸에 맞으면 튕겨 나와 바닥에 떨어져 구른다 (맞은 사람은 공이 온 반대쪽으로 밀리며 넘어지거나 휘청인다).
+  // 품에 받으면 받은 사람이 살짝 밀리고, 아직 날아가는 중을 그린 컷이면 컷이 끝나는 순간 그 자리에 닿는다 ----
   const bn = PROPS.ball;
   let fly = null;
   if (bn && bn.isEnabled() && old && A.ball !== false) {
@@ -18002,17 +18004,47 @@ function cutAnim(p, prev, n = 0) {
     const target = () => { if (!par) return loc.clone(); par.computeWorldMatrix(true); return BABYLON.Vector3.TransformCoordinates(loc, par.getWorldMatrix()); };
     const to = target();
     let from = old.ball;
-    if (!from) { const fc = star ? star.root.position : V3(0, 0, 0), dir = to.subtract(fc); dir.y = 0; from = to.add((dir.length() > 0.3 ? dir.normalize() : V3(1, 0, 0)).scale(6)).add(V3(0, 0.4, 0)); } // 없던 공은 멀리서 날아든다
+    if (!from) { const fc = star ? star.root.position : V3(0, 0, 0), dir0 = to.subtract(fc); dir0.y = 0; from = to.add((dir0.length() > 0.3 ? dir0.normalize() : V3(1, 0, 0)).scale(6)).add(V3(0, 0.3, 0)); } // 없던 공은 멀리서 날아든다
     const d = BABYLON.Vector3.Distance(from, to);
-    if (d > 0.35) fly = { par, loc, rot, target, from, t0: A.ballFrom == null ? 0.07 : A.ballFrom, dur: clamp(d / (9 * CUT_SEC), 0.1, 0.3), h: d * 0.1, floor: !par || par === stageNow.root ? to.y < 0.35 : false };
+    if (d > 0.35) {
+      const dir = to.subtract(from); dir.y = 0; dir.normalize();
+      const holder = acts.find(a => { let n = par; while (n) { if (n === a.c.root) return true; n = n.parent; } return false; }) || null; // 품이나 손에 받는 사람
+      const air = !holder && to.y > 0.3;
+      const victim = air ? acts.filter(a => Math.hypot(a.c.root.position.x - to.x, a.c.root.position.z - to.z) < 0.75)[0] || null : null; // 공이 닿는 자리에 선 사람
+      const dur = clamp(d / (8 * CUT_SEC), 0.1, 0.32), mid = air && !victim;
+      const t0 = A.ballFrom != null ? A.ballFrom : mid ? 0.97 - dur : 0.12;
+      fly = { par, loc, rot, target, from, to, dir, t0, dur, tb: t0 + dur, holder, victim, mid, T: dur * CUT_SEC, floor: !holder && !air };
+      if (victim) { // 맞는 사람: 맞는 순간부터 앞에서 맞으면 엉덩방아, 뒤에서 맞으면 앞으로 휘청 (anim.hit 이 'light' 면 움찔만)
+        const K = victim.keys, fin = K[K.length - 1], front = BABYLON.Vector3.Dot(dir, facing(victim.c)) < 0;
+        const mv = A.hit === 'light' ? 'jolt' : front ? 'tumble' : 'trip';
+        const kept = K.filter((k, i) => i < K.length - 1 && k[0] < fly.tb - 0.02);
+        victim.keys = [...kept, [fly.tb + 0.01, fin[1], 'surprised', mv, 0.02], [Math.min(0.88, fly.tb + (mv === 'tumble' ? 0.5 : 0.36)), fin[1], fin[2], 'still', mv === 'tumble' ? 0.2 : 0.1]];
+        victim.push = { t: fly.tb, dir, k: mv === 'jolt' ? 0.08 : 0.3 };
+        // 튕겨 나온 공: 맞은 자리에서 뒤쪽 위로 튀어 올랐다가 떨어져 바닥에서 몇 번 튀고 구른다
+        const v0 = dir.scale(-1.3).add(V3(dir.z * 0.5, 2.1, -dir.x * 0.5));
+        fly.reb = tau => {
+          const pz = to.clone(); let vy = v0.y, vx = v0.x, vz = v0.z, left = tau;
+          for (let n = 0; n < 400 && left > 0; n++) {
+            const h = Math.min(0.01, left); left -= h;
+            vy -= 9.8 * h; pz.x += vx * h; pz.y += vy * h; pz.z += vz * h;
+            if (pz.y < 0.085) { pz.y = 0.085; vy = Math.abs(vy) > 0.6 ? -vy * 0.5 : 0; vx *= 0.75; vz *= 0.75; }
+            if (pz.y <= 0.086 && vy === 0) { vx *= 1 - 1.6 * h; vz *= 1 - 1.6 * h; } // 구르다 멈춘다
+          }
+          return pz;
+        };
+      } else if (holder) holder.push = { t: fly.tb, dir, k: 0.12 }; // 받은 사람은 공의 힘에 살짝 밀린다
+    }
   }
-  // 던진 사람: 앞 컷에서 팔을 젖히고 있었고 공이 손을 떠났으면, 팔을 앞으로 휘두른 뒤 이 컷의 자세가 된다
-  if (old && old.holder && fly && !(fly.par && fly.par === (CH[old.holder] && CH[old.holder].armA.hand))) {
+  // 던진 사람: 앞 컷에서 팔을 젖히고 있었고 공이 손을 떠났으면, 공이 떠나는 순간 팔을 앞으로 휘두른 뒤 이 컷의 자세가 된다
+  if (old && old.holder && fly && !(fly.holder && fly.holder.c.id === old.holder)) {
     const a = acts.find(x => x.c.id === old.holder);
-    if (a && prev && prev.poses && prev.poses[old.holder] === 'throw') { const sw = poseVals(a.c.base, 'reach'); sw.lean = 0.3; a.keys.splice(1, 0, [0.1, sw, a.keys[0][2], 'still', 0.07]); if (a.keys[2][0] < 0.3) a.keys[2][0] = 0.3; }
+    if (a && prev && prev.poses && prev.poses[old.holder] === 'throw') {
+      const sw = poseVals(a.c.base, 'reach'), K = a.keys, fin = K[K.length - 1]; sw.lean = 0.3;
+      a.keys = [K[0], [fly.t0 + 0.03, sw, K[0][2], 'still', 0.06], ...K.slice(1, -1).filter(k => k[0] > fly.t0 + 0.2), [clamp(Math.max(fin[0], fly.t0 + 0.26), 0.3, 0.95), fin[1], fin[2], fin[3], 0.18]];
+    }
   }
   const kids = (stageNow.kids || []).map((nd, i) => ({ n: nd, y: nd.position.y, rz: nd.rotation.z, ry: nd.rotation.y, ph: i * 2.4 }));
-  const cheer = A.cheer == null ? 0.15 : A.cheer;
+  const cheer = A.cheer == null ? 0 : A.cheer * 0.7;
   return function at(t, sec) { // t: 0~1, sec: 지난 초
     const live = 1 - sstep(0.82, 0.97, t); // 끝에서는 움직임이 멎어 멈춘 삽화와 같아진다
     const k = easeIO(clamp(t / 0.9, 0, 1));
@@ -18061,29 +18093,40 @@ function cutAnim(p, prev, n = 0) {
         const fx = Math.sin(c.ry0), fz = Math.cos(c.ry0);
         c.root.position.set(a.P1.x + fz * ox + fx * oz, a.P1.y, a.P1.z - fx * ox + fz * oz);
       }
+      if (a.push && t > a.push.t) { // 공에 맞거나 받은 힘: 공이 가던 쪽으로 밀렸다가 제자리로 돌아온다
+        const dt3 = t - a.push.t, k3 = a.push.k * (1 - Math.exp(-dt3 * 14)) * (1 - sstep(0.62, 0.9, t));
+        c.root.position.x += a.push.dir.x * k3; c.root.position.z += a.push.dir.z * k3;
+      }
       if (t >= 1) { c.root.position.copyFrom(a.P1); c.root.rotation.y = c.ry0; }
       applyPose(c, pv);
       const blink = live > 0.5 && ((sec + c.phase * 0.37) % 2.3) < 0.12;
       if (face !== c.face || blink !== c.blinking) { c.face = face; c.blinking = blink; paintFace(c, blink); }
     }
-    if (fly) { // 공이 날아간다 (포물선, 빙글 돌며). 닿은 뒤 바닥이면 통통 튄다
+    if (fly) { // 공이 날아간다: 옆으로는 같은 빠르기, 위아래는 중력 (포물선)
       const u = clamp((t - fly.t0) / fly.dur, 0, 1), tg = fly.target();
-      if (u < 1 && t < 0.99) {
+      if (t < fly.t0) { bn.parent = null; bn.position.copyFrom(fly.from); }
+      else if (u < 1 && t < 0.995) {
         bn.parent = null;
         const pos = BABYLON.Vector3.Lerp(fly.from, tg, u);
-        pos.y += Math.sin(u * Math.PI) * fly.h;
+        pos.y += 0.5 * 9.8 * fly.T * fly.T * u * (1 - u);
         bn.position.copyFrom(pos);
-        bn.rotation.x = u * 14;
+        bn.rotation.x = u * fly.T * 9;
+      } else if (fly.reb) { // 몸에 맞고 튕겨 나와 바닥에 떨어져 구른다 (컷이 끝나도 떨어진 자리에 남는다)
+        bn.parent = null;
+        bn.position.copyFrom(fly.reb((t - fly.tb) * CUT_SEC));
+        bn.rotation.x = fly.T * 9 - (t - fly.tb) * 6;
+        bn.getChildMeshes().forEach(m => { m.layerMask = 1; });
       } else {
         bn.parent = fly.par; bn.position.copyFrom(fly.loc); bn.rotation.copyFrom(fly.rot);
-        const dt2 = t - fly.t0 - fly.dur;
-        if (fly.floor && t < 0.99) bn.position.y += Math.abs(Math.sin(dt2 * 38)) * 0.3 * Math.exp(-dt2 * 14);
+        const dt2 = (t - fly.tb) * CUT_SEC; // 바닥에 떨어진 공: 점점 낮게 튄다
+        if (fly.floor && t < 0.995) bn.position.y += Math.abs(Math.sin(dt2 * 9)) * 0.28 * Math.exp(-dt2 * 3.2);
       }
     }
     kids.forEach(o => { // 배경 아이들: 들썩이고 기웃거린다
-      o.n.position.y = o.y + Math.abs(Math.sin(sec * 3.4 + o.ph)) * 0.04 * cheer * live;
-      o.n.rotation.z = o.rz + Math.sin(sec * 2.3 + o.ph) * 0.07 * cheer * live;
-      o.n.rotation.y = o.ry + Math.sin(sec * 1.7 + o.ph * 1.3) * 0.25 * cheer * live;
+      const kw = cheer * live * sstep(0.02, 0.2, t);
+      o.n.position.y = o.y + (Math.sin(sec * 3 + o.ph) * 0.5 + 0.5) * 0.03 * kw;
+      o.n.rotation.z = o.rz + Math.sin(sec * 1.5 + o.ph) * 0.05 * kw;
+      o.n.rotation.y = o.ry + Math.sin(sec * 1.1 + o.ph * 1.3) * 0.2 * kw;
     });
   };
 }

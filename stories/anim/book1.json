@@ -25,14 +25,14 @@
     "3": {"cheer": 1, "yuna": [[0.2, null, "joy", "cheer"]], "jiwoo": [[0.25, null, "joy", "clap"]], "minjun": [[0.2, null, "laugh", "cheer"]], "seoa": [[0.25, null, "joy", "clap"]]},
     "4": {"yuna": [[0.2, null, "laugh", "cheer"]]},
     "5": {"minjun": [[0.15, "dodge", "joy", "dodge"], [0.45, "dance", "laugh", "dance"]], "path": {"minjun": [[0.12, -0.6, 0], [0.25, 0.5, 0], [0.4, 0, 0]]}},
-    "7": {"cheer": 1, "minjun": [[0.1, "dance", "laugh", "dance"]], "yuna": [[0.25, null, "laugh", "laugh"]], "jiwoo": [[0.25, null, "laugh", "laugh"]], "seoa": [[0.3, null, "laugh", "laugh"]]},
+    "7": {"cheer": 1, "minjun": [[0.1, "dance", "laugh", "dance"]], "yuna": [[0.25, null, "laugh", "laugh"]], "jiwoo": [[0.25, null, "laugh", "laugh"]], "seoa": [[0.3, null, "laugh", "laugh"]], "hit": "light"},
     "8": {"minjun": [[0.12, "dance", "laugh", "dance"], [0.42, "dance", "surprised", "jolt"]], "cam": {"back": 1.2}},
     "10": {"cheer": 0.4, "yuna": [[0.2, null, "worried", "look"]], "jiwoo": [[0.2, null, "worried", "dodge"]], "seoa": [[0.25, null, "worried", "dodge"]], "path": {"jiwoo": [[0.2, -0.7, 0], [0.45, 0.6, 0.3], [0.65, -0.3, 0]], "seoa": [[0.25, 0.6, 0], [0.5, -0.5, 0]], "yuna": [[0.2, 0.5, 0], [0.5, -0.5, 0.2]]}}
   },
   "s04": {
     "0": {"yuna": [[0.3, "throw", "angry", "windup"]], "path": {"yuna": [[0.15, 0, -0.4], [0.3, 0, 0.4]]}},
     "3": {"yuna": [[0.2, null, "surprised", "jolt"]]},
-    "5": {"yuna": [[0.15, "dodge", "worried", "dodge"], [0.33, "dodge", "surprised", "tumble"], [0.64, "dodge", "surprised", "still", 0.06]], "cam": {"back": 1.2}, "path": {"yuna": [[0.15, -0.5, 0], [0.36, 0.3, -0.35]]}},
+    "5": {"yuna": [[0.08, "dodge", "worried", "still"]], "cam": {"back": 1.2}},
     "7": {"jiwoo": [[0.2, null, "worried", "look"]], "cam": {"back": 0.8}},
     "9": {"jiwoo": [[0.25, "open", "worried", "brace"]]},
     "11": {"jiwoo": [[0.2, "open", "surprised", "trip"]]}
@@ -152,7 +152,7 @@
     "4": {"yuna": [[0.3, "throw", "angry", "windup"]], "path": {"yuna": [[0.15, 0, -0.4], [0.3, 0, 0.4]]}},
     "6": {"yuna": [[0.2, "reach", "surprised", "still"]]},
     "7": {"yuna": [[0.2, null, "worried", "look"]]},
-    "9": {"yuna": [[0.3, "dodge", "surprised", "trip"]], "cam": {"back": 1.25}}
+    "9": {"cam": {"back": 1.25}}
   },
   "s12": {
     "0": {"yuna": [[0.2, null, "angry", "blame"]]},
