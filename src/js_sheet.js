@@ -58,6 +58,8 @@ function tally(i) {
 // 장면 첫머리: 무대를 둘러보고 「이야기 보기」
 function askIntro(sc) {
   return waitFor(done => {
+    hist.push({ intro: true, sc, p: {}, stage: stageNow.name, set: curSet, key: stageKey(), page: livePage, lines: [] }); // 장면 첫머리도 한 장으로: 「이전」으로 앞 장의 마지막 컷에 갔다가 「다음」으로 돌아온다
+    hi = hist.length - 1;
     titleCard(sc);
     setAsk('intro', () => {
       const tip = asList(sc.explore).length ? t('introTipHot') : t('introTip');

@@ -18577,6 +18577,8 @@ let nextFn = null, nextLabel = t('next');
 let making = 0; // 컷을 찍는 중 (이때 「이전」으로 무대를 바꾸면 새 컷이 엉뚱한 무대·표정으로 찍힌다)
 let shownAt = 0; // 새 컷이 나온 때 (더블클릭·Enter 되풀이로 글·수첩 컷을 건너뛰지 않게)
 function resetHist() { hist = []; hi = -1; renderFoot(); }
+// 장면이 바뀔 때: 지난 컷을 지우지 않고 가까운 것만 남긴다 (그림을 많이 쥐고 있지 않게 열네 장)
+function keepHist() { if (hist.length > 14) hist = hist.slice(-14); hi = hist.length - 1; renderFoot(); }
 function setNext(fn, label = t('next')) { if (fn && fn !== nextFn) shownAt = performance.now(); nextFn = fn; nextLabel = label; renderFoot(); } // 새 할 일(첫 장·결말 카드)도 두 번 누름에 건너뛰지 않게
 function renderFoot() {
   const live = hi === hist.length - 1;
@@ -18599,7 +18601,7 @@ $('#btnPrev').addEventListener('click', e => { if (e.detail > 0) e.currentTarget
 const panelW = () => Math.round(clamp(storyEl.clientWidth * 2, 560, 900));
 const stageKey = () => stageNow.name + JSON.stringify(curSet);
 async function makeEntry(p, my, anim) {
-  const e = { p, stage: stageNow.name, set: curSet, key: stageKey(), img: null, photo: null, lines: [] };
+  const e = { p, stage: stageNow.name, set: curSet, key: stageKey(), page: livePage, img: null, photo: null, lines: [] };
   applyCut(p);
   const ph = p.phone && p.phone.profile && p.phone.profile.photo;
   if (ph) { applyCut(ph); e.photo = await shoot(ph, 320, 320, my); chk(my); applyCut(p); }
@@ -18624,10 +18626,10 @@ async function showPanel(p, my) {
   skipAhead = false; wantPrev = false;
   let e;
   const anim = canAnim(p), last = hist[hist.length - 1];
-  const prev = anim && last && last.key === stageKey() ? last.p : null; // 같은 무대의 앞 컷에서 이어서 움직인다
+  const prev = anim && last && !last.intro && last.key === stageKey() ? last.p : null; // 같은 무대의 앞 컷에서 이어서 움직인다
   try {
     if (anim) { // 처음 한 번은 움직이는 컷으로: 앞 컷의 자세에서 시작해 이 컷의 삽화에서 멈춘다
-      e = { p, stage: stageNow.name, set: curSet, key: stageKey(), img: null, photo: null,
+      e = { p, stage: stageNow.name, set: curSet, key: stageKey(), page: livePage, img: null, photo: null,
         lines: asList(p.lines).map(l => { const kind = ['shout', 'think', 'whisper', 'say'].find(k => l[k]); return { who: l.who, kind, text: l[kind], ko: l['~' + kind], img: (l.who && cardPic[l.who]) || null }; }) }; // 얼굴 사진은 움직임이 끝난 뒤에 이 컷의 표정으로 찍는다
       if (my !== runId) throw CANCEL;
       e.anim = true; e.prev = prev; e.spots = lastSpots; // 「이전」으로 돌아오면 같은 자리에서 다시 움직인다
@@ -18661,7 +18663,9 @@ function renderEntry(replay = false) {
   replay = replay && !!e.anim && !!e.img && canAnim(e.p) && !(actView && live);
   if (replay || e.key !== stageKey()) applySet(e.stage, e.set, false); // 다른 무대에서 찍은 컷을 다시 볼 때는 그 무대로 (다시 움직일 때는 공·인물 자리도 그 컷의 처음으로)
   applyCut(e.p);
-  if (actView && live) actView(); // 지난 컷을 보고 돌아오면 하던 활동 화면으로
+  if (e.page != null) setHeader(e.page, true); // 앞 장의 컷을 볼 때는 그 장의 면 번호로
+  if (e.intro) titleCard(e.sc); // 장면 첫머리
+  else if (actView && live) actView(); // 지난 컷을 보고 돌아오면 하던 활동 화면으로
   else storyEl.replaceChildren(...panelNodes(e, !live, replay));
   if (replay) playCut(e, e.prev, runId, true).catch(err => { if (err !== CANCEL) console.warn('다시 재생 실패', err && err.message); });
   rise();
@@ -18758,7 +18762,9 @@ function fitSide() {
 new ResizeObserver(() => fitSide()).observe($('.side'));
 
 // ---- 위 막대: 책 제목, 이야기 마디, 몇 면 ----
-function setHeader(page) {
+let livePage = null; // 지금 읽는 면 (지난 컷을 볼 때 바뀌는 것은 보이는 번호뿐)
+function setHeader(page, view) {
+  if (!view) livePage = page;
   const inBook = page != null;
   $('#bookTitle').textContent = inBook ? BOOK.title : t('appTitle');
   $('#bookSub').textContent = inBook ? BOOK.sub : t('appSub');
@@ -19452,6 +19458,8 @@ function tally(i) {
 // 장면 첫머리: 무대를 둘러보고 「이야기 보기」
 function askIntro(sc) {
   return waitFor(done => {
+    hist.push({ intro: true, sc, p: {}, stage: stageNow.name, set: curSet, key: stageKey(), page: livePage, lines: [] }); // 장면 첫머리도 한 장으로: 「이전」으로 앞 장의 마지막 컷에 갔다가 「다음」으로 돌아온다
+    hi = hist.length - 1;
     titleCard(sc);
     setAsk('intro', () => {
       const tip = asList(sc.explore).length ? t('introTipHot') : t('introTip');
@@ -19981,7 +19989,7 @@ async function playScene(id, opt, my) {
   const partChanged = !!sc.part && sc.part !== curPart;
   if (sc.part) curPart = sc.part;
   setHeader(parseInt(sc.page, 10) || 1);
-  resetHist();
+  keepHist(); // 앞 장면의 컷을 남겨 둔다: 다음 장으로 넘어와서도 「이전」으로 앞 장의 컷을 다시 볼 수 있다
   // 인물의 둘러보기 말은 무대 위 점 대신 인물 카드의 ? 표시로 (점이 아이들 얼굴을 가리지 않게)
   buildHot(asList(sc.explore).filter(x => !BOOK.castById[x.on]), it => showPop(it, it.text, it['~text']));
   markCards();
@@ -20060,7 +20068,7 @@ async function playCompose(sc, id, preset, my) {
 async function playEnding(my) {
   const end = BOOK.endings.find(e => meets(e.when)) || BOOK.endings[BOOK.endings.length - 1];
   setHeader(BOOK.pages - 2);
-  resetHist();
+  keepHist();
   for (const it of end.panels) {
     if (!meets(it.when)) continue;
     if (it.stage || it.set) { applyItemSet(it); continue; }

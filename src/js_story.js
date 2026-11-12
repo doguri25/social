@@ -83,7 +83,7 @@ async function playScene(id, opt, my) {
   const partChanged = !!sc.part && sc.part !== curPart;
   if (sc.part) curPart = sc.part;
   setHeader(parseInt(sc.page, 10) || 1);
-  resetHist();
+  keepHist(); // 앞 장면의 컷을 남겨 둔다: 다음 장으로 넘어와서도 「이전」으로 앞 장의 컷을 다시 볼 수 있다
   // 인물의 둘러보기 말은 무대 위 점 대신 인물 카드의 ? 표시로 (점이 아이들 얼굴을 가리지 않게)
   buildHot(asList(sc.explore).filter(x => !BOOK.castById[x.on]), it => showPop(it, it.text, it['~text']));
   markCards();
@@ -162,7 +162,7 @@ async function playCompose(sc, id, preset, my) {
 async function playEnding(my) {
   const end = BOOK.endings.find(e => meets(e.when)) || BOOK.endings[BOOK.endings.length - 1];
   setHeader(BOOK.pages - 2);
-  resetHist();
+  keepHist();
   for (const it of end.panels) {
     if (!meets(it.when)) continue;
     if (it.stage || it.set) { applyItemSet(it); continue; }
