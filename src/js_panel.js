@@ -11,7 +11,7 @@ function resetHist() { hist = []; hi = -1; renderFoot(); }
 function setNext(fn, label = t('next')) { if (fn && fn !== nextFn) shownAt = performance.now(); nextFn = fn; nextLabel = label; renderFoot(); } // 새 할 일(첫 장·결말 카드)도 두 번 누름에 건너뛰지 않게
 function renderFoot() {
   const live = hi === hist.length - 1;
-  $('#btnPrev').disabled = hi <= 0 || making > 0;
+  $('#btnPrev').disabled = hi <= 0 || (making > 0 && !cutPlaying); // 컷이 움직이는 동안에도 「이전」을 누를 수 있다 (찍는 동안에만 막는다)
   const nb = $('#btnNext');
   nb.disabled = live && !nextFn;
   nb.firstChild.textContent = (live ? nextLabel : t('next')) + ' ';
@@ -24,7 +24,7 @@ $('#btnNext').addEventListener('click', e => {
   if (hi < hist.length - 1) { hi++; renderEntry(true); return; }
   if (nextFn) nextFn();
 });
-$('#btnPrev').addEventListener('click', e => { if (e.detail > 0) e.currentTarget.blur(); if (hi > 0 && !making) { sfx('tap'); hi--; renderEntry(true); } }); // 마우스로 누른 뒤의 Enter 는 「다음」
+$('#btnPrev').addEventListener('click', e => { if (e.detail > 0) e.currentTarget.blur(); if (hi > 0 && making && cutPlaying) { sfx('tap'); wantPrev = true; skipCut = true; return; } /* 움직이는 중: 끝 장면으로 건너뛴 뒤 앞 컷으로 */ if (hi > 0 && !making) { sfx('tap'); hi--; renderEntry(true); } }); // 마우스로 누른 뒤의 Enter 는 「다음」
 
 // ---- 컷 만들기: 무대를 찍고, 말하는 사람 얼굴 사진을 붙인다 ----
 const panelW = () => Math.round(clamp(storyEl.clientWidth * 2, 560, 900));
@@ -52,7 +52,7 @@ async function showPanel(p, my) {
   if (hi < hist.length - 1) { hi = hist.length - 1; renderEntry(); } // 지난 컷을 보는 사이 흐름이 이어지면(숨 고르기가 저절로 끝남) 지금 무대로 돌아와서 찍는다
   making++;
   renderFoot();
-  skipAhead = false;
+  skipAhead = false; wantPrev = false;
   let e;
   const anim = canAnim(p), last = hist[hist.length - 1];
   const prev = anim && last && last.key === stageKey() ? last.p : null; // 같은 무대의 앞 컷에서 이어서 움직인다
@@ -83,6 +83,7 @@ async function showPanel(p, my) {
   renderEntry();
   shownAt = performance.now();
   if (!anim) { sfx('page'); speak(readText(p)); }
+  if (wantPrev) { wantPrev = false; if (hi > 0) { hi--; renderEntry(true); } } // 움직이는 동안 「이전」을 눌렀다
 }
 function rise() { storyEl.classList.remove('rise'); void storyEl.offsetWidth; storyEl.classList.add('rise'); }
 // replay: 「이전」·「다음」으로 옮겨 온 컷이면 그 컷의 움직임을 한 번 다시 보여 준다

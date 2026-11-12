@@ -536,6 +536,7 @@ async function cutFrame(endPos, hk, w, hh) {
   hk.forEach(k => k.setEnabled(false));
   try { return await loadImg(await snap(shotCam, w, hh)); } finally { restoreWalls(); hk.forEach(k => k.setEnabled(true)); }
 }
+let cutPlaying = false, wantPrev = false; // 지금 컷이 움직이는 중, 그동안 「이전」을 눌렀다
 let skipAhead = false; // 움직이는 동안 「다음」을 눌렀다: 끝 장면으로 건너뛰고 바로 다음 컷으로
 // replay: 「이전」·「다음」으로 지난 컷을 다시 볼 때 — 그 컷이 처음 나왔을 때의 자리(e.spots)에서 다시 움직이고, 「다음」 단추의 할 일은 건드리지 않는다
 function playCut(e, prev, my, replay = false) {
@@ -552,7 +553,7 @@ function playCut(e, prev, my, replay = false) {
     hiddenKids = []; hk.forEach(k => k.setEnabled(true));
     skipCut = false;
     const skipNext = () => { skipCut = true; skipAhead = true; };
-    if (!replay) { skipAhead = false; setNext(skipNext); } // 움직이는 동안에도 「다음」을 누를 수 있다
+    if (!replay) { skipAhead = false; cutPlaying = true; setNext(skipNext); } // 움직이는 동안에도 「다음」을 누를 수 있다
     cv.parentElement.classList.add('playing');
     const t0 = performance.now();
     try {
@@ -566,6 +567,7 @@ function playCut(e, prev, my, replay = false) {
       }
     } finally {
       at(1, CUT_SEC);
+      if (!replay) { cutPlaying = false; renderFoot(); }
       if (nextFn === skipNext) setNext(null);
       for (const k in CH) if (CH[k].blinking) setFace(CH[k], CH[k].face);
       cv.parentElement.classList.remove('playing');
