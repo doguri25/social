@@ -19250,7 +19250,15 @@ if (ARGS.has('rec')) window.__rec = {
         const endPos = shotCam.position.clone(), hk = hiddenKids;
         hiddenKids = []; hk.forEach(k => k.setEnabled(true));
         try {
-          if (!fps) { for (let f = 0; f <= 40; f++) at(f / 40, f * CUT_SEC / 40); await window.__frame(''); } // 그리지 않고 동작만 돌려 보기 (오류 점검)
+          if (!fps) { // 그리지 않고 동작만 돌려 본다: 오류가 없는지, 인물이 사라지지 않는지(자리·자세 값이 숫자인지)
+            for (let f = 0; f <= 40; f++) {
+              at(f / 40, f * CUT_SEC / 40);
+              for (const k in CH) { const c = CH[k]; if (!shown(c)) continue;
+                const vals = [c.root.position.x, c.root.position.y, c.root.position.z, c.root.rotation.y, c.body.position.y, c.body.rotation.x, c.body.rotation.z, c.head.rotation.x, c.head.rotation.y, c.armA.rotation.x, c.armB.rotation.x, c.armA.elbow.rotation.x, c.legA.rotation.x, c.legA.knee.rotation.x];
+                if (!vals.every(Number.isFinite)) throw new Error(`사라짐: ${id} ${i}번 컷 ${k} (때 ${f / 40})`); }
+            }
+            await window.__frame('');
+          } // 그리지 않고 동작만 돌려 보기 (오류 점검)
           else for (let f = 0; f <= n; f++) {
             at(f / n, f / fps);
             g.drawImage(await cutFrame(endPos, hk, w, hh), 0, 0);
