@@ -363,9 +363,12 @@ function cutAnim(p, prev, n = 0) {
     const target = () => { if (!par) return loc.clone(); par.computeWorldMatrix(true); return BABYLON.Vector3.TransformCoordinates(loc, par.getWorldMatrix()); };
     const to = target();
     let from = A.ballIn ? null : old.ball; // ballIn: 이미 그 자리에 있는 공도 멀리서 다시 날아오게 (맞는 순간을 가까이서 다시 보여 줄 때)
-    if (!from) { const fc = star ? star.root.position : V3(0, 0, 0), dir0 = to.subtract(fc); dir0.y = 0; from = to.add((dir0.length() > 0.3 ? dir0.normalize() : V3(1, 0, 0)).scale(6)).add(V3(0, 0.3, 0)); } // 없던 공은 멀리서 날아든다
+    // 맞는 컷: 공은 맞는 쪽(몸에서 공 자리로 가는 쪽)의 바깥에서 날아온다. 앞 컷의 공 자리가 몸 건너편이면 몸을 뚫고 오게 되므로 쓰지 않는다
+    const vHit = A.hit && acts.find(a => a.c.id === A.hit);
+    if (vHit && from) { const out = to.subtract(vHit.c.root.position); out.y = 0; const back = from.subtract(to); back.y = 0; if (out.length() > 0.05 && BABYLON.Vector3.Dot(back, out.normalize()) < 0.5) from = null; }
+    if (!from) { const fc = vHit ? vHit.c.root.position : star ? star.root.position : V3(0, 0, 0), dir0 = to.subtract(fc); dir0.y = 0; from = to.add((dir0.length() > 0.05 ? dir0.normalize() : V3(1, 0, 0)).scale(6)).add(V3(0, 0.3, 0)); } // 없던 공은 멀리서 날아든다
     const d = BABYLON.Vector3.Distance(from, to);
-    if (d > 0.35 && !(par && old && par === old.ballPar && !A.ballIn)) { // 같은 사람이 계속 들고 있는 공은 날지 않는다 (그 사람과 함께 움직인다)
+    if (d > 0.35 && !(par && par !== stageNow.root && old && par === old.ballPar && !A.ballIn)) { // 같은 사람이 계속 들고 있는 공은 날지 않는다 (그 사람과 함께 움직인다)
       const dir = to.subtract(from); dir.y = 0; dir.normalize();
       const holder = acts.find(a => { let n = par; while (n) { if (n === a.c.root) return true; n = n.parent; } return false; }) || null; // 품이나 손에 받는 사람
       const air = !holder && to.y > 0.3;
