@@ -312,6 +312,7 @@ function cutAnim(p, prev, n = 0) {
       const s = sec + c.phase * 0.3;
       const face = (u > 0.5 ? K[i][2] : K[i - 1][2]) || K[i - 1][2] || c.face0;
       c.root.rotation.y = c.ry0;
+      c.root.position.copyFrom(a.P1); // 자리도 매번 제자리에서 다시 셈한다 (밀림이 쌓이지 않게)
       // 동작: 열쇠 장면에 닿은 뒤부터 다음 장면으로 넘어가기 전까지. 따로 정하지 않았으면 표정에 맞는 동작
       const last = t >= K[K.length - 1][0], j = last ? K.length - 1 : i - 1;
       const mvName = K[j][3] || (j === K.length - 1 ? a.f1 : K[j][2] || face);
