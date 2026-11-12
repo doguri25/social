@@ -212,6 +212,75 @@ function talkAct(pv, w, s, c) {
   addV(pv, 'hd', 0, Math.max(0, b) * 0.1 * w);
   pv.yy += Math.max(0, b) * 0.008 * w;
 }
+// ---- 길 찾기: 걸어가는 인물이 책상·의자·다른 아이를 뚫고 지나가지 않게 돌아서 간다 ----
+// 무대의 물건(바닥에 놓인 것, 키 높이 안)을 위에서 본 칸(0.12m)에 채우고, 막히지 않은 칸으로 가장 짧은 길을 찾는다.
+// 떠나는 자리와 닿는 자리 둘레는 비운다 (의자에 앉아 있거나 앉으러 가므로). 길이 없으면 곧장 간다
+const CELL = 0.12;
+function planPath(p0, p1, self) {
+  const boxes = [];
+  for (const m of stageNow.root.getChildMeshes(false)) {
+    if (!m.isEnabled() || !m.isVisible || m.visibility === 0) continue;
+    const b = m.getBoundingInfo().boundingBox, lo = b.minimumWorld, hi = b.maximumWorld;
+    if (hi.y < 0.12 || lo.y > 0.9) continue; // 바닥·깔개·햇빛 무늬, 머리 위에 있는 것
+    if ((hi.x - lo.x) * (hi.z - lo.z) > 9) continue; // 방 전체를 덮는 큰 덩어리(바닥 틀 등)
+    boxes.push([lo.x, lo.z, hi.x, hi.z]);
+  }
+  for (const id in CH) { const c = CH[id]; if (c !== self && shown(c)) { const q = c.root.position; boxes.push([q.x - 0.22, q.z - 0.22, q.x + 0.22, q.z + 0.22]); } }
+  const x0 = Math.min(p0.x, p1.x) - 2.5, z0 = Math.min(p0.z, p1.z) - 2.5, W = Math.ceil((Math.abs(p0.x - p1.x) + 5) / CELL), H = Math.ceil((Math.abs(p0.z - p1.z) + 5) / CELL);
+  if (W * H > 40000) return null;
+  const blocked = new Uint8Array(W * H), R = 0.17; // 몸 반지름만큼 물건을 부풀린다
+  for (const [ax, az, bx, bz] of boxes) {
+    const i0 = Math.max(0, Math.floor((ax - R - x0) / CELL)), i1 = Math.min(W - 1, Math.floor((bx + R - x0) / CELL)), j0 = Math.max(0, Math.floor((az - R - z0) / CELL)), j1 = Math.min(H - 1, Math.floor((bz + R - z0) / CELL));
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) blocked[j * W + i] = 1;
+  }
+  const cell = v => [clamp(Math.round((v.x - x0) / CELL), 0, W - 1), clamp(Math.round((v.z - z0) / CELL), 0, H - 1)];
+  const [si, sj] = cell(p0), [gi, gj] = cell(p1), CL = Math.ceil(0.5 / CELL);
+  [[si, sj], [gi, gj]].forEach(([ci, cj]) => { for (let j = -CL; j <= CL; j++) for (let i = -CL; i <= CL; i++) if (i * i + j * j <= CL * CL && ci + i >= 0 && ci + i < W && cj + j >= 0 && cj + j < H) blocked[(cj + j) * W + ci + i] = 0; });
+  // 두 칸 사이가 곧게 뚫려 있는가
+  const clear = (ai, aj, bi, bj) => { const n = Math.max(Math.abs(bi - ai), Math.abs(bj - aj)) * 2; for (let k = 0; k <= n; k++) { const i = Math.round(ai + (bi - ai) * k / (n || 1)), j = Math.round(aj + (bj - aj) * k / (n || 1)); if (blocked[j * W + i]) return false; } return true; };
+  if (clear(si, sj, gi, gj)) return null; // 곧장 가도 부딪히지 않는다
+  // A*: 여덟 방향
+  const g = new Float32Array(W * H).fill(Infinity), from = new Int32Array(W * H).fill(-1), open = [[0, sj * W + si]], done = new Uint8Array(W * H);
+  g[sj * W + si] = 0;
+  const hfn = (i, j) => Math.hypot(i - gi, j - gj);
+  let found = false;
+  while (open.length) {
+    let bi = 0;
+    for (let k = 1; k < open.length; k++) if (open[k][0] < open[bi][0]) bi = k;
+    const cur = open.splice(bi, 1)[0][1];
+    if (done[cur]) continue;
+    done[cur] = 1;
+    const ci = cur % W, cj = (cur - ci) / W;
+    if (ci === gi && cj === gj) { found = true; break; }
+    for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+      if (!di && !dj) continue;
+      const ni = ci + di, nj = cj + dj, n = nj * W + ni;
+      if (ni < 0 || nj < 0 || ni >= W || nj >= H || blocked[n] || done[n]) continue;
+      if (di && dj && (blocked[cj * W + ni] || blocked[nj * W + ci])) continue; // 모서리를 비스듬히 뚫지 않는다
+      const ng = g[cur] + (di && dj ? 1.414 : 1);
+      if (ng < g[n]) { g[n] = ng; from[n] = cur; open.push([ng + hfn(ni, nj), n]); }
+    }
+  }
+  if (!found) return null;
+  const cells = [];
+  for (let n = gj * W + gi; n >= 0; n = from[n]) cells.push([n % W, Math.floor(n / W)]);
+  cells.reverse();
+  // 꺾이는 곳만 남긴다 (곧게 뚫린 데는 건너뛴다)
+  const keep = [cells[0]];
+  for (let a = 0; a < cells.length - 1;) { let b = cells.length - 1; while (b > a + 1 && !clear(cells[a][0], cells[a][1], cells[b][0], cells[b][1])) b--; keep.push(cells[b]); a = b; }
+  const pts = keep.map(([i, j]) => V3(x0 + i * CELL, p1.y, z0 + j * CELL));
+  pts[0] = p0.clone(); pts[pts.length - 1] = p1.clone();
+  return pts;
+}
+// 꺾인 길 위에서 m(0~1)만큼 간 자리와 그때 바라보는 쪽
+function alongPath(tr, m) {
+  let d = m * tr.len;
+  for (let k = 1; k < tr.pts.length; k++) {
+    const a = tr.pts[k - 1], b = tr.pts[k], L = BABYLON.Vector3.Distance(a, b);
+    if (d <= L || k === tr.pts.length - 1) return { pos: BABYLON.Vector3.Lerp(a, b, L ? clamp(d / L, 0, 1) : 1), head: Math.atan2(b.x - a.x, b.z - a.z) };
+    d -= L;
+  }
+}
 // 컷 p 의 움직임을 준비한다. prev: 앞 컷 (없으면 무대에서 정한 자세·표정에서 시작). 카메라는 삽화 자리에 그대로 둔다 (anim.cam 을 준 컷만 움직인다)
 // 돌려주는 함수에 0~1 을 넣으면 그때의 장면이 된다
 function cutAnim(p, prev, n = 0) {
@@ -264,8 +333,11 @@ function cutAnim(p, prev, n = 0) {
     else if (old && !o && A.enter !== false) p0 = P1.subtract(facing(c).scale(2.4));
     if (A.from && A.from[c.id]) { const f = A.from[c.id], fw = facing(c); p0 = P1.add(V3(fw.z * f[0] + fw.x * f[1], 0, -fw.x * f[0] + fw.z * f[1])); } // [오른쪽, 앞] m 만큼 떨어진 데서 시작
     if (p0) {
-      const d = BABYLON.Vector3.Distance(p0, P1), run = (A.run && A.run.includes(c.id)) || d > 2.6;
-      a.trav = { p0, run, dur: clamp(d / ((run ? 3.6 : 1.5) * CUT_SEC), 0.14, 0.5), head: Math.atan2(P1.x - p0.x, P1.z - p0.z) };
+      const pts = planPath(p0, P1, c) || [p0, P1]; // 책상·의자·다른 아이를 돌아서 가는 길
+      let d = 0;
+      for (let k = 1; k < pts.length; k++) d += BABYLON.Vector3.Distance(pts[k - 1], pts[k]);
+      const run = (A.run && A.run.includes(c.id)) || d > 2.6;
+      a.trav = { p0, run, pts, len: d, dur: clamp(d / ((run ? 3.6 : 1.5) * CUT_SEC), 0.14, 0.55) };
     }
     a.path = A.path && A.path[c.id]; // [[때, 오른쪽, 앞], ...] 제자리에서 벗어났다 돌아오는 길
   }
@@ -352,9 +424,13 @@ function cutAnim(p, prev, n = 0) {
           const wk = mixPose(c, a.stand, a.stand, 0);
           MOVES[a.trav.run ? 'run' : 'walk'](wk, 1, sec, c, false, t, t);
           for (const key in wk) pv[key] = wk[key];
-          c.root.position.copyFrom(BABYLON.Vector3.Lerp(a.trav.p0, a.P1, m));
-          let dy = c.ry0 - a.trav.head; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
-          c.root.rotation.y = a.trav.head + dy * sstep(0.8, 1, m);
+          const q = alongPath(a.trav, m);
+          c.root.position.copyFrom(q.pos);
+          // 가는 쪽을 보며 걷는다. 꺾일 때는 부드럽게 돌고, 다 와서는 삽화에서 바라보는 쪽으로 돈다
+          let dh = q.head - (a.trav.h == null ? q.head : a.trav.h); dh = Math.atan2(Math.sin(dh), Math.cos(dh));
+          a.trav.h = (a.trav.h == null ? q.head : a.trav.h) + dh * 0.35;
+          let dy = c.ry0 - a.trav.h; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+          c.root.rotation.y = a.trav.h + dy * sstep(0.85, 1, m);
         } else {
           c.root.position.copyFrom(a.P1);
           const b = sstep(0, 0.07, t - 0.03 - a.trav.dur);
@@ -430,18 +506,22 @@ async function cutFrame(endPos, hk, w, hh) {
   try { return await loadImg(await snap(shotCam, w, hh)); } finally { restoreWalls(); hk.forEach(k => k.setEnabled(true)); }
 }
 let skipAhead = false; // 움직이는 동안 「다음」을 눌렀다: 끝 장면으로 건너뛰고 바로 다음 컷으로
-function playCut(e, prev, my) {
+// replay: 「이전」·「다음」으로 지난 컷을 다시 볼 때 — 그 컷이 처음 나왔을 때의 자리(e.spots)에서 다시 움직이고, 「다음」 단추의 할 일은 건드리지 않는다
+function playCut(e, prev, my, replay = false) {
   return serial(async () => {
     const cv = storyEl.querySelector('.pic > canvas');
     if (!cv || my !== runId) return;
     const w = CUT_W, hh = Math.round(w / 1.6), g = cv.getContext('2d', { willReadFrequently: true });
     cv.width = w; cv.height = hh;
-    const at = cutAnim(e.p, prev, hist.length);
+    const now = lastSpots;
+    if (replay) lastSpots = e.spots || { stage: null, pos: {} };
+    let at;
+    try { at = cutAnim(e.p, prev, hist.length); } finally { lastSpots = now; }
     const endPos = shotCam.position.clone(), hk = hiddenKids;
     hiddenKids = []; hk.forEach(k => k.setEnabled(true));
-    skipCut = false; skipAhead = false;
+    skipCut = false;
     const skipNext = () => { skipCut = true; skipAhead = true; };
-    setNext(skipNext); // 움직이는 동안에도 「다음」을 누를 수 있다
+    if (!replay) { skipAhead = false; setNext(skipNext); } // 움직이는 동안에도 「다음」을 누를 수 있다
     cv.parentElement.classList.add('playing');
     const t0 = performance.now();
     try {
@@ -458,6 +538,10 @@ function playCut(e, prev, my) {
       if (nextFn === skipNext) setNext(null);
       for (const k in CH) if (CH[k].blinking) setFace(CH[k], CH[k].face);
       cv.parentElement.classList.remove('playing');
+      if (replay && my === runId) {
+        if (cv.isConnected && e.img) { const img = new Image(); img.src = e.img; img.alt = ''; cv.replaceWith(img); } // 끝나면 삽화로
+        else if (hist[hi] && hist[hi] !== e) { const h2 = hist[hi]; applySet(h2.stage, h2.set, false); applyCut(h2.p); } // 보는 도중 다른 컷으로 넘어갔다: 무대를 지금 보는 컷으로 되돌린다
+      }
     }
   });
 }

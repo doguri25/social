@@ -21,10 +21,10 @@ function waitNext(label) { if (skipAhead) { skipAhead = false; return Promise.re
 $('#btnNext').addEventListener('click', e => {
   if (hi === hist.length - 1 && e.timeStamp - shownAt < 300) return; // 누른 때(timeStamp)로 잰다: 앞 클릭 처리가 길어 뒤 클릭이 늦게 와도 막히게
   sfx('tap');
-  if (hi < hist.length - 1) { hi++; renderEntry(); return; }
+  if (hi < hist.length - 1) { hi++; renderEntry(true); return; }
   if (nextFn) nextFn();
 });
-$('#btnPrev').addEventListener('click', e => { if (e.detail > 0) e.currentTarget.blur(); if (hi > 0 && !making) { sfx('tap'); hi--; renderEntry(); } }); // 마우스로 누른 뒤의 Enter 는 「다음」
+$('#btnPrev').addEventListener('click', e => { if (e.detail > 0) e.currentTarget.blur(); if (hi > 0 && !making) { sfx('tap'); hi--; renderEntry(true); } }); // 마우스로 누른 뒤의 Enter 는 「다음」
 
 // ---- 컷 만들기: 무대를 찍고, 말하는 사람 얼굴 사진을 붙인다 ----
 const panelW = () => Math.round(clamp(storyEl.clientWidth * 2, 560, 900));
@@ -61,6 +61,7 @@ async function showPanel(p, my) {
       e = { p, stage: stageNow.name, set: curSet, key: stageKey(), img: null, photo: null,
         lines: asList(p.lines).map(l => { const kind = ['shout', 'think', 'whisper', 'say'].find(k => l[k]); return { who: l.who, kind, text: l[kind], ko: l['~' + kind], img: (l.who && cardPic[l.who]) || null }; }) }; // 얼굴 사진은 움직임이 끝난 뒤에 이 컷의 표정으로 찍는다
       if (my !== runId) throw CANCEL;
+      e.anim = true; e.prev = prev; e.spots = lastSpots; // 「이전」으로 돌아오면 같은 자리에서 다시 움직인다
       hist.push(e);
       hi = hist.length - 1;
       storyEl.replaceChildren(...panelNodes(e, false));
@@ -84,12 +85,15 @@ async function showPanel(p, my) {
   if (!anim) { sfx('page'); speak(readText(p)); }
 }
 function rise() { storyEl.classList.remove('rise'); void storyEl.offsetWidth; storyEl.classList.add('rise'); }
-function renderEntry() {
-  const e = hist[hi];
-  if (e.key !== stageKey()) applySet(e.stage, e.set, false); // 다른 무대에서 찍은 컷을 다시 볼 때는 그 무대로
+// replay: 「이전」·「다음」으로 옮겨 온 컷이면 그 컷의 움직임을 한 번 다시 보여 준다
+function renderEntry(replay = false) {
+  const e = hist[hi], live = hi === hist.length - 1;
+  replay = replay && !!e.anim && !!e.img && canAnim(e.p) && !(actView && live);
+  if (replay || e.key !== stageKey()) applySet(e.stage, e.set, false); // 다른 무대에서 찍은 컷을 다시 볼 때는 그 무대로 (다시 움직일 때는 공·인물 자리도 그 컷의 처음으로)
   applyCut(e.p);
-  if (actView && hi === hist.length - 1) actView(); // 지난 컷을 보고 돌아오면 하던 활동 화면으로
-  else storyEl.replaceChildren(...panelNodes(e, hi < hist.length - 1));
+  if (actView && live) actView(); // 지난 컷을 보고 돌아오면 하던 활동 화면으로
+  else storyEl.replaceChildren(...panelNodes(e, !live, replay));
+  if (replay) playCut(e, e.prev, runId, true).catch(() => {});
   rise();
   renderAsk();
   renderFoot();
@@ -113,7 +117,7 @@ function lineNodes(lines) {
     return row;
   });
 }
-function panelNodes(e, past) {
+function panelNodes(e, past, replay) {
   const p = e.p, out = [];
   if (p.text != null) {
     const t = h('div', 'textp ' + (p.tone || ''));
@@ -125,7 +129,7 @@ function panelNodes(e, past) {
   const pic = h('div', 'pic' + (p.tone ? ' ' + p.tone : '') + (p.phone ? ' phonepic' : ''));
   if (p.phone) pic.appendChild(device(p.phone, e.photo));
   else {
-    if (e.img) { const img = new Image(); img.src = e.img; img.alt = ''; pic.appendChild(img); }
+    if (e.img && !replay) { const img = new Image(); img.src = e.img; img.alt = ''; pic.appendChild(img); }
     else pic.appendChild(h('canvas')); // 움직이는 동안은 캔버스, 끝나면 삽화로 바뀐다
   }
   if (p.tone === 'memory') pic.appendChild(h('span', 'tag', t('tagThen')));
