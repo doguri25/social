@@ -5,7 +5,7 @@ const easeIO = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 const sstep = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 const lerp = (a, b, t) => a + (b - a) * t;
 function mixPose(c, a, b, t) {
-  const o = {}, y = p => (p.sit ? SEAT - c.D.hip : p.y);
+  const o = {}, y = p => (p.yy != null ? p.yy : p.sit ? SEAT - c.D.hip : p.y); // 이미 섞은 자세(yy)도 다시 섞을 수 있게
   ['aA', 'aB', 'lA', 'lB', 'hd'].forEach(k => { o[k] = a[k].map((v, i) => lerp(v, b[k][i], t)); });
   ['eA', 'eB', 'kA', 'kB', 'lean', 'tilt'].forEach(k => { o[k] = lerp(a[k], b[k], t); });
   o.yy = lerp(y(a), y(b), t);
@@ -281,7 +281,7 @@ function cutAnim(p, prev, n = 0) {
     let from = old.ball;
     if (!from) { const fc = star ? star.root.position : V3(0, 0, 0), dir0 = to.subtract(fc); dir0.y = 0; from = to.add((dir0.length() > 0.3 ? dir0.normalize() : V3(1, 0, 0)).scale(6)).add(V3(0, 0.3, 0)); } // 없던 공은 멀리서 날아든다
     const d = BABYLON.Vector3.Distance(from, to);
-    if (d > 0.35) {
+    if (d > 0.35 && !(par && par === old.ballPar)) { // 같은 사람이 계속 들고 있는 공은 날지 않는다 (그 사람과 함께 움직인다)
       const dir = to.subtract(from); dir.y = 0; dir.normalize();
       const holder = acts.find(a => { let n = par; while (n) { if (n === a.c.root) return true; n = n.parent; } return false; }) || null; // 품이나 손에 받는 사람
       const air = !holder && to.y > 0.3;
@@ -414,7 +414,7 @@ function saveSpots() {
   const bn = PROPS.ball;
   let ball = null, holder = null;
   if (bn && bn.isEnabled()) { bn.computeWorldMatrix(true); ball = bn.getAbsolutePosition().clone(); for (const id in CH) if (bn.parent === CH[id].armA.hand) holder = id; }
-  lastSpots = { stage: stageNow && stageNow.name, pos, ball, holder };
+  lastSpots = { stage: stageNow && stageNow.name, pos, ball, holder, ballPar: ball ? bn.parent : null };
 }
 const CUT_SEC = 3.6, CUT_W = 520; // 움직이는 시간, 움직이는 동안 찍는 그림 너비 (작게 찍어야 느린 기기에서도 끊기지 않는다)
 const canAnim = p => !REDUCED && save.set.anim !== false && p.text == null && !p.phone && !p.note;
@@ -466,12 +466,13 @@ function playCut(e, prev, my) {
 if (ARGS.has('rec')) window.__rec = {
   ready: () => !!(stageNow && stageNow.name) && !capBusy,
   keys: () => [...Object.keys(BOOK.scenes), ...BOOK.endings.map(e => 'end:' + e.id)],
-  run: (id, cuts, fps = 24, w = 900) => serial(async () => {
+  run: (id, cuts, fps = 24, w = 900, keep = false) => serial(async () => { // keep: 앞 장면에서 있던 자리를 그대로 둔다 (장면이 바뀌며 걸어가는 모습을 볼 때)
     const ps = id.startsWith('end:') ? BOOK.endings.find(e => e.id === id.slice(4)).panels : BOOK.scenes[id].panels, hh = Math.round(w / 1.6), n = Math.round(fps * CUT_SEC);
+    if (keep) saveSpots();
     if (!id.startsWith('end:')) applySet(BOOK.scenes[id].stage, BOOK.scenes[id].set || {}, false);
     const cv = Object.assign(document.createElement('canvas'), { width: w, height: hh }), g = cv.getContext('2d', { willReadFrequently: true });
     let prev = null;
-    saveSpots();
+    if (!keep) saveSpots();
     for (let i = 0; i < ps.length; i++) {
       const p = ps[i];
       if (p.stage || p.set) { applyItemSet(p); continue; }

@@ -208,6 +208,8 @@
  "low": "Thấp",
  "high": "Cao",
  "sound": "Âm thanh",
+ "anim": "Tranh chuyển động",
+ "animNote": "Tranh chuyển động một lần khi mới hiện ra. Nếu máy chậm, hãy tắt đi.",
  "classMode": "Xem cùng cả lớp",
  "classModeNote": "Dùng cho bảng điện tử: khi chọn sẽ có câu hỏi của thầy cô, thời gian suy nghĩ, số bạn giơ tay",
  "classLink": "Liên kết giờ học",

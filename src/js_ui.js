@@ -329,6 +329,7 @@ function openSettings() {
     row(t('fontSize'), '', seg([[0.9, t('small')], [1, t('normal')], [1.2, t('large')]], save.set.fs, v => { save.set.fs = v; store(); document.documentElement.style.setProperty('--fs', v); fitSide(); })),
     row(t('quality'), t('qualityNote'), seg([['auto', t('auto')], ['low', t('low')], ['high', t('high')]], save.set.q, v => { save.set.q = v; slowDevice = false; frames = ftime = 0; store(); applyTier(); })),
     row(t('sound'), '', onOff('sound')),
+    row(t('anim'), t('animNote'), onOff('anim')),
     row(t('classMode'), t('classModeNote'), seg([[true, t('on')], [false, t('off')]], classMode(), v => { save.set.cls = v; if (!v) CLS_LINK = false; store(); renderAsk(); })),
     row(t('classLink'), t('classLinkNote'), copy),
     link,
