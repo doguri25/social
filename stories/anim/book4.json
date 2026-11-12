@@ -29,7 +29,7 @@
   },
   "r1b": {
     "0": {"cheer": 1, "yuna": [[0.2, "show", "joy", "pump"]], "jiwoo": [[0.2, null, "calm", "ready"]], "minjun": [[0.2, null, "laugh", "sway"]], "seoa": [[0.2, null, "calm", "ready"]]},
-    "2": {"minjun": [[0.1, "dance", "laugh", "dance"], [0.5, "dance", "surprised", "jolt"]], "hit": "minjun", "hitLight": true},
+    "2": {"minjun": [[0.08, "dance", "laugh", "dance"]], "hit": "minjun", "hitLight": true, "ballFrom": 0.36},
     "4": {"seoa": [[0.4, "show", "calm", "write"]]},
     "6": {"jiwoo": [[0.25, "open", "worried", "brace"]]},
     "8": {"jiwoo": [[0.2, "open", "surprised", "trip"]]}
@@ -67,7 +67,7 @@
   },
   "s03": {
     "0": {"cheer": 1, "yuna": [[0.2, "show", "joy", "pump"]], "jiwoo": [[0.2, null, "calm", "ready"]], "minjun": [[0.2, null, "laugh", "sway"]], "seoa": [[0.2, null, "calm", "ready"]]},
-    "2": {"minjun": [[0.1, "dance", "laugh", "dance"], [0.5, "dance", "surprised", "jolt"]], "hit": "minjun", "hitLight": true},
+    "2": {"minjun": [[0.08, "dance", "laugh", "dance"]], "hit": "minjun", "hitLight": true, "ballFrom": 0.36},
     "4": {"seoa": [[0.15, "dodge", "worried", "dodge"], [0.5, "dodge", "surprised", "jolt"]], "path": {"seoa": [[0.2, -0.6, 0], [0.42, 0.5, 0]]}},
     "6": {"seoa": [[0.4, "show", "calm", "write"]]},
     "7": {"yuna": [[0.3, "throw", "angry", "windup"]], "path": {"yuna": [[0.15, 0, -0.4], [0.3, 0, 0.4]]}},

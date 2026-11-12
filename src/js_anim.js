@@ -132,6 +132,13 @@ Object.assign(MOVES, {
     toward(pv, { aA: [-0.3, 0, -1.0], eA: -0.6, aB: [-0.3, 0, 1.0], eB: -0.6 }, Math.min(1, j * 1.2) * (c.held ? 0.3 : 1));
     addV(pv, 'hd', 0, -0.15 * j);
   },
+  // 뒤에서 톡 맞음: 앞으로 살짝 밀리며 멈칫한다
+  nudge(pv, w, s, c, sit, t, dt) {
+    const j = Math.exp(-Math.max(0, dt) * 9);
+    pv.lean += 0.22 * j; pv.yy += 0.03 * j;
+    addV(pv, 'hd', 0, -0.2 * j);
+    toward(pv, { aA: [-0.4, 0, -0.7], eA: -0.5, aB: [-0.4, 0, 0.7], eB: -0.5 }, Math.min(1, j * 1.2) * (c.held ? 0.3 : 1));
+  },
   // 경기 준비: 무릎을 굽혔다 폈다 하며 좌우로 움직인다
   ready(pv, w, s) { const b = Math.sin(s * 5); pv.kA += (0.35 + b * 0.15) * w; pv.kB += (0.35 - b * 0.15) * w; addV(pv, 'lA', 0, -0.2 * w); addV(pv, 'lB', 0, -0.2 * w); pv.tilt += b * 0.1 * w; pv.yy -= 0.02 * w; pv.lean += 0.08 * w; },
   // 던지기 직전: 팔을 젖힌 채 힘을 모아 떤다
@@ -216,16 +223,21 @@ function talkAct(pv, w, s, c) {
 // 무대의 물건(바닥에 놓인 것, 키 높이 안)을 위에서 본 칸(0.12m)에 채우고, 막히지 않은 칸으로 가장 짧은 길을 찾는다.
 // 떠나는 자리와 닿는 자리 둘레는 비운다 (의자에 앉아 있거나 앉으러 가므로). 길이 없으면 곧장 간다
 const CELL = 0.12;
-function planPath(p0, p1, self) {
+// 무대에 놓인 물건과 사람이 차지한 자리: [x0, z0, x1, z1, 꼭대기 높이]. 바닥에 깔린 것과 머리 위에 있는 것은 뺀다
+function stageBoxes(self, low = 0.9) {
   const boxes = [];
   for (const m of stageNow.root.getChildMeshes(false)) {
     if (!m.isEnabled() || !m.isVisible || m.visibility === 0) continue;
     const b = m.getBoundingInfo().boundingBox, lo = b.minimumWorld, hi = b.maximumWorld;
-    if (hi.y < 0.12 || lo.y > 0.9) continue; // 바닥·깔개·햇빛 무늬, 머리 위에 있는 것
+    if (hi.y < 0.12 || lo.y > low) continue; // 바닥·깔개·햇빛 무늬, 머리 위에 있는 것
     if ((hi.x - lo.x) * (hi.z - lo.z) > 9) continue; // 방 전체를 덮는 큰 덩어리(바닥 틀 등)
-    boxes.push([lo.x, lo.z, hi.x, hi.z]);
+    boxes.push([lo.x, lo.z, hi.x, hi.z, hi.y]);
   }
-  for (const id in CH) { const c = CH[id]; if (c !== self && shown(c)) { const q = c.root.position; boxes.push([q.x - 0.22, q.z - 0.22, q.x + 0.22, q.z + 0.22]); } }
+  for (const id in CH) { const c = CH[id]; if (c !== self && shown(c)) { const q = c.root.position; boxes.push([q.x - 0.22, q.z - 0.22, q.x + 0.22, q.z + 0.22, q.y + c.D.neck + c.r * 2 + (c.y0 || 0)]); } }
+  return boxes;
+}
+function planPath(p0, p1, self) {
+  const boxes = stageBoxes(self);
   const x0 = Math.min(p0.x, p1.x) - 2.5, z0 = Math.min(p0.z, p1.z) - 2.5, W = Math.ceil((Math.abs(p0.x - p1.x) + 5) / CELL), H = Math.ceil((Math.abs(p0.z - p1.z) + 5) / CELL);
   if (W * H > 40000) return null;
   const blocked = new Uint8Array(W * H), R = 0.17; // 몸 반지름만큼 물건을 부풀린다
@@ -346,34 +358,53 @@ function cutAnim(p, prev, n = 0) {
   // 품에 받으면 받은 사람이 살짝 밀리고, 아직 날아가는 중을 그린 컷이면 컷이 끝나는 순간 그 자리에 닿는다 ----
   const bn = PROPS.ball;
   let fly = null;
-  if (bn && bn.isEnabled() && old && A.ball !== false) {
+  if (bn && bn.isEnabled() && (old || A.ballIn) && A.ball !== false) {
     const par = bn.parent, loc = bn.position.clone(), rot = bn.rotation.clone();
     const target = () => { if (!par) return loc.clone(); par.computeWorldMatrix(true); return BABYLON.Vector3.TransformCoordinates(loc, par.getWorldMatrix()); };
     const to = target();
-    let from = old.ball;
+    let from = A.ballIn ? null : old.ball; // ballIn: 이미 그 자리에 있는 공도 멀리서 다시 날아오게 (맞는 순간을 가까이서 다시 보여 줄 때)
     if (!from) { const fc = star ? star.root.position : V3(0, 0, 0), dir0 = to.subtract(fc); dir0.y = 0; from = to.add((dir0.length() > 0.3 ? dir0.normalize() : V3(1, 0, 0)).scale(6)).add(V3(0, 0.3, 0)); } // 없던 공은 멀리서 날아든다
     const d = BABYLON.Vector3.Distance(from, to);
-    if (d > 0.35 && !(par && par === old.ballPar)) { // 같은 사람이 계속 들고 있는 공은 날지 않는다 (그 사람과 함께 움직인다)
+    if (d > 0.35 && !(par && old && par === old.ballPar && !A.ballIn)) { // 같은 사람이 계속 들고 있는 공은 날지 않는다 (그 사람과 함께 움직인다)
       const dir = to.subtract(from); dir.y = 0; dir.normalize();
       const holder = acts.find(a => { let n = par; while (n) { if (n === a.c.root) return true; n = n.parent; } return false; }) || null; // 품이나 손에 받는 사람
       const air = !holder && to.y > 0.3;
       const victim = (air && A.hit && acts.find(a => a.c.id === A.hit)) || null; // 이 컷에서 공에 맞는 사람 (anim.hit 에 적은 컷만. 적지 않으면 공은 아직 날아가는 중)
-      const dur = clamp(d / (8 * CUT_SEC), 0.1, 0.32), mid = air && !victim;
+      // 날아가는 길에 사람이나 물건이 있으면 그 위로 넘어가도록 더 높이(더 오래) 던진다 — 공이 뚫고 지나가지 않게
+      let T = clamp(d / 8, 0.1 * CUT_SEC, 0.32 * CUT_SEC);
+      const fx = to.x - from.x, fz = to.z - from.z, L2 = fx * fx + fz * fz || 1;
+      for (const [ax, az, bx, bz, top] of stageBoxes(null, 3)) {
+        const cx = (ax + bx) / 2, cz = (az + bz) / 2, u = ((cx - from.x) * fx + (cz - from.z) * fz) / L2;
+        if (u < 0.1 || u > 0.9) continue; // 던지는 사람·받는 사람 곁의 것은 넘지 않아도 된다
+        const px = from.x + fx * u, pz2 = from.z + fz * u, r = 0.12;
+        if (px < ax - r || px > bx + r || pz2 < az - r || pz2 > bz + r) continue;
+        const need = top + 0.2 - (from.y + (to.y - from.y) * u);
+        if (need > 0) T = Math.max(T, Math.sqrt(2 * need / (9.8 * u * (1 - u))));
+      }
+      T = Math.min(T, 1.5);
+      const dur = T / CUT_SEC, mid = air && !victim;
       const t0 = A.ballFrom != null ? A.ballFrom : mid ? 0.97 - dur : 0.12;
       fly = { par, loc, rot, target, from, to, dir, t0, dur, tb: t0 + dur, holder, victim, mid, T: dur * CUT_SEC, floor: !holder && !air };
       if (victim) { // 맞는 사람: 맞는 순간부터 앞에서 맞으면 엉덩방아, 뒤에서 맞으면 앞으로 휘청 (anim.hitLight 면 움찔만)
         const K = victim.keys, fin = K[K.length - 1], front = BABYLON.Vector3.Dot(dir, facing(victim.c)) < 0;
-        const mv = A.hitLight ? 'jolt' : front ? 'tumble' : 'trip';
+        const mv = A.hitLight ? (front ? 'jolt' : 'nudge') : front ? 'tumble' : 'trip';
         const kept = K.filter((k, i) => i < K.length - 1 && k[0] < fly.tb - 0.02);
         victim.keys = [...kept, [fly.tb + 0.01, fin[1], 'surprised', mv, 0.02], [Math.min(0.88, fly.tb + (mv === 'tumble' ? 0.5 : 0.36)), fin[1], fin[2], 'still', mv === 'tumble' ? 0.2 : 0.1]];
-        victim.push = { t: fly.tb, dir, k: mv === 'jolt' ? 0.08 : 0.3 };
+        victim.push = { t: fly.tb, dir, k: A.hitLight ? 0.08 : 0.3 };
         // 튕겨 나온 공: 맞은 자리에서 뒤쪽 위로 튀어 올랐다가 떨어져 바닥에서 몇 번 튀고 구른다
         const v0 = dir.scale(-1.3).add(V3(dir.z * 0.5, 2.1, -dir.x * 0.5));
+        const near = stageBoxes(victim.c, 3).filter(b => b[0] < to.x + 3 && b[2] > to.x - 3 && b[1] < to.z + 3 && b[3] > to.z - 3);
         fly.reb = tau => {
           const pz = to.clone(); let vy = v0.y, vx = v0.x, vz = v0.z, left = tau;
           for (let n = 0; n < 400 && left > 0; n++) {
             const h = Math.min(0.01, left); left -= h;
-            vy -= 9.8 * h; pz.x += vx * h; pz.y += vy * h; pz.z += vz * h;
+            vy -= 9.8 * h;
+            const nx = pz.x + vx * h, nz = pz.z + vz * h;
+            // 물건이나 사람에 부딪히면 그 면에서 되튄다 (뚫고 지나가지 않는다)
+            const hitB = near.find(b => pz.y < b[4] && nx > b[0] - 0.085 && nx < b[2] + 0.085 && nz > b[1] - 0.085 && nz < b[3] + 0.085);
+            if (hitB) { const inX = pz.x > hitB[0] - 0.085 && pz.x < hitB[2] + 0.085; if (inX) vz = -vz * 0.5; else vx = -vx * 0.5; }
+            else { pz.x = nx; pz.z = nz; }
+            pz.y += vy * h;
             if (pz.y < 0.085) { pz.y = 0.085; vy = Math.abs(vy) > 0.6 ? -vy * 0.5 : 0; vx *= 0.75; vz *= 0.75; }
             if (pz.y <= 0.086 && vy === 0) { vx *= 1 - 1.6 * h; vz *= 1 - 1.6 * h; } // 구르다 멈춘다
           }
