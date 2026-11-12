@@ -17881,7 +17881,7 @@ Object.assign(MOVES, {
   // 공 피하기: 좌우로 폴짝 비킨다
   dodge(pv, w, s) { const b = Math.sin(s * 6); pv.tilt += b * 0.3 * w; pv.yy += Math.abs(b) * 0.04 * w; addV(pv, 'aA', 2, -Math.abs(b) * 0.5 * w); addV(pv, 'aB', 2, Math.abs(b) * 0.5 * w); pv.kA += Math.max(0, b) * 0.5 * w; pv.kB += Math.max(0, -b) * 0.5 * w; },
   // 받을 준비: 팔을 벌린 채 무릎을 굽혔다 편다
-  brace(pv, w, s) { const b = Math.sin(s * 4.5); pv.kA += b * 0.2 * w; pv.kB += b * 0.2 * w; pv.yy -= (0.5 + b * 0.5) * 0.02 * w; addV(pv, 'aA', 2, b * 0.12 * w); addV(pv, 'aB', 2, -b * 0.12 * w); },
+  brace(pv, w, s) { const b = Math.sin(s * 2.6); pv.kA += (0.25 + b * 0.12) * w; pv.kB += (0.25 + b * 0.12) * w; pv.yy -= (0.5 + b * 0.5) * 0.015 * w; pv.lean += 0.06 * w; }, // 긴장해서 무릎을 살짝 굽혔다 펴는 정도만
   // 주먹을 꼭 쥐고 부르르 (발은 구르지 않는다)
   fist(pv, w, s) { toward(pv, { aA: [0.1, 0, -0.35], eA: -0.6 - (Math.sin(s * 2.5) * 0.5 + 0.5) * 0.25, aB: [0.1, 0, 0.35], eB: -0.6 - (Math.sin(s * 2.5) * 0.5 + 0.5) * 0.25 }, w * 0.85); addV(pv, 'hd', 0, 0.12 * w); },
   // 깊은 숨: 어깨가 천천히 오르내린다
@@ -17948,7 +17948,16 @@ function cutAnim(p, prev, n = 0) {
   placeShot(p);
   const end = { pos: shotCam.position.clone(), look: shotLook.clone(), fov: shotCam.fov };
   const A = p.anim || {};
-  const cm = Object.assign({ turn: 0, back: 1, up: 0 }, A.cam);
+  // 카메라: 필요한 컷에만 움직인다. 따로 정하지 않았으면 컷의 성격에 맞춰 —
+  // 장면을 여는 넓은 컷은 조금 가까이서 물러나며 무대를 보여 주고, 외치는 말·효과음·집중선 컷은 빠르게 다가가고,
+  // 물건 컷과 속상한 얼굴 컷은 천천히 다가간다. 나머지는 고정
+  const f1s = Object.values(p.faces || {}), loud = asList(p.lines).some(l => l.shout) || p.sfx || p.fx === 'focus';
+  const auto = loud ? { back: 1.22 }
+    : (p.shot === 'wide' || !p.shot) && !prev ? { back: 0.86, turn: 6 }
+    : p.shot === 'item' ? { back: 1.14 }
+    : (p.shot === 'close' && f1s.some(f => ['sad', 'hurt', 'worried', 'cry', 'shy'].includes(f))) ? { back: 1.1 }
+    : null;
+  const cm = Object.assign({ turn: 0, back: 1, up: 0 }, A.cam === false ? null : A.cam || auto);
   const off = end.pos.subtract(end.look);
   const start = { pos: end.look.add(turnY(off, cm.turn).scale(cm.back)).add(V3(0, cm.up, 0)), look: end.look.clone(), fov: end.fov };
   const talkers = new Set(asList(p.lines).map(l => l.who));
