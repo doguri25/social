@@ -451,7 +451,7 @@ function playCut(e, prev, my) {
         if (t >= 1) break;
         const img = await cutFrame(endPos, hk, w, hh);
         if (my !== runId || !cv.isConnected) break;
-        g.drawImage(img, 0, 0); // 움직이는 동안에는 망점을 입히지 않는다: 작게 찍어 늘려 보여 주므로 망점이 굵은 격자무늬로 보인다 (끝의 삽화에는 그대로)
+        g.drawImage(img, 0, 0);
       }
     } finally {
       at(1, CUT_SEC);

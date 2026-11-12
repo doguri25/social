@@ -1,4 +1,4 @@
-// ===== 웹툰 컷 찍기: 컷마다 카메라 자리를 정해 무대를 찍고, 망점을 입힌다 =====
+// ===== 웹툰 컷 찍기: 컷마다 카메라 자리를 정해 무대를 찍는다 =====
 const shotCam = new BABYLON.UniversalCamera('shot', V3(0, 1, 3), scene);
 const faceCam = new BABYLON.UniversalCamera('faceCam', V3(0, 1, 3), scene);
 // Babylon 9.27: 후처리가 없는 카메라로 화면 밖 찍기를 하면 빈 그림이 나온다. 그대로 옮기는 후처리를 하나씩 붙인다
@@ -145,8 +145,7 @@ function shoot(p, w, hh, my) {
     cv.width = w;
     cv.height = hh;
     const g = cv.getContext('2d');
-    g.drawImage(img, 0, 0);
-    screentone(g, w, hh);
+    g.drawImage(img, 0, 0); // 망점은 입히지 않는다 (점이 많아 그림이 지저분해 보였다. 다시 쓰려면 여기서 screentone(g, w, hh))
     return cv.toDataURL('image/jpeg', 0.86);
   });
 }
