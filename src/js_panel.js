@@ -88,6 +88,7 @@ function rise() { storyEl.classList.remove('rise'); void storyEl.offsetWidth; st
 // replay: 「이전」·「다음」으로 옮겨 온 컷이면 그 컷의 움직임을 한 번 다시 보여 준다
 function renderEntry(replay = false) {
   const e = hist[hi], live = hi === hist.length - 1;
+  if (replay) console.warn('재생 조건', !!e.anim, !!e.img, canAnim(e.p), !!actView, live);
   replay = replay && !!e.anim && !!e.img && canAnim(e.p) && !(actView && live);
   if (replay || e.key !== stageKey()) applySet(e.stage, e.set, false); // 다른 무대에서 찍은 컷을 다시 볼 때는 그 무대로 (다시 움직일 때는 공·인물 자리도 그 컷의 처음으로)
   applyCut(e.p);

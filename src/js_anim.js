@@ -524,6 +524,7 @@ function playCut(e, prev, my, replay = false) {
     if (!replay) { skipAhead = false; setNext(skipNext); } // 움직이는 동안에도 「다음」을 누를 수 있다
     cv.parentElement.classList.add('playing');
     const t0 = performance.now();
+    let dbgN = 0; if (replay) console.warn('재생 시작', !!cv, skipCut);
     try {
       for (;;) {
         const sec = (performance.now() - t0) / 1000, t = skipCut ? 1 : Math.min(1, sec / CUT_SEC);
@@ -531,9 +532,10 @@ function playCut(e, prev, my, replay = false) {
         if (t >= 1) break;
         const img = await cutFrame(endPos, hk, w, hh);
         if (my !== runId || !cv.isConnected) break;
-        g.drawImage(img, 0, 0);
+        g.drawImage(img, 0, 0); dbgN++;
       }
     } finally {
+      if (replay) console.warn('재생 끝', dbgN, Math.round(performance.now() - t0), skipCut, my === runId, cv.isConnected);
       at(1, CUT_SEC);
       if (nextFn === skipNext) setNext(null);
       for (const k in CH) if (CH[k].blinking) setFace(CH[k], CH[k].face);
