@@ -18579,7 +18579,7 @@ function renderFoot() {
   nb.firstChild.textContent = (live ? nextLabel : t('next')) + ' ';
 }
 // 「다음」을 누를 때까지 기다린다. 지난 컷을 보는 중이면 「다음」은 먼저 지금 컷으로 돌아온다
-function waitNext(label) { return waitFor(done => { setNext(done, label); return () => { if (nextFn === done) setNext(null); }; }); }
+function waitNext(label) { if (skipAhead) { skipAhead = false; return Promise.resolve(); } return waitFor(done => { setNext(done, label); return () => { if (nextFn === done) setNext(null); }; }); }
 $('#btnNext').addEventListener('click', e => {
   if (hi === hist.length - 1 && e.timeStamp - shownAt < 300) return; // 누른 때(timeStamp)로 잰다: 앞 클릭 처리가 길어 뒤 클릭이 늦게 와도 막히게
   sfx('tap');
@@ -18614,6 +18614,7 @@ async function showPanel(p, my) {
   if (hi < hist.length - 1) { hi = hist.length - 1; renderEntry(); } // 지난 컷을 보는 사이 흐름이 이어지면(숨 고르기가 저절로 끝남) 지금 무대로 돌아와서 찍는다
   making++;
   renderFoot();
+  skipAhead = false;
   let e;
   const anim = canAnim(p), last = hist[hist.length - 1];
   const prev = anim && last && last.key === stageKey() ? last.p : null; // 같은 무대의 앞 컷에서 이어서 움직인다
@@ -19179,6 +19180,15 @@ const canAnim = p => !REDUCED && save.set.anim !== false && p.text == null && !p
 let skipCut = false; // 그림을 누르면 바로 끝 장면으로
 storyEl.addEventListener('click', e => { if (e.target.closest('.pic.playing')) skipCut = true; });
 // 컷 e 를 옆 칸의 캔버스에 한 번 재생한다. 끝나면 인물·카메라는 삽화와 같은 자리에 있다
+// 움직이는 컷의 한 장: 큰 무대를 먼저 그리고(벽·아이들은 제대로 보이게), 찍는 그 순간에만 컷 카메라 기준으로 벽과 가리는 아이를 뺐다가 바로 되돌린다.
+// 벽은 삽화 자리(endPos) 기준으로 늘 같게 — 카메라가 움직이는 동안 벽이나 물건이 깜빡이지 않는다
+async function cutFrame(endPos, hk, w, hh) {
+  scene.render();
+  wallsForShot(endPos);
+  hk.forEach(k => k.setEnabled(false));
+  try { return await loadImg(await snap(shotCam, w, hh)); } finally { restoreWalls(); hk.forEach(k => k.setEnabled(true)); }
+}
+let skipAhead = false; // 움직이는 동안 「다음」을 눌렀다: 끝 장면으로 건너뛰고 바로 다음 컷으로
 function playCut(e, prev, my) {
   return serial(async () => {
     const cv = storyEl.querySelector('.pic > canvas');
@@ -19186,8 +19196,11 @@ function playCut(e, prev, my) {
     const w = CUT_W, hh = Math.round(w / 1.6), g = cv.getContext('2d', { willReadFrequently: true });
     cv.width = w; cv.height = hh;
     const at = cutAnim(e.p, prev, hist.length);
-    wallsForShot(shotCam.position);
-    skipCut = false;
+    const endPos = shotCam.position.clone(), hk = hiddenKids;
+    hiddenKids = []; hk.forEach(k => k.setEnabled(true));
+    skipCut = false; skipAhead = false;
+    const skipNext = () => { skipCut = true; skipAhead = true; };
+    setNext(skipNext); // 움직이는 동안에도 「다음」을 누를 수 있다
     cv.parentElement.classList.add('playing');
     const t0 = performance.now();
     try {
@@ -19195,15 +19208,14 @@ function playCut(e, prev, my) {
         const sec = (performance.now() - t0) / 1000, t = skipCut ? 1 : Math.min(1, sec / CUT_SEC);
         at(t, sec);
         if (t >= 1) break;
-        scene.render();
-        const img = await loadImg(await snap(shotCam, w, hh));
+        const img = await cutFrame(endPos, hk, w, hh);
         if (my !== runId || !cv.isConnected) break;
         g.drawImage(img, 0, 0);
         screentone(g, w, hh);
       }
     } finally {
       at(1, CUT_SEC);
-      restoreWalls(); hiddenKids.forEach(k => k.setEnabled(true)); hiddenKids = [];
+      if (nextFn === skipNext) setNext(null);
       for (const k in CH) if (CH[k].blinking) setFace(CH[k], CH[k].face);
       cv.parentElement.classList.remove('playing');
     }
@@ -19226,17 +19238,17 @@ if (ARGS.has('rec')) window.__rec = {
       if (!cuts || cuts.includes(i)) {
         await window.__cut(i);
         const at = cutAnim(p, prev);
-        wallsForShot(shotCam.position);
+        const endPos = shotCam.position.clone(), hk = hiddenKids;
+        hiddenKids = []; hk.forEach(k => k.setEnabled(true));
         try {
           if (!fps) { for (let f = 0; f <= 40; f++) at(f / 40, f * CUT_SEC / 40); await window.__frame(''); } // 그리지 않고 동작만 돌려 보기 (오류 점검)
           else for (let f = 0; f <= n; f++) {
             at(f / n, f / fps);
-            scene.render();
-            g.drawImage(await loadImg(await snap(shotCam, w, hh)), 0, 0);
+            g.drawImage(await cutFrame(endPos, hk, w, hh), 0, 0);
             screentone(g, w, hh);
             await window.__frame(cv.toDataURL('image/jpeg', 0.93));
           }
-        } finally { restoreWalls(); hiddenKids.forEach(k => k.setEnabled(true)); hiddenKids = []; }
+        } finally { restoreWalls(); }
       }
       applyCut(p);
       saveSpots();

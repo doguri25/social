@@ -17,7 +17,7 @@ function renderFoot() {
   nb.firstChild.textContent = (live ? nextLabel : t('next')) + ' ';
 }
 // 「다음」을 누를 때까지 기다린다. 지난 컷을 보는 중이면 「다음」은 먼저 지금 컷으로 돌아온다
-function waitNext(label) { return waitFor(done => { setNext(done, label); return () => { if (nextFn === done) setNext(null); }; }); }
+function waitNext(label) { if (skipAhead) { skipAhead = false; return Promise.resolve(); } return waitFor(done => { setNext(done, label); return () => { if (nextFn === done) setNext(null); }; }); }
 $('#btnNext').addEventListener('click', e => {
   if (hi === hist.length - 1 && e.timeStamp - shownAt < 300) return; // 누른 때(timeStamp)로 잰다: 앞 클릭 처리가 길어 뒤 클릭이 늦게 와도 막히게
   sfx('tap');
@@ -52,6 +52,7 @@ async function showPanel(p, my) {
   if (hi < hist.length - 1) { hi = hist.length - 1; renderEntry(); } // 지난 컷을 보는 사이 흐름이 이어지면(숨 고르기가 저절로 끝남) 지금 무대로 돌아와서 찍는다
   making++;
   renderFoot();
+  skipAhead = false;
   let e;
   const anim = canAnim(p), last = hist[hist.length - 1];
   const prev = anim && last && last.key === stageKey() ? last.p : null; // 같은 무대의 앞 컷에서 이어서 움직인다
