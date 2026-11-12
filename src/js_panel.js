@@ -75,6 +75,7 @@ async function showPanel(p, my) {
     } else e = await makeEntry(p, my);
   } finally { making--; renderFoot(); }
   if (my !== runId) throw CANCEL;
+  saveSpots();
   if (!anim) hist.push(e);
   hi = hist.length - 1;
   renderEntry();

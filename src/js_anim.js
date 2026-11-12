@@ -172,6 +172,21 @@ Object.assign(MOVES, {
   fidget(pv, w, s) { const b = Math.sin(s * 6); toward(pv, { aA: [-0.45, 0, 0.34 + b * 0.05], eA: -1.75 + b * 0.12, aB: [-0.45, 0, -0.34 + b * 0.05], eB: -1.75 - b * 0.12 }, w * (c.held ? 0 : 0.9)); addV(pv, 'hd', 0, 0.14 * w); addV(pv, 'hd', 1, Math.sin(s * 1.9) * 0.12 * w); },
   // 크게 외친다: 몸을 내밀며 힘을 준다
   shout(pv, w, s) { const b = Math.max(0, Math.sin(s * 6)); pv.lean += b * 0.18 * w; pv.yy += b * 0.02 * w; addV(pv, 'hd', 0, -b * 0.12 * w); },
+  // 엉덩방아: 뒤로 벌렁 넘어져 주저앉았다가 일어난다
+  tumble(pv, w, s, c, sit, t, dt) {
+    const j = sstep(0, 0.07, dt) * w;
+    pv.lean -= 1.25 * j; pv.yy += 0.1 * j;
+    toward(pv, { lA: [-1.2, 0, 0.25], lB: [-1.2, 0, -0.25], kA: 0.5, kB: 0.5, aA: [0.6, 0, -0.9 + Math.sin(s * 14) * 0.3 * (1 - j)], eA: -0.3, aB: [0.6, 0, 0.9], eB: -0.3 }, j);
+    addV(pv, 'hd', 0, 0.5 * j);
+  },
+  // 앞으로 고꾸라질 뻔: 크게 휘청하고 팔을 허우적댄다
+  trip(pv, w, s, c, sit, t, dt) {
+    const j = Math.exp(-Math.max(0, dt) * 5) * sstep(0, 0.04, dt);
+    pv.lean += 0.95 * j; pv.yy -= 0.04 * j;
+    toward(pv, { aA: [-2.4 + Math.sin(s * 16) * 0.5, 0, -0.5], eA: -0.3, aB: [-2.0 - Math.sin(s * 16) * 0.5, 0, 0.5], eB: -0.3, lA: [0.7, 0, 0], kA: 0.9 }, Math.min(1, j * 1.3));
+  },
+  // 한 바퀴 빙글
+  spin(pv, w, s, c, sit, t, dt) { c.root.rotation.y = c.ry0 + easeIO(clamp(dt / 0.25, 0, 1)) * Math.PI * 2; pv.yy += Math.sin(clamp(dt / 0.25, 0, 1) * Math.PI) * 0.05; toward(pv, { aA: [0, 0, -1.4], aB: [0, 0, 1.4] }, w); },
   // 한 손 흔들기
   wave(pv, w, s) { toward(pv, { aB: [0, 0, 2.5 + Math.sin(s * 10) * 0.35], eB: -0.6 }, w); addV(pv, 'hd', 2, 0.08 * w); },
 });
@@ -215,6 +230,38 @@ function cutAnim(p, prev, n = 0) {
     if (star && star !== c) { const d = star.root.position.subtract(c.root.position); look = clamp(Math.atan2(d.x, d.z) - c.ry0, -Math.PI, Math.PI); look = clamp(Math.atan2(Math.sin(look), Math.cos(look)), -0.8, 0.8); }
     acts.push({ c, keys, f1, talk: talkers.has(id), k: focus.has(id) || !star ? 1 : 0.45, look, sit: !!poseVals(c.base, o1).sit });
   }
+  // ---- 이동: 앞 컷 뒤로 자리가 바뀐 인물은 그 자리에서 걸어(멀면 뛰어) 온다. 새로 나온 인물은 뒤쪽에서 걸어 들어온다 ----
+  const old = lastSpots.stage === stageNow.name ? lastSpots : null;
+  for (const a of acts) {
+    const c = a.c, P1 = c.root.position.clone(), o = old && old.pos[c.id];
+    a.P1 = P1; a.stand = poseVals('stand');
+    let p0 = null;
+    if (o && BABYLON.Vector3.Distance(o, P1) > 0.3) p0 = o;
+    else if (old && !o && A.enter !== false) p0 = P1.subtract(facing(c).scale(2.4));
+    if (A.from && A.from[c.id]) { const f = A.from[c.id], fw = facing(c); p0 = P1.add(V3(fw.z * f[0] + fw.x * f[1], 0, -fw.x * f[0] + fw.z * f[1])); } // [오른쪽, 앞] m 만큼 떨어진 데서 시작
+    if (p0) {
+      const d = BABYLON.Vector3.Distance(p0, P1), run = (A.run && A.run.includes(c.id)) || d > 2.6;
+      a.trav = { p0, run, dur: clamp(d / ((run ? 3.6 : 1.5) * CUT_SEC), 0.14, 0.5), head: Math.atan2(P1.x - p0.x, P1.z - p0.z) };
+    }
+    a.path = A.path && A.path[c.id]; // [[때, 오른쪽, 앞], ...] 제자리에서 벗어났다 돌아오는 길
+  }
+  // ---- 공: 앞 컷 뒤로 자리가 바뀌었으면 그 자리에서 날아온다 (던진 공, 날아와 맞는 공, 품에 안기는 공) ----
+  const bn = PROPS.ball;
+  let fly = null;
+  if (bn && bn.isEnabled() && old && A.ball !== false) {
+    const par = bn.parent, loc = bn.position.clone(), rot = bn.rotation.clone();
+    const target = () => { if (!par) return loc.clone(); par.computeWorldMatrix(true); return BABYLON.Vector3.TransformCoordinates(loc, par.getWorldMatrix()); };
+    const to = target();
+    let from = old.ball;
+    if (!from) { const fc = star ? star.root.position : V3(0, 0, 0), dir = to.subtract(fc); dir.y = 0; from = to.add((dir.length() > 0.3 ? dir.normalize() : V3(1, 0, 0)).scale(6)).add(V3(0, 0.4, 0)); } // 없던 공은 멀리서 날아든다
+    const d = BABYLON.Vector3.Distance(from, to);
+    if (d > 0.35) fly = { par, loc, rot, target, from, t0: A.ballFrom == null ? 0.07 : A.ballFrom, dur: clamp(d / (9 * CUT_SEC), 0.1, 0.3), h: d * 0.1, floor: !par || par === stageNow.root ? to.y < 0.35 : false };
+  }
+  // 던진 사람: 앞 컷에서 팔을 젖히고 있었고 공이 손을 떠났으면, 팔을 앞으로 휘두른 뒤 이 컷의 자세가 된다
+  if (old && old.holder && fly && !(fly.par && fly.par === (CH[old.holder] && CH[old.holder].armA.hand))) {
+    const a = acts.find(x => x.c.id === old.holder);
+    if (a && prev && prev.poses && prev.poses[old.holder] === 'throw') { const sw = poseVals(a.c.base, 'reach'); sw.lean = 0.3; a.keys.splice(1, 0, [0.1, sw, a.keys[0][2], 'still', 0.07]); if (a.keys[2][0] < 0.3) a.keys[2][0] = 0.3; }
+  }
   const kids = (stageNow.kids || []).map((nd, i) => ({ n: nd, y: nd.position.y, rz: nd.rotation.z, ry: nd.rotation.y, ph: i * 2.4 }));
   const cheer = A.cheer == null ? 0.15 : A.cheer;
   return function at(t, sec) { // t: 0~1, sec: 지난 초
@@ -241,9 +288,48 @@ function cutAnim(p, prev, n = 0) {
       if (a.talk) talkAct(pv, sstep(0.15, 0.3, t) * live, s, c);
       if (a.look) addV(pv, 'hd', 1, a.look * sstep(0.05, 0.25, t) * live);
       pv.yy += Math.sin(s * 2.9) * 0.005 * live;
+      // 이동
+      if (a.trav) {
+        const m = clamp((t - 0.03) / a.trav.dur, 0, 1);
+        if (m < 1) {
+          const wk = mixPose(c, a.stand, a.stand, 0);
+          MOVES[a.trav.run ? 'run' : 'walk'](wk, 1, sec, c, false, t, t);
+          for (const key in wk) pv[key] = wk[key];
+          c.root.position.copyFrom(BABYLON.Vector3.Lerp(a.trav.p0, a.P1, m));
+          let dy = c.ry0 - a.trav.head; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+          c.root.rotation.y = a.trav.head + dy * sstep(0.8, 1, m);
+        } else {
+          c.root.position.copyFrom(a.P1);
+          const b = sstep(0, 0.07, t - 0.03 - a.trav.dur);
+          if (b < 1) { const st = mixPose(c, a.stand, pv, b); for (const key in st) pv[key] = st[key]; }
+        }
+      }
+      if (a.path && !(a.trav && t - 0.03 < a.trav.dur)) {
+        const P = [[0, 0, 0], ...a.path, [Math.max(0.86, a.path[a.path.length - 1][0] + 0.1), 0, 0]];
+        let q = 1;
+        while (q < P.length - 1 && t > P[q][0]) q++;
+        const e2 = easeIO(clamp((t - P[q - 1][0]) / Math.max(0.01, P[q][0] - P[q - 1][0]), 0, 1)), ox = lerp(P[q - 1][1], P[q][1], e2), oz = lerp(P[q - 1][2], P[q][2], e2);
+        const fx = Math.sin(c.ry0), fz = Math.cos(c.ry0);
+        c.root.position.set(a.P1.x + fz * ox + fx * oz, a.P1.y, a.P1.z - fx * ox + fz * oz);
+      }
+      if (t >= 1) { c.root.position.copyFrom(a.P1); c.root.rotation.y = c.ry0; }
       applyPose(c, pv);
       const blink = live > 0.5 && ((sec + c.phase * 0.37) % 2.3) < 0.12;
       if (face !== c.face || blink !== c.blinking) { c.face = face; c.blinking = blink; paintFace(c, blink); }
+    }
+    if (fly) { // 공이 날아간다 (포물선, 빙글 돌며). 닿은 뒤 바닥이면 통통 튄다
+      const u = clamp((t - fly.t0) / fly.dur, 0, 1), tg = fly.target();
+      if (u < 1 && t < 0.99) {
+        bn.parent = null;
+        const pos = BABYLON.Vector3.Lerp(fly.from, tg, u);
+        pos.y += Math.sin(u * Math.PI) * fly.h;
+        bn.position.copyFrom(pos);
+        bn.rotation.x = u * 14;
+      } else {
+        bn.parent = fly.par; bn.position.copyFrom(fly.loc); bn.rotation.copyFrom(fly.rot);
+        const dt2 = t - fly.t0 - fly.dur;
+        if (fly.floor && t < 0.99) bn.position.y += Math.abs(Math.sin(dt2 * 38)) * 0.3 * Math.exp(-dt2 * 14);
+      }
     }
     kids.forEach(o => { // 배경 아이들: 들썩이고 기웃거린다
       o.n.position.y = o.y + Math.abs(Math.sin(sec * 3.4 + o.ph)) * 0.04 * cheer * live;
@@ -251,6 +337,16 @@ function cutAnim(p, prev, n = 0) {
       o.n.rotation.y = o.ry + Math.sin(sec * 1.7 + o.ph * 1.3) * 0.25 * cheer * live;
     });
   };
+}
+// 앞 컷이 끝났을 때 인물과 공이 있던 자리 (다음 컷에서 자리가 바뀌었으면 거기서부터 움직인다)
+let lastSpots = { stage: null, pos: {}, ball: null, holder: null };
+function saveSpots() {
+  const pos = {};
+  for (const id in CH) if (shown(CH[id])) pos[id] = CH[id].root.position.clone();
+  const bn = PROPS.ball;
+  let ball = null, holder = null;
+  if (bn && bn.isEnabled()) { bn.computeWorldMatrix(true); ball = bn.getAbsolutePosition().clone(); for (const id in CH) if (bn.parent === CH[id].armA.hand) holder = id; }
+  lastSpots = { stage: stageNow && stageNow.name, pos, ball, holder };
 }
 const CUT_SEC = 3.6, CUT_W = 520; // 움직이는 시간, 움직이는 동안 찍는 그림 너비 (작게 찍어야 느린 기기에서도 끊기지 않는다)
 const canAnim = p => !REDUCED && save.set.anim !== false && p.text == null && !p.phone && !p.note;
@@ -287,22 +383,35 @@ function playCut(e, prev, my) {
     }
   });
 }
-// 시험·소개 영상용 창구 (?rec): 컷 하나의 움직임을 정해진 장수로 찍어 넘긴다 (느린 기기에서도 매끄러운 영상을 만들 수 있게)
+// 시험·소개 영상용 창구 (?rec): 장면을 처음부터 따라가며 고른 컷의 움직임을 정해진 장수로 찍어 넘긴다 (느린 기기에서도 매끄러운 영상을 만들 수 있게)
 if (ARGS.has('rec')) window.__rec = {
   ready: () => !!(stageNow && stageNow.name) && !capBusy,
-  cut: (id, i, fps = 24, w = 900) => serial(async () => {
-    const ps = BOOK.scenes[id].panels, p = ps[i], hh = Math.round(w / 1.6), n = Math.round(fps * CUT_SEC);
+  run: (id, cuts, fps = 24, w = 900) => serial(async () => {
+    const ps = BOOK.scenes[id].panels, hh = Math.round(w / 1.6), n = Math.round(fps * CUT_SEC);
     const cv = Object.assign(document.createElement('canvas'), { width: w, height: hh }), g = cv.getContext('2d', { willReadFrequently: true });
-    const at = cutAnim(p, ps[i - 1], i);
-    wallsForShot(shotCam.position);
-    try {
-      for (let f = 0; f <= n; f++) {
-        at(f / n, f / fps);
-        scene.render();
-        g.drawImage(await loadImg(await snap(shotCam, w, hh)), 0, 0);
-        screentone(g, w, hh);
-        await window.__frame(cv.toDataURL('image/jpeg', 0.93));
+    let prev = null;
+    saveSpots();
+    for (let i = 0; i < ps.length; i++) {
+      const p = ps[i];
+      if (p.stage || p.set) { applyItemSet(p); continue; }
+      if (!p.shot) continue;
+      if (cuts.includes(i)) {
+        await window.__cut(i);
+        const at = cutAnim(p, prev);
+        wallsForShot(shotCam.position);
+        try {
+          for (let f = 0; f <= n; f++) {
+            at(f / n, f / fps);
+            scene.render();
+            g.drawImage(await loadImg(await snap(shotCam, w, hh)), 0, 0);
+            screentone(g, w, hh);
+            await window.__frame(cv.toDataURL('image/jpeg', 0.93));
+          }
+        } finally { restoreWalls(); hiddenKids.forEach(k => k.setEnabled(true)); hiddenKids = []; }
       }
-    } finally { restoreWalls(); hiddenKids.forEach(k => k.setEnabled(true)); hiddenKids = []; applyCut(p); }
+      applyCut(p);
+      saveSpots();
+      prev = p;
+    }
   }),
 };
