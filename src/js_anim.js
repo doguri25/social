@@ -16,7 +16,7 @@ function cutAnim(p, prev) {
   applyCut(p);
   for (const id in CH) if (shown(CH[id])) [CH[id].root, ...CH[id].root.getChildTransformNodes(false)].forEach(n => n.computeWorldMatrix(true)); // 그리지 않고 끝 자세의 자리만 계산 (무대가 깜빡이지 않게)
   placeShot(p);
-  const end = { pos: shotCam.position.clone(), look: shotCam.getTarget().clone(), fov: shotCam.fov };
+  const end = { pos: shotCam.position.clone(), look: shotLook.clone(), fov: shotCam.fov };
   const A = p.anim || {}, cm = Object.assign({ turn: p.shot === 'wide' || !p.shot ? 12 : 7, back: p.shot === 'wide' || !p.shot ? 1.1 : 1.32, up: 0.06 }, A.cam);
   const off = end.pos.subtract(end.look);
   const start = { pos: end.look.add(turnY(off, cm.turn).scale(cm.back)).add(V3(0, cm.up, 0)), look: end.look.add(V3(0, cm.up * 0.4, 0)), fov: end.fov * 1.04 };

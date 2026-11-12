@@ -25,7 +25,7 @@ function blocksAt(head, pos, look) {
   // 카메라 바로 앞(1.2m 안)의 큰 머리는 시선에서 조금 비켜 있어도 컷 가장자리를 덮는다
   return t > 0 && t < L - 0.2 && BABYLON.Vector3.Distance(pos.add(dir.scale(t)), p) < (t < 1.2 ? 0.8 : 0.45);
 }
-let hiddenKids = [];
+let hiddenKids = [], shotLook = V3();
 function placeShot(p) {
   hiddenKids.forEach(n => n.setEnabled(true)); // 앞 컷이 중간에 멈췄어도 숨긴 아이를 되돌린다
   const on = [].concat(p.on || []);
@@ -91,6 +91,7 @@ function placeShot(p) {
   }
   shotCam.position.copyFrom(pos);
   shotCam.setTarget(look);
+  shotLook = look.clone(); // 컷 애니메이션이 카메라를 이 점을 보며 움직인다
   shotCam.fov = fov * DEG;
   // 넓은 컷, 모둠 컷, 물건 컷(전시판 앞에 선 아이들처럼 함께 찍히는 것)은 모두 보이게, 나머지는 가리는 아이를 뺀다
   const keepAll = shot !== 'close' && shot !== 'two' && shot !== 'over';
