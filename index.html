@@ -18669,7 +18669,7 @@ function renderEntry(replay = false) {
   applyCut(e.p);
   if (actView && live) actView(); // 지난 컷을 보고 돌아오면 하던 활동 화면으로
   else storyEl.replaceChildren(...panelNodes(e, !live, replay));
-  if (replay) playCut(e, e.prev, runId, true).catch(() => {});
+  if (replay) playCut(e, e.prev, runId, true).catch(err => { if (err !== CANCEL) console.warn('다시 재생 실패', err && err.message); });
   rise();
   renderAsk();
   renderFoot();
