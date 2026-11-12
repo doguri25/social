@@ -261,13 +261,13 @@ function cutAnim(p, prev, n = 0) {
       const dir = to.subtract(from); dir.y = 0; dir.normalize();
       const holder = acts.find(a => { let n = par; while (n) { if (n === a.c.root) return true; n = n.parent; } return false; }) || null; // 품이나 손에 받는 사람
       const air = !holder && to.y > 0.3;
-      const victim = air ? acts.filter(a => Math.hypot(a.c.root.position.x - to.x, a.c.root.position.z - to.z) < 0.75)[0] || null : null; // 공이 닿는 자리에 선 사람
+      const victim = (air && A.hit && acts.find(a => a.c.id === A.hit)) || null; // 이 컷에서 공에 맞는 사람 (anim.hit 에 적은 컷만. 적지 않으면 공은 아직 날아가는 중)
       const dur = clamp(d / (8 * CUT_SEC), 0.1, 0.32), mid = air && !victim;
       const t0 = A.ballFrom != null ? A.ballFrom : mid ? 0.97 - dur : 0.12;
       fly = { par, loc, rot, target, from, to, dir, t0, dur, tb: t0 + dur, holder, victim, mid, T: dur * CUT_SEC, floor: !holder && !air };
-      if (victim) { // 맞는 사람: 맞는 순간부터 앞에서 맞으면 엉덩방아, 뒤에서 맞으면 앞으로 휘청 (anim.hit 이 'light' 면 움찔만)
+      if (victim) { // 맞는 사람: 맞는 순간부터 앞에서 맞으면 엉덩방아, 뒤에서 맞으면 앞으로 휘청 (anim.hitLight 면 움찔만)
         const K = victim.keys, fin = K[K.length - 1], front = BABYLON.Vector3.Dot(dir, facing(victim.c)) < 0;
-        const mv = A.hit === 'light' ? 'jolt' : front ? 'tumble' : 'trip';
+        const mv = A.hitLight ? 'jolt' : front ? 'tumble' : 'trip';
         const kept = K.filter((k, i) => i < K.length - 1 && k[0] < fly.tb - 0.02);
         victim.keys = [...kept, [fly.tb + 0.01, fin[1], 'surprised', mv, 0.02], [Math.min(0.88, fly.tb + (mv === 'tumble' ? 0.5 : 0.36)), fin[1], fin[2], 'still', mv === 'tumble' ? 0.2 : 0.1]];
         victim.push = { t: fly.tb, dir, k: mv === 'jolt' ? 0.08 : 0.3 };

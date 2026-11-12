@@ -14969,14 +14969,14 @@ const ANIMS = {
     "3": {"cheer": 1, "yuna": [[0.2, null, "joy", "cheer"]], "jiwoo": [[0.25, null, "joy", "clap"]], "minjun": [[0.2, null, "laugh", "cheer"]], "seoa": [[0.25, null, "joy", "clap"]]},
     "4": {"yuna": [[0.2, null, "laugh", "cheer"]]},
     "5": {"minjun": [[0.15, "dodge", "joy", "dodge"], [0.45, "dance", "laugh", "dance"]], "path": {"minjun": [[0.12, -0.6, 0], [0.25, 0.5, 0], [0.4, 0, 0]]}},
-    "7": {"cheer": 1, "minjun": [[0.1, "dance", "laugh", "dance"]], "yuna": [[0.25, null, "laugh", "laugh"]], "jiwoo": [[0.25, null, "laugh", "laugh"]], "seoa": [[0.3, null, "laugh", "laugh"]], "hit": "light"},
+    "7": {"cheer": 1, "minjun": [[0.1, "dance", "laugh", "dance"]], "yuna": [[0.25, null, "laugh", "laugh"]], "jiwoo": [[0.25, null, "laugh", "laugh"]], "seoa": [[0.3, null, "laugh", "laugh"]], "hit": "minjun", "hitLight": true},
     "8": {"minjun": [[0.12, "dance", "laugh", "dance"], [0.42, "dance", "surprised", "jolt"]], "cam": {"back": 1.2}},
     "10": {"cheer": 0.4, "yuna": [[0.2, null, "worried", "look"]], "jiwoo": [[0.2, null, "worried", "dodge"]], "seoa": [[0.25, null, "worried", "dodge"]], "path": {"jiwoo": [[0.2, -0.7, 0], [0.45, 0.6, 0.3], [0.65, -0.3, 0]], "seoa": [[0.25, 0.6, 0], [0.5, -0.5, 0]], "yuna": [[0.2, 0.5, 0], [0.5, -0.5, 0.2]]}}
   },
   "s04": {
     "0": {"yuna": [[0.3, "throw", "angry", "windup"]], "path": {"yuna": [[0.15, 0, -0.4], [0.3, 0, 0.4]]}},
     "3": {"yuna": [[0.2, null, "surprised", "jolt"]]},
-    "5": {"yuna": [[0.08, "dodge", "worried", "still"]], "cam": {"back": 1.2}},
+    "5": {"yuna": [[0.08, "dodge", "worried", "still"]], "cam": {"back": 1.2}, "hit": "yuna"},
     "7": {"jiwoo": [[0.2, null, "worried", "look"]], "cam": {"back": 0.8}},
     "9": {"jiwoo": [[0.25, "open", "worried", "brace"]]},
     "11": {"jiwoo": [[0.2, "open", "surprised", "trip"]]}
@@ -15096,7 +15096,7 @@ const ANIMS = {
     "4": {"yuna": [[0.3, "throw", "angry", "windup"]], "path": {"yuna": [[0.15, 0, -0.4], [0.3, 0, 0.4]]}},
     "6": {"yuna": [[0.2, "reach", "surprised", "still"]]},
     "7": {"yuna": [[0.2, null, "worried", "look"]]},
-    "9": {"cam": {"back": 1.25}}
+    "9": {"cam": {"back": 1.25}, "hit": "yuna"}
   },
   "s12": {
     "0": {"yuna": [[0.2, null, "angry", "blame"]]},
@@ -18010,13 +18010,13 @@ function cutAnim(p, prev, n = 0) {
       const dir = to.subtract(from); dir.y = 0; dir.normalize();
       const holder = acts.find(a => { let n = par; while (n) { if (n === a.c.root) return true; n = n.parent; } return false; }) || null; // 품이나 손에 받는 사람
       const air = !holder && to.y > 0.3;
-      const victim = air ? acts.filter(a => Math.hypot(a.c.root.position.x - to.x, a.c.root.position.z - to.z) < 0.75)[0] || null : null; // 공이 닿는 자리에 선 사람
+      const victim = (air && A.hit && acts.find(a => a.c.id === A.hit)) || null; // 이 컷에서 공에 맞는 사람 (anim.hit 에 적은 컷만. 적지 않으면 공은 아직 날아가는 중)
       const dur = clamp(d / (8 * CUT_SEC), 0.1, 0.32), mid = air && !victim;
       const t0 = A.ballFrom != null ? A.ballFrom : mid ? 0.97 - dur : 0.12;
       fly = { par, loc, rot, target, from, to, dir, t0, dur, tb: t0 + dur, holder, victim, mid, T: dur * CUT_SEC, floor: !holder && !air };
-      if (victim) { // 맞는 사람: 맞는 순간부터 앞에서 맞으면 엉덩방아, 뒤에서 맞으면 앞으로 휘청 (anim.hit 이 'light' 면 움찔만)
+      if (victim) { // 맞는 사람: 맞는 순간부터 앞에서 맞으면 엉덩방아, 뒤에서 맞으면 앞으로 휘청 (anim.hitLight 면 움찔만)
         const K = victim.keys, fin = K[K.length - 1], front = BABYLON.Vector3.Dot(dir, facing(victim.c)) < 0;
-        const mv = A.hit === 'light' ? 'jolt' : front ? 'tumble' : 'trip';
+        const mv = A.hitLight ? 'jolt' : front ? 'tumble' : 'trip';
         const kept = K.filter((k, i) => i < K.length - 1 && k[0] < fly.tb - 0.02);
         victim.keys = [...kept, [fly.tb + 0.01, fin[1], 'surprised', mv, 0.02], [Math.min(0.88, fly.tb + (mv === 'tumble' ? 0.5 : 0.36)), fin[1], fin[2], 'still', mv === 'tumble' ? 0.2 : 0.1]];
         victim.push = { t: fly.tb, dir, k: mv === 'jolt' ? 0.08 : 0.3 };
