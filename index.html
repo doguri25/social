@@ -719,45 +719,61 @@ const STORIES = {
     {
       "id": "yuna",
       "name": "수아",
-      "top": "#f28b74",
-      "pants": "#5b6b8c",
+      "top": "#fbf5ea",
+      "pants": "#6c9bd6",
       "shorts": true,
-      "hair": "bob",
-      "hairColor": "#4a3326",
+      "hair": "wavy",
+      "hairColor": "#7b4a2d",
+      "long": true,
+      "outfit": "hoodie",
+      "cord": "#d9cfc0",
+      "shoe": "#ffffff",
       "card": "#d3f0e1",
       "intro": "수아. 이 이야기 속 ‘나’예요. 우리 반에서 공을 제일 세게 던져요."
     },
     {
       "id": "seoa",
       "name": "보라",
-      "top": "#9fd6b5",
-      "pants": "#6f86a8",
+      "top": "#d9c2f0",
+      "pants": "#8fa6c8",
       "shorts": true,
-      "hair": "long",
-      "hairColor": "#4a3226",
+      "hair": "pony",
+      "hairColor": "#5a3524",
+      "long": true,
+      "tie": "#9b6fd0",
+      "shoe": "#ffffff",
       "card": "#f6ead7",
       "intro": "보라. 뭐든지 수첩에 꼼꼼히 적어요."
     },
     {
       "id": "jiwoo",
       "name": "현우",
-      "top": "#c7b2e6",
-      "pants": "#6b5b8c",
+      "top": "#3f7fd6",
+      "pants": "#4a5168",
       "shorts": true,
-      "hair": "bun",
-      "hairColor": "#3b2b25",
+      "hair": "neat",
+      "hairColor": "#33241d",
       "tie": "#a77fd6",
+      "long": true,
+      "outfit": "hoodie",
+      "shoe": "#ffffff",
       "card": "#ece2f8",
       "intro": "현우. 누구하고나 잘 어울려서, 현우 옆은 늘 북적거려요."
     },
     {
       "id": "minjun",
       "name": "하준",
-      "top": "#f2c45a",
-      "pants": "#4a5168",
+      "top": "#cfd2d6",
+      "pants": "#3c4a6b",
       "shorts": true,
-      "hair": "curly",
-      "hairColor": "#3a2a22",
+      "hair": "fluffy",
+      "hairColor": "#cfc8c0",
+      "long": true,
+      "brow": "#8f8780",
+      "outfit": "hoodie",
+      "print": "23",
+      "printColor": "#3f8f5f",
+      "shoe": "#ffffff",
       "card": "#fde3cf",
       "intro": "하준이. 웃기는 걸 제일 잘해요."
     },
@@ -15654,73 +15670,97 @@ function markResume() {
 }
 function clearResume() { delete save.resume[BOOK.id]; if (NET.mode === 'student') NET.ended[BOOK.id] = srvNow(); else save.done = Object.assign({}, save.done, { [BOOK.id]: Date.now() }); store(); } // 서버가 다른 기기에 남은 이 책 자리도 지우게 (손님은 같은 기기의 다른 탭이)
 const unlockedAfter = () => ['book1', 'book2', 'book3', 'book4'].every(id => save.books[id] && STORIES[id] && seenEnds(save.books[id], STORIES[id]) > 0); // 지금 책에 있는 결말만 센다 (책장 「본 결말」과 같게)
-// ===== 얼굴 그림 (캔버스): three 판과 바빌론 판이 함께 쓴다 =====
+// ===== 얼굴 그림 (캔버스): 애니메이션풍 큰 눈. 머리 앞쪽에 붙는 투명 그림 =====
 const FACE_W = 256;
 const INK_C = '#2a2433';
 
-// 얼굴은 머리 앞쪽 반구에 붙는 투명 그림. 가운데(128,128)가 머리 정면 가운데.
-// 디오라마처럼 멀리서 봐도 보이게 선을 굵게, 눈과 입을 크게 그린다.
+// 가운데(128,128)가 머리 정면 가운데.
 // closed: 눈 깜빡임 — 뜬 눈만 감은 눈으로 바꿔 그린다 (눈썹, 입은 그대로)
-function drawFace(g, kind, closed = false) {
-  const L = 88, R = 168, EY = 136, MY = 184;
+// o.eye: 눈동자 색, o.brow: 눈썹 색, o.talk: 0~1 말하는 입 (애니메이션에서만)
+function drawFace(g, kind, closed = false, o = {}) {
+  const L = 90, R = 166, EY = 144, MY = 196;
+  const IRIS = o.eye || '#553220', BROW = o.brow || '#4a3326';
   g.clearRect(0, 0, FACE_W, FACE_W);
   g.lineCap = g.lineJoin = 'round';
   g.strokeStyle = g.fillStyle = INK_C;
-  g.lineWidth = 10;
+  g.lineWidth = 6;
   const path = fn => { g.beginPath(); fn(); };
   const fill = (c, fn) => { g.fillStyle = c; path(fn); g.fill(); g.fillStyle = INK_C; };
-  const blinkLid = (x, y) => path(() => { g.arc(x, y - 8, 17, Math.PI * .15, Math.PI * .85); g.stroke(); });
-  const eye = (x, y, rx = 14, ry = 19) => {
-    if (closed) return blinkLid(x, y);
-    fill(INK_C, () => g.ellipse(x, y, rx, ry, 0, 0, 7));
-    fill('#fff', () => g.arc(x - rx * .3, y - ry * .38, rx * .36, 0, 7));
+  const line = (w, c, fn) => { g.lineWidth = w; g.strokeStyle = c; path(fn); g.stroke(); g.strokeStyle = INK_C; g.lineWidth = 6; };
+  const shade = (c, k) => { const n = parseInt(c.slice(1), 16), f = v => Math.round(clamp(v * k, 0, 255)); return `rgb(${f(n >> 16)},${f((n >> 8) & 255)},${f(n & 255)})`; };
+  // 감은 눈: 속눈썹 선 하나. up 이면 웃는 눈(∩), 아니면 내리감은 눈(∪)
+  const lidLine = (x, y, up) => line(7, INK_C, () => { if (up) g.arc(x, y + 12, 21, Math.PI * 1.14, Math.PI * 1.86); else g.arc(x, y - 12, 21, Math.PI * .14, Math.PI * .86); });
+  // 뜬 눈. s: 크기, lid: 윗눈꺼풀이 덮는 정도(0~1), small: 놀란 작은 눈동자, wet: 글썽임
+  const eye = (x, y, { s = 1, lid = 0, small = false, wet = false, slant = 0 } = {}) => {
+    if (closed) return lidLine(x, y + 4, false);
+    const rx = 20 * s, ry = 26 * s, side = x < 128 ? -1 : 1;
+    g.save();
+    path(() => g.ellipse(x, y, rx, ry, 0, 0, 7));
+    g.clip();
+    g.fillStyle = '#fffdf8'; g.fillRect(x - rx, y - ry, rx * 2, ry * 2);
+    const k = small ? 0.62 : 1, ix = rx * 0.86 * k, iy = ry * 0.9 * k;
+    const gr = g.createLinearGradient(0, y - iy, 0, y + iy);
+    gr.addColorStop(0, shade(IRIS, 0.45)); gr.addColorStop(0.5, IRIS); gr.addColorStop(1, shade(IRIS, 1.55));
+    g.fillStyle = gr; path(() => g.ellipse(x, y + ry * 0.06, ix, iy, 0, 0, 7)); g.fill();
+    g.fillStyle = shade(IRIS, 0.28); path(() => g.ellipse(x, y, ix * 0.45, iy * 0.5, 0, 0, 7)); g.fill();
+    g.fillStyle = 'rgba(30,18,30,.30)'; g.fillRect(x - rx, y - ry, rx * 2, ry * 0.42); // 윗눈꺼풀 그늘
+    g.fillStyle = '#fff';
+    path(() => g.ellipse(x - rx * 0.32, y - ry * 0.34, rx * 0.3, ry * 0.26, -0.4, 0, 7)); g.fill();
+    path(() => g.arc(x + rx * 0.36, y + ry * 0.42, rx * (wet ? 0.24 : 0.15), 0, 7)); g.fill();
+    if (wet) { g.fillStyle = 'rgba(255,255,255,.75)'; path(() => g.arc(x - rx * 0.1, y + ry * 0.55, rx * 0.16, 0, 7)); g.fill(); }
+    if (lid > 0) { g.fillStyle = '#ffe2cc'; path(() => { g.moveTo(x - rx - 2, y - ry - 2); g.lineTo(x + rx + 2, y - ry - 2); g.lineTo(x + rx + 2, y - ry + ry * 2 * lid - slant * side * 8); g.lineTo(x - rx - 2, y - ry + ry * 2 * lid + slant * side * 8); }); g.fill(); }
+    g.restore();
+    // 윗속눈썹 (굵게, 바깥 끝이 살짝 올라감), 아래 선은 가늘게
+    const top = y - ry + ry * 2 * lid;
+    if (lid > 0) line(7, INK_C, () => { g.moveTo(x - rx - 2, top + slant * side * 8); g.lineTo(x + rx + 2, top - slant * side * 8); });
+    else line(7, INK_C, () => { g.ellipse(x, y, rx + 1, ry + 1, 0, Math.PI * 1.08, Math.PI * 1.92); });
+    line(5, INK_C, () => { g.moveTo(x + side * (rx + 1), y - ry * 0.3 + (lid > 0 ? ry * lid : 0)); g.lineTo(x + side * (rx + 8), y - ry * 0.55 + (lid > 0 ? ry * lid : 0)); });
+    line(2.5, 'rgba(60,40,45,.55)', () => g.ellipse(x, y, rx, ry, 0, Math.PI * 0.2, Math.PI * 0.8));
   };
-  const lidEye = (x, y) => { // 내리깐 눈: 아래 반쪽만
-    if (closed) return blinkLid(x, y + 4);
-    fill(INK_C, () => { g.ellipse(x, y, 14, 15, 0, 0, Math.PI); g.closePath(); });
-    path(() => { g.moveTo(x - 17, y - 1); g.lineTo(x + 17, y + 1); g.stroke(); });
-  };
-  const happy = (x, y) => path(() => { g.arc(x, y + 10, 17, Math.PI * 1.15, Math.PI * 1.85); g.stroke(); });
-  const shut = (x, y) => path(() => { g.arc(x, y - 8, 17, Math.PI * .15, Math.PI * .85); g.stroke(); });
-  const brows = (inner, outer, y = EY - 30) => {
-    g.lineWidth = 8;
-    path(() => { g.moveTo(L - 18, y + outer); g.lineTo(L + 16, y + inner); g.moveTo(R + 18, y + outer); g.lineTo(R - 16, y + inner); g.stroke(); });
-    g.lineWidth = 10;
-  };
-  const blush = (a = .45, big = false) => [L - 10, R + 10].forEach(x => fill(`rgba(255,118,140,${a})`, () => g.ellipse(x, MY - 12, big ? 22 : 17, big ? 12 : 9, 0, 0, 7)));
+  const happy = (x, y) => lidLine(x, y, true);
+  const brows = (inner, outer, y = EY - 42) => line(4.5, BROW, () => { g.moveTo(L - 20, y + outer); g.quadraticCurveTo(L, y + (inner + outer) / 2 - 3, L + 18, y + inner); g.moveTo(R + 20, y + outer); g.quadraticCurveTo(R, y + (inner + outer) / 2 - 3, R - 18, y + inner); });
+  const blush = (a = .4, big = false) => [L - 6, R + 6].forEach(x => {
+    const gr = g.createRadialGradient(x, MY - 22, 2, x, MY - 22, big ? 30 : 24);
+    gr.addColorStop(0, `rgba(255,120,130,${a})`); gr.addColorStop(1, 'rgba(255,120,130,0)');
+    g.fillStyle = gr; g.fillRect(x - 32, MY - 54, 64, 64); g.fillStyle = INK_C;
+  });
   const drop = (c, x, y, s = 1) => fill(c, () => { g.moveTo(x, y); g.quadraticCurveTo(x - 9 * s, y + 16 * s, x, y + 20 * s); g.quadraticCurveTo(x + 9 * s, y + 16 * s, x, y); });
-  const smile = w => path(() => { g.arc(128, MY - 10, w, Math.PI * .15, Math.PI * .85); g.stroke(); });
-  const frown = (w = 18) => path(() => { g.arc(128, MY + 12, w, Math.PI * 1.2, Math.PI * 1.8); g.stroke(); });
+  const nose = () => line(3, 'rgba(190,110,90,.55)', () => { g.moveTo(126, MY - 30); g.lineTo(130, MY - 27); });
+  const smile = w => line(5, '#7a3b33', () => g.arc(128, MY - 14, w, Math.PI * .18, Math.PI * .82));
+  const frown = (w = 14) => line(5, '#7a3b33', () => g.arc(128, MY + 10, w, Math.PI * 1.22, Math.PI * 1.78));
   const open = (w, d, tongue = true) => {
-    fill(INK_C, () => { g.moveTo(128 - w, MY - 6); g.quadraticCurveTo(128, MY - 6 + d * 2, 128 + w, MY - 6); g.closePath(); });
-    if (tongue) fill('#ff8fa3', () => g.ellipse(128, MY - 6 + d * .78, w * .45, d * .28, 0, 0, 7));
+    fill('#7a2f2f', () => { g.moveTo(128 - w, MY - 8); g.quadraticCurveTo(128, MY - 12, 128 + w, MY - 8); g.quadraticCurveTo(128, MY - 8 + d * 2, 128 - w, MY - 8); });
+    if (tongue) fill('#ff8fa3', () => g.ellipse(128, MY - 8 + d * .72, w * .5, d * .26, 0, 0, 7));
+    fill('#fff', () => { g.moveTo(128 - w * 0.7, MY - 8); g.quadraticCurveTo(128, MY - 10, 128 + w * 0.7, MY - 8); g.quadraticCurveTo(128, MY - 2, 128 - w * 0.7, MY - 8); });
   };
-  const oval = (rx, ry, y = MY) => fill(INK_C, () => g.ellipse(128, y, rx, ry, 0, 0, 7));
-  const wave = (w = 20) => path(() => { g.moveTo(128 - w, MY); g.quadraticCurveTo(128 - w / 2, MY - 7, 128, MY); g.quadraticCurveTo(128 + w / 2, MY + 7, 128 + w, MY); g.stroke(); });
+  const oval = (rx, ry, y = MY) => fill('#7a2f2f', () => g.ellipse(128, y, rx, ry, 0, 0, 7));
+  const wave = (w = 16) => line(5, '#7a3b33', () => { g.moveTo(128 - w, MY - 4); g.quadraticCurveTo(128 - w / 2, MY - 10, 128, MY - 4); g.quadraticCurveTo(128 + w / 2, MY + 2, 128 + w, MY - 4); });
+  const talk = o.talk || 0; // 말하는 입: 닫힌 입 대신 작게 벌린다
+  const mouth = fn => { if (talk > 0.08) oval(8 + talk * 4, 3 + talk * 9, MY - 4); else fn(); };
+  nose();
   switch (kind) {
-    case 'joy': happy(L, EY); happy(R, EY); open(22, 18); blush(); break;
-    case 'laugh': g.lineWidth = 11; happy(L, EY); happy(R, EY); open(28, 25); blush(.55); break;
-    case 'sad': brows(-9, 3); eye(L, EY + 4); eye(R, EY + 4); frown(); drop('#6fc3ff', L + 6, EY + 18); break;
+    case 'joy': brows(-2, 0); eye(L, EY); eye(R, EY); open(17, 13 + talk * 4); blush(.5); break;
+    case 'laugh': brows(-4, -2, EY - 46); happy(L, EY); happy(R, EY); open(23, 19 + talk * 4); blush(.6); break;
+    case 'sad': brows(-9, 4); eye(L, EY + 4, { lid: .22, wet: true }); eye(R, EY + 4, { lid: .22, wet: true }); mouth(() => frown()); drop('#6fc3ff', L + 12, EY + 34); break;
     case 'angry':
-      brows(11, -6); eye(L, EY + 3, 14, 14); eye(R, EY + 3, 14, 14); frown(20); blush(.3);
-      g.strokeStyle = '#e8505b'; g.lineWidth = 5;
-      path(() => { [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => { g.moveTo(206 + a * 5, 70 + b * 14); g.lineTo(206 + a * 5, 70 + b * 5); g.moveTo(206 + a * 14, 70 + b * 5); g.lineTo(206 + a * 5, 70 + b * 5); }); g.stroke(); });
+      brows(12, -6, EY - 38); eye(L, EY + 3, { lid: .26, slant: 1 }); eye(R, EY + 3, { lid: .26, slant: 1 }); mouth(() => frown(16)); blush(.3);
+      line(4.5, '#e8505b', () => { [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => { g.moveTo(216 + a * 5, 62 + b * 14); g.lineTo(216 + a * 5, 62 + b * 5); g.moveTo(216 + a * 14, 62 + b * 5); g.lineTo(216 + a * 5, 62 + b * 5); }); });
       break;
-    case 'worried': brows(-10, 2); eye(L, EY, 13, 17); eye(R, EY, 13, 17); wave(); drop('#9fd8ff', R + 36, EY - 34, 1.1); break;
-    case 'surprised': brows(-4, -4, EY - 46); eye(L, EY, 16, 21); eye(R, EY, 16, 21); oval(12, 16, MY + 2); break;
+    case 'worried': brows(-10, 3); eye(L, EY, { s: .94, wet: true }); eye(R, EY, { s: .94, wet: true }); mouth(() => wave()); drop('#9fd8ff', R + 40, EY - 40, 1.1); break;
+    case 'surprised': brows(-4, -4, EY - 52); eye(L, EY, { s: 1.08, small: true }); eye(R, EY, { s: 1.08, small: true }); oval(9, 12, MY); break;
     case 'shy':
-      shut(L, EY); shut(R, EY); blush(.65, true); wave(13);
-      g.lineWidth = 3; g.strokeStyle = '#e8708f';
-      path(() => { [L - 18, L - 8, R + 4, R + 14].forEach(x => { g.moveTo(x, MY - 4); g.lineTo(x + 6, MY - 18); }); g.stroke(); });
+      lidLine(L, EY + 4, false); lidLine(R, EY + 4, false); blush(.75, true); mouth(() => wave(11));
+      line(2.5, '#e8708f', () => { [L - 18, L - 8, R + 4, R + 14].forEach(x => { g.moveTo(x, MY - 16); g.lineTo(x + 6, MY - 30); }); });
       break;
-    case 'hurt': brows(-7, 2); lidEye(L, EY + 4); lidEye(R, EY + 4); path(() => { g.arc(128, MY + 11, 12, Math.PI * 1.25, Math.PI * 1.75); g.stroke(); }); blush(.25); break;
-    case 'yawn': shut(L, EY - 4); shut(R, EY - 4); oval(18, 25, MY + 4); drop('#9fd8ff', R + 16, EY - 2, .7); break;
+    case 'hurt': brows(-8, 3); eye(L, EY + 4, { lid: .42 }); eye(R, EY + 4, { lid: .42 }); mouth(() => frown(10)); blush(.25); break;
+    case 'yawn': lidLine(L, EY, false); lidLine(R, EY, false); oval(14, 20, MY); drop('#9fd8ff', R + 22, EY + 2, .7); break;
     case 'cry':
-      path(() => { g.moveTo(L - 12, EY - 10); g.lineTo(L + 10, EY); g.lineTo(L - 12, EY + 10); g.moveTo(R + 12, EY - 10); g.lineTo(R - 10, EY); g.lineTo(R + 12, EY + 10); g.stroke(); });
-      open(24, 20, false);
-      [L - 4, R + 4].forEach(x => fill('rgba(111,195,255,.85)', () => g.ellipse(x, EY + 34, 7, 22, 0, 0, 7)));
+      brows(-10, 4);
+      line(7, INK_C, () => { g.moveTo(L - 18, EY - 8); g.lineTo(L + 14, EY + 2); g.lineTo(L - 18, EY + 12); g.moveTo(R + 18, EY - 8); g.lineTo(R - 14, EY + 2); g.lineTo(R + 18, EY + 12); });
+      open(20, 17, false);
+      [L - 2, R + 2].forEach(x => fill('rgba(111,195,255,.85)', () => g.ellipse(x, EY + 36, 6, 20, 0, 0, 7)));
       break;
-    default: eye(L, EY); eye(R, EY); smile(17); blush(.3);
+    default: brows(-1, 0); eye(L, EY); eye(R, EY); mouth(() => smile(13)); blush(.32);
   }
 }
 // ===== 보라 수첩 한 장: 컷 자리에 그리는 그림 (note 컷). 글씨가 또렷하게 보이도록 3D 대신 캔버스로 =====
@@ -16176,13 +16216,33 @@ engine.runRenderLoop(() => {
 new ResizeObserver(() => { engine.resize(); fitCam(); poke(); }).observe(canvas.parentElement);
 // ===== 인물: 몸은 기본 도형, 얼굴은 캔버스 그림을 머리에 붙인 무늬, 머리카락은 깎은 껍데기 하나. 배경 아이는 한 자세로 굳혀 합친다 =====
 const SKIN = '#ffe2cc';
-// 인물 재질: 무광 + 가장자리가 살짝 밝아지는 테두리 빛(만화 같은 입체감). 살색은 그늘에서도 밝게
+// 인물 재질: 만화 음영(밝은 면과 그늘 두 단계) + 가장자리 빛. StandardMaterial 의 조명 결과(diffuseBase)를 단계로 나눠 다시 칠한다
+class ToonPlugin extends BABYLON.MaterialPluginBase {
+  constructor(m) { super(m, 'Toon', 200, { TOON: false }); this._enable(true); }
+  prepareDefines(d) { d.TOON = true; }
+  getClassName() { return 'ToonPlugin'; }
+  getCustomCode(type) {
+    return type !== 'fragment' ? null : { CUSTOM_FRAGMENT_BEFORE_FRAGCOLOR: `
+#ifdef TOON
+{
+  vec3 tAlb = diffuseColor * baseColor.rgb;
+  vec3 tN = normalize(normalW);
+  float tK = smoothstep(-0.02, 0.05, dot(normalize((view * vec4(tN, 0.0)).xyz), normalize(vec3(-0.5, 0.55, 0.62))));
+  vec3 tEnv = min(diffuseBase * 1.7, vec3(1.0));
+  tEnv = mix(vec3(dot(tEnv, vec3(0.3333))), tEnv, 0.5) * 0.5 + 0.5 * step(0.85, dot(tEnv, vec3(0.3333))) + 0.5 * (1.0 - step(0.85, dot(tEnv, vec3(0.3333)))) * tEnv;
+  vec3 tShade = tAlb * vec3(0.90, 0.80, 0.86) * mix(vec3(1.0), tAlb, 0.15);
+  float tRim = pow(1.0 - max(dot(tN, viewDirectionW), 0.0), 3.0) * tK;
+  color.rgb = mix(tShade, tAlb, tK) * tEnv + tRim * 0.14 * vec3(1.0, 0.95, 0.86);
+}
+#endif` };
+  }
+}
+BABYLON.RegisterClass('BABYLON.ToonPlugin', ToonPlugin);
 const cmats = {};
+function toon(m) { m.toon = new ToonPlugin(m); return m; }
 function charMat(color) {
   if (cmats[color]) return cmats[color];
-  const m = Object.assign(new BABYLON.StandardMaterial('c' + color, scene), { diffuseColor: C3(color), specularColor: BLACK });
-  m.emissiveFresnelParameters = Object.assign(new BABYLON.FresnelParameters(), { bias: 0.2, power: 2.2, leftColor: C3('#fff3e0').scale(0.32), rightColor: color === SKIN ? C3(SKIN).scale(0.22) : BLACK });
-  return (cmats[color] = m);
+  return (cmats[color] = toon(Object.assign(new BABYLON.StandardMaterial('c' + color, scene), { diffuseColor: C3(color), specularColor: BLACK })));
 }
 // 윤곽선: 같은 모양을 법선 방향으로 조금 부풀려 뒷면만 진하게 그린다 (renderOutline 의 깊이 문제가 없다)
 const inkMat = Object.assign(new BABYLON.StandardMaterial('ink', scene), { diffuseColor: BLACK, specularColor: BLACK, emissiveColor: C3('#3b2a22'), disableLighting: true, cullBackFaces: false });
@@ -16200,7 +16260,7 @@ function hull(m, w) {
   return h;
 }
 // ---- 몸 비율 (m): 2등신 SD 캐릭터. 아이는 키 약 1.09에 머리 지름 0.54(키의 절반), 어른은 키 약 1.42, 머리 약 2.8개 ----
-const KID = { r: 0.27, hip: 0.27, thigh: 0.13, shin: 0.12, legR: 0.055, sh: 0.5, shX: 0.135, upper: 0.12, fore: 0.11, armR: 0.045, neck: 0.53, torsoY: 0.4, torsoR: 0.13, torsoL: 0.12 };
+const KID = { r: 0.24, hip: 0.27, thigh: 0.13, shin: 0.12, legR: 0.055, sh: 0.5, shX: 0.135, upper: 0.12, fore: 0.11, armR: 0.045, neck: 0.53, torsoY: 0.4, torsoR: 0.13, torsoL: 0.12 };
 const ADULT = { r: 0.25, hip: 0.5, thigh: 0.24, shin: 0.23, legR: 0.065, sh: 0.86, shX: 0.17, upper: 0.2, fore: 0.18, armR: 0.052, neck: 0.9, torsoY: 0.7, torsoR: 0.15, torsoL: 0.22 };
 const SEAT = 0.41; // 앉았을 때 엉덩이 관절 높이 (아이 의자 앉는 면 약 0.36)
 
@@ -16251,9 +16311,10 @@ function makeChar(d, i, extra) {
     const hip = node('hip', body, x, D.hip, 0);
     const knee = node('knee', hip, 0, -D.thigh, 0);
     limb(D.legR, D.thigh, d.skirt && !d.tall ? SKIN : d.pants, hip);
-    limb(D.legR * 0.9, D.shin, d.skirt || d.shorts ? SKIN : d.pants, knee); // 반바지면 무릎 아래는 맨살
-    const shoe = part(capsule(D.legR * 1.1, 0.07), '#4a4f63', knee, 0, -D.shin, 0.03);
+    limb(D.legR * 0.9, D.shin, d.skirt || (d.shorts && !d.long) ? SKIN : d.pants, knee); // 반바지면 무릎 아래는 맨살
+    const shoe = part(capsule(D.legR * 1.15, 0.075), d.shoe || '#4a4f63', knee, 0, -D.shin, 0.03);
     shoe.rotation.x = Math.PI / 2;
+    if (d.shoe) part(MB.CreateBox('sole', { width: D.legR * 2.2, height: 0.022, depth: 0.2 }, scene), d.sole || '#8fa0b8', knee, 0, -D.shin - D.legR * 0.95, 0.03);
     hip.knee = knee;
     return hip;
   };
@@ -16268,6 +16329,23 @@ function makeChar(d, i, extra) {
     ? part(MB.CreateCylinder('skirt', { diameterTop: D.torsoR * 1.9, diameterBottom: D.torsoR * 3.2, height: D.hip * 0.36, tessellation: 20 }, scene), d.pants, body, 0, D.hip - D.hip * 0.1, 0)
     : part(capsule(D.torsoR * 0.95, 0.05), d.pants, body, 0, D.hip, 0);
   hips.scaling.z = 0.82;
+  if (d.outfit === 'hoodie') { // 후드티: 목 뒤 모자, 밑단, 앞주머니, 가슴 글자
+    const hood = part(MB.CreateSphere('hood', { diameter: D.torsoR * 2.5, segments: 14 }, scene), d.top, body, 0, D.sh + 0.005, -D.torsoR * 0.62);
+    hood.scaling.set(1, 0.55, 0.72);
+    const hem = part(MB.CreateCylinder('hem', { diameter: D.torsoR * 2.2, height: 0.035, tessellation: 20 }, scene), d.top, body, 0, D.hip + 0.045, 0);
+    hem.scaling.z = 0.84;
+    const pocket = part(capsule(0.04, D.torsoR * 0.9), d.top, body, 0, D.torsoY - D.torsoL * 0.42, D.torsoR * 0.72);
+    pocket.rotation.z = Math.PI / 2; pocket.scaling.z = 0.5;
+    [-1, 1].forEach(x => part(capsule(0.004, 0.045), d.cord || '#ffffff', body, x * 0.022, D.sh - 0.06, D.torsoR * 0.83));
+  }
+  if (d.print) { // 가슴에 찍힌 글자·번호
+    const tex = canvasTex(256, 128, (g, W, H) => { g.clearRect(0, 0, W, H); g.font = '900 104px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = d.printColor || '#3f8f5f'; g.fillText(d.print, W / 2, H / 2 + 6); }, true);
+    const pl = MB.CreateCylinder('print', { diameter: D.torsoR * 2.19, height: 0.085, tessellation: 24, arc: 0.3, enclose: false, cap: BABYLON.Mesh.NO_CAP, sideOrientation: BABYLON.Mesh.DOUBLESIDE }, scene);
+    part(pl, d.top, body, 0, D.torsoY + 0.03, 0);
+    pl.material = toon(texMat(tex, { both: true }));
+    pl.scaling.z = 0.8; pl.rotation.y = Math.PI * (d.printTurn == null ? 0.2 : d.printTurn);
+    pl.noHull = true;
+  }
   part(MB.CreateCylinder('neck', { diameterTop: D.torsoR * 0.8, diameterBottom: D.torsoR * 0.9, height: 0.06, tessellation: 12 }, scene), SKIN, body, 0, D.neck, 0);
 
   const mkArm = x => {
@@ -16275,6 +16353,7 @@ function makeChar(d, i, extra) {
     const elbow = node('elbow', sh, 0, -D.upper, 0);
     limb(D.armR, D.upper, d.top, sh);
     limb(D.armR * 0.92, D.fore, d.top, elbow);
+    if (d.outfit === 'hoodie') part(MB.CreateCylinder('cuff', { diameter: D.armR * 2.25, height: 0.028, tessellation: 12 }, scene), d.top, elbow, 0, -D.fore + 0.012, 0);
     sh.hand = part(MB.CreateSphere('hand', { diameter: D.armR * 1.9, segments: 12 }, scene), SKIN, elbow, 0, -D.fore - 0.01, 0);
     sh.elbow = elbow;
     return sh;
@@ -16284,10 +16363,11 @@ function makeChar(d, i, extra) {
   // 머리: 처음에는 원점에서 만들어 얼굴 무늬를 머리 공에 바로 붙인 다음 몸에 단다
   const head = node('head');
   const skull = part(MB.CreateSphere('skull', { diameter: D.r * 2, segments: 32 }, scene), SKIN, head, 0, D.r, 0);
+  [-1, 1].forEach(x => { part(MB.CreateSphere('ear', { diameter: D.r * 0.34, segments: 10 }, scene), SKIN, head, x * D.r * 0.97, D.r * 0.86, -D.r * 0.02).scaling.set(0.55, 1, 0.8); });
   skull.computeWorldMatrix(true);
   const faceTex = new BABYLON.DynamicTexture('face', { width: FACE_TEX, height: FACE_TEX }, scene, true);
   faceTex.hasAlpha = true;
-  const faceMat = new BABYLON.StandardMaterial('face', scene);
+  const faceMat = toon(new BABYLON.StandardMaterial('face', scene));
   // 오른손 좌표계에서는 무늬 삼각형 방향이 뒤집혀 만들어져 뒷면 숨기기를 끈다
   Object.assign(faceMat, { diffuseTexture: faceTex, useAlphaFromDiffuseTexture: true, specularColor: BLACK, backFaceCulling: false });
   const face = MB.CreateDecal('face', skull, { position: V3(0, D.r, D.r), normal: V3(0, 0, 1), size: V3(D.r * 1.9, D.r * 1.9, D.r * 1.2) });
@@ -16322,7 +16402,7 @@ function makeChar(d, i, extra) {
   c.rope = put(MB.CreateTube('rope', { path, radius: 0.008, tessellation: 6 }, scene), '#e8505b', 0, 0, 0, body);
   meshes.push(c.rope);
   meshes.forEach(m => { m.layerMask = mask; m.isPickable = true; m.metadata = { char: d.id }; });
-  meshes.forEach(m => { if (m !== face) hull(m, OUT_W); });
+  meshes.forEach(m => { if (m !== face && !m.noHull) hull(m, OUT_W); });
   setPose(c, 'stand');
   setFace(c, 'calm');
   root.setEnabled(false);
@@ -16335,11 +16415,19 @@ const hairMats = {};
 function hairMat(color) {
   if (hairMats[color]) return hairMats[color];
   const tex = canvasTex(256, 256, (g, W, H) => {
-    g.fillStyle = color;
+    const n = parseInt(color.slice(1), 16), mix = (k, a) => `rgba(${[n >> 16, (n >> 8) & 255, n & 255].map(v => Math.round(clamp(v * k + (k > 1 ? 40 : 0), 0, 255))).join(',')},${a})`;
+    const gr = g.createLinearGradient(0, 0, 0, H); // 정수리는 밝게, 끝은 조금 짙게
+    gr.addColorStop(0, mix(1.12, 1)); gr.addColorStop(0.45, color); gr.addColorStop(1, mix(0.8, 1));
+    g.fillStyle = gr;
     g.fillRect(0, 0, W, H);
+    g.fillStyle = mix(1.5, 0.5); // 머리 윤기 띠 (톱니 모양)
+    g.beginPath(); g.moveTo(0, H * 0.27);
+    for (let x = 0; x <= W; x += 8) g.lineTo(x, H * (0.27 + ((x / 8) % 2 ? 0.035 : 0)));
+    for (let x = W; x >= 0; x -= 8) g.lineTo(x, H * (0.215 - ((x / 8) % 2 ? 0.02 : 0)));
+    g.fill();
     for (let i = 0; i < 110; i++) {
       const x = Math.random() * W;
-      g.strokeStyle = Math.random() < 0.5 ? 'rgba(255,236,214,.16)' : 'rgba(20,10,5,.24)';
+      g.strokeStyle = Math.random() < 0.5 ? 'rgba(255,236,214,.07)' : 'rgba(20,10,5,.09)';
       g.lineWidth = 1 + Math.random() * 2.5;
       g.beginPath();
       g.moveTo(x, 0);
@@ -16349,9 +16437,7 @@ function hairMat(color) {
   });
   tex.wrapU = BABYLON.Texture.WRAP_ADDRESSMODE;
   tex.uScale = 3;
-  const m = charMat(color).clone('hair' + color);
-  m.diffuseColor = BABYLON.Color3.White();
-  m.diffuseTexture = tex;
+  const m = toon(Object.assign(new BABYLON.StandardMaterial('hair' + color, scene), { specularColor: BLACK, diffuseTexture: tex }));
   return (hairMats[color] = m);
 }
 // 머리카락 껍데기: 머리보다 조금 큰 공 하나를 깎는다. 얼굴 쪽(앞머리 선 아래)과 머리 길이 아래는 머리 속으로 넣어 감춘다.
@@ -16376,7 +16462,31 @@ function hairShell(r, o) {
   m.refreshBoundingInfo();
   return m;
 }
+// 머리 가닥: 머리 공 위 (az 좌우 각, el 높이 각) 자리에 길쭉한 덩어리를 붙인다. 값은 머리 반지름 r 단위.
+// out: 0 이면 머리를 따라 아래로 흐르고 1 이면 바깥으로 뻗는다. twist: 흐르는 방향을 옆으로 튼다
+function hairLock(r, az, el, len, w, t, out = 0, twist = 0, lift = 1.0) {
+  const m = MB.CreateSphere('lock', { diameter: 1, segments: 10 }, scene);
+  const pos = m.getVerticesData(BABYLON.VertexBuffer.PositionKind), nor = []; // 끝이 뾰족한 물방울 모양으로
+  for (let i = 0; i < pos.length; i += 3) if (pos[i + 1] < 0) { const f = 1 - 0.8 * Math.pow(-pos[i + 1] * 2, 1.6); pos[i] *= f; pos[i + 2] *= f; }
+  m.setVerticesData(BABYLON.VertexBuffer.PositionKind, pos);
+  BABYLON.VertexData.ComputeNormals(pos, m.getIndices(), nor);
+  m.setVerticesData(BABYLON.VertexBuffer.NormalKind, nor);
+  const n = V3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el));
+  const down = V3(Math.sin(az) * Math.sin(el), -Math.cos(el), Math.cos(az) * Math.sin(el));
+  const side = V3(Math.cos(az), 0, -Math.sin(az));
+  const d = down.scale(1 - out).add(n.scale(out)).add(side.scale(twist)).normalize();
+  const x = BABYLON.Vector3.Cross(d, n).normalize(), z = BABYLON.Vector3.Cross(x, d).normalize();
+  m.scaling.set(w * r, len * r, t * r);
+  m.rotationQuaternion = BABYLON.Quaternion.RotationQuaternionFromAxis(x, d, z);
+  m.position = V3(0, r, 0).add(n.scale(r * lift)).add(d.scale(len * r * 0.36));
+  return m;
+}
 const HAIR = {
+  // 동화책 인물: 물결 단발(수아), 삐죽 솜털 머리(하준), 단정한 짧은 머리(현우), 높이 묶은 머리(보라)
+  wavy: { hl: 0.36, scallop: 0.0, side: 0.86, bottom: z => -0.35 + 0.1 * z },
+  fluffy: { hl: 0.46, scallop: 0.05, side: 0.9, bottom: z => -0.2 - 0.3 * Math.max(0, -z), curl: 0.08 },
+  neat: { hl: 0.44, scallop: 0.05, side: 0.9, bottom: z => -0.2 - 0.32 * Math.max(0, -z) },
+  pony: { hl: 0.38, scallop: 0.04, side: 0.86, bottom: z => -0.42 + 0.3 * z },
   bob: { hl: 0.33, scallop: 0.1, side: 0.8, bottom: z => -0.52 + 0.08 * z },
   long: { hl: 0.33, scallop: 0.08, side: 0.82, bottom: () => -0.4 },
   bun: { hl: 0.36, scallop: 0.06, side: 0.88, bottom: z => -0.5 + 0.3 * z },
@@ -16387,6 +16497,40 @@ function addHair(d, r, part) {
   const hm = hairMat(d.hairColor);
   const add = (m, x = 0, y = 0, z = 0) => { part(m, d.hairColor, x, y, z); m.material = hm; return m; };
   add(hairShell(r, HAIR[d.hair] || HAIR.bob));
+  const L = (...a) => { const m = hairLock(r, ...a), q = m.position; return add(m, q.x, q.y, q.z); };
+  if (d.hair === 'wavy') {
+    [[-0.85, -0.1], [-0.6, 0.3], [-0.36, 0.1], [-0.12, 0.34], [0.12, 0.12], [0.36, 0.36], [0.6, 0.1], [0.84, 0.3]].forEach(([az, tw]) => L(az, 0.6, 0.72, 0.36, 0.1, 0.04, tw, 1.01)); // 옆으로 넘긴 앞머리
+    for (let i = 0; i < 11; i++) { // 옆과 뒤로 어깨까지 내려오는 물결
+      const az = 1.12 + i * (Math.PI * 2 - 2.24) / 10;
+      L(az, 0.02, 1.18, 0.5, 0.36, i % 2 ? 0.2 : 0.06, 0, 0.96);
+      const f = add(MB.CreateSphere('flip', { diameter: r * 0.32, segments: 8 }, scene), Math.sin(az) * r * (i % 2 ? 1.18 : 1.08), r * 0.02, Math.cos(az) * r * (i % 2 ? 1.18 : 1.08)); // 끝이 바깥으로 말린다
+      f.scaling.y = 0.8;
+    }
+  }
+  if (d.hair === 'fluffy') {
+    [-0.75, -0.4, -0.05, 0.3, 0.68].forEach((az, i) => L(az, 0.6, 0.5, 0.34, 0.15, 0.1, i % 2 ? 0.3 : -0.25));
+    for (let k = 0; k < 3; k++) for (let i = 0; i < 9 - k * 2; i++) { // 삐죽삐죽 솟은 가닥
+      const az = (i + (k % 2) * 0.5) * Math.PI * 2 / (9 - k * 2), el = 0.35 + k * 0.42;
+      if (el < 0.5 && Math.abs(Math.atan2(Math.sin(az), Math.cos(az))) < 0.9) continue; // 얼굴 앞은 비운다
+      L(az, el, 0.5, 0.36, 0.3, 0.72, (i % 2 ? 0.35 : -0.35), 0.92).scaling.z *= 1;
+    }
+    L(0, 1.45, 0.4, 0.34, 0.3, 0.9, 0.2, 0.95);
+  }
+  if (d.hair === 'neat') {
+    [-0.78, -0.45, -0.12, 0.2, 0.52, 0.82].forEach((az, i) => L(az, 0.6, 0.52, 0.34, 0.14, 0.05, 0.3)); // 한쪽으로 빗은 앞머리
+    [[-0.5, 1.1], [0.6, 1.2], [2.6, 0.9], [-2.4, 1.0], [3.14, 0.4], [1.9, 0.5], [-1.9, 0.5]].forEach(([az, el]) => L(az, el, 0.42, 0.4, 0.26, 0.45, 0.4, 0.93));
+  }
+  if (d.hair === 'pony') {
+    [-0.6, -0.22, 0.16, 0.54].forEach((az, i) => L(az, 0.56, 0.5, 0.36, 0.14, 0.05, i < 2 ? 0.25 : -0.25));
+    [-1.12, 1.12].forEach(az => L(az, 0.12, 0.95, 0.2, 0.15, 0.02, 0, 0.99)); // 귀 앞 옆머리
+    const tie = part(MB.CreateTorus('tie', { diameter: 0.5 * r, thickness: 0.2 * r, tessellation: 20 }, scene), d.tie || '#9b6fd0', 0, r + 0.86 * r, -0.72 * r);
+    tie.rotation.x = -0.95;
+    [[1.98, -1.12, 0.62, 0.3], [1.66, -1.42, 0.66, 0.9], [1.22, -1.56, 0.6, 1.35], [0.8, -1.52, 0.48, 1.6], [0.46, -1.42, 0.32, 1.75]].forEach(([y, z, w, rx]) => { // 묶은 머리 꼬리: 위에서 뒤로 휘어 내려온다
+      const m = add(MB.CreateSphere('tail', { diameter: 1, segments: 10 }, scene), 0, y * r, z * r);
+      m.scaling.set(w * r, w * r * 1.35, w * r * 0.9);
+      m.rotation.x = rx;
+    });
+  }
   if (d.hair === 'long') { // 어깨까지 내려오는 뒷머리: 위가 좁고 아래가 살짝 퍼지는 반쪽 원통
     const back = add(MB.CreateCylinder('hairBack', { height: 1.3 * r, diameterTop: 1.9 * r, diameterBottom: 2.15 * r, tessellation: 32, arc: 0.5, enclose: false, cap: BABYLON.Mesh.NO_CAP, sideOrientation: BABYLON.Mesh.DOUBLESIDE }, scene), 0, 0.1 * r, -0.04 * r);
   }
@@ -16401,13 +16545,16 @@ function addHair(d, r, part) {
   }
 }
 // name: 무대에서 정한 자세, over: 컷 하나에서만 바꾸는 자세 (앉아 있으면 다리와 높이는 앉은 채로)
-function setPose(c, name, over) {
+function poseVals(name, over) {
   const base = Object.assign({}, POSE0, POSES[name]);
   let p = base;
   if (over && over !== name) {
     p = Object.assign({}, POSE0, POSES[over]);
     if (base.sit) Object.assign(p, { lA: base.lA, lB: base.lB, kA: base.kA, kB: base.kB, sit: true });
   }
+  return p;
+}
+function applyPose(c, p) {
   c.armA.rotation.set(...p.aA);
   c.armB.rotation.set(...p.aB);
   c.armA.elbow.rotation.x = p.eA;
@@ -16419,8 +16566,11 @@ function setPose(c, name, over) {
   c.head.rotation.set(...p.hd);
   c.body.rotation.x = p.lean;
   c.body.rotation.z = p.tilt;
-  c.y0 = p.sit ? SEAT - c.D.hip : p.y;
+  c.y0 = p.yy != null ? p.yy : p.sit ? SEAT - c.D.hip : p.y;
   c.body.position.y = c.y0;
+}
+function setPose(c, name, over) {
+  applyPose(c, poseVals(name, over));
   c.pose = over || name;
   if (c.phone) c.phone.setEnabled(c.pose === 'phone');
   if (c.rope) c.rope.setEnabled(c.pose === 'jump');
@@ -16429,7 +16579,7 @@ function paintFace(c, closed) {
   const g = c.faceTex.getContext();
   g.save();
   g.scale(FACE_TEX / FACE_W, FACE_TEX / FACE_W);
-  drawFace(g, c.face, closed);
+  drawFace(g, c.face, closed, { eye: c.d.eye, brow: c.d.brow || c.d.hairColor, talk: c.talk });
   g.restore();
   c.faceTex.update();
 }
@@ -16489,7 +16639,7 @@ function faceMatOf(kind) {
   drawFace(g, kind, false);
   g.restore();
   t.update();
-  return (faceMats[kind] = Object.assign(new BABYLON.StandardMaterial('faceX', scene), { diffuseTexture: t, useAlphaFromDiffuseTexture: true, specularColor: BLACK, backFaceCulling: false }));
+  return (faceMats[kind] = Object.assign(toon(new BABYLON.StandardMaterial('faceX', scene)), { diffuseTexture: t, useAlphaFromDiffuseTexture: true, specularColor: BLACK, backFaceCulling: false }));
 }
 const EXTRA_TOPS = ['#f6a5a5', '#ffd98a', '#f4a259', '#f2a7c9', '#e9b4e0', '#fbe39a', '#ff8f7a', '#c8e07a']; // 살색과 헷갈리지 않는 밝은 색
 const TEAM_TOPS = { b1: '#7da7e0', b3: '#6c86b8' }; // 다른 반은 푸른 옷으로 한눈에
@@ -17388,6 +17538,100 @@ function setHeader(page) {
   if (!inBook) return;
   $('#count').textContent = `${page} / ${BOOK.pages}`;
   $('#dots').replaceChildren(...Array.from({ length: BOOK.pages }, (_, i) => h('i', i < page - 1 ? 'on' : i === page - 1 ? 'on now' : '')));
+}
+// ===== 컷 애니메이션: 컷마다 인물이 움직이고 카메라가 다가간 뒤, 지금의 멈춘 삽화와 같은 장면에서 끝난다 =====
+// 영상은 미리 만들어 assets/cuts/<책>/<장면>-<컷 번호>.mp4 로 둔다 (tools/cuts.mjs 가 이 창구로 한 장씩 찍는다).
+// 컷의 anim: { 인물 id: [[때(0~1), 자세, 표정], ...], cam: { turn 도, back 배, up m }, cheer: 반 아이들이 들썩이는 정도 }
+const easeIO = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const sstep = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const lerp = (a, b, t) => a + (b - a) * t;
+function mixPose(c, a, b, t) {
+  const o = {}, y = p => (p.sit ? SEAT - c.D.hip : p.y);
+  ['aA', 'aB', 'lA', 'lB', 'hd'].forEach(k => { o[k] = a[k].map((v, i) => lerp(v, b[k][i], t)); });
+  ['eA', 'eB', 'kA', 'kB', 'lean', 'tilt'].forEach(k => { o[k] = lerp(a[k], b[k], t); });
+  o.yy = lerp(y(a), y(b), t);
+  return o;
+}
+// 컷 p 의 움직임을 준비한다. prev: 앞 컷 (없으면 무대에서 정한 자세·표정에서 시작). 돌려주는 함수에 0~1 을 넣으면 그때의 장면이 된다
+function cutAnim(p, prev) {
+  applyCut(p);
+  scene.render();
+  placeShot(p);
+  const end = { pos: shotCam.position.clone(), look: shotCam.getTarget().clone(), fov: shotCam.fov };
+  const A = p.anim || {}, cm = Object.assign({ turn: p.shot === 'wide' || !p.shot ? 12 : 7, back: p.shot === 'wide' || !p.shot ? 1.1 : 1.32, up: 0.06 }, A.cam);
+  const off = end.pos.subtract(end.look);
+  const start = { pos: end.look.add(turnY(off, cm.turn).scale(cm.back)).add(V3(0, cm.up, 0)), look: end.look.add(V3(0, cm.up * 0.4, 0)), fov: end.fov * 1.04 };
+  const talkers = new Set(asList(p.lines).map(l => l.who));
+  const acts = [];
+  for (const id in CH) {
+    const c = CH[id];
+    if (!shown(c)) continue;
+    const f1 = (p.faces && p.faces[id]) || c.face0, o1 = p.poses && p.poses[id];
+    const f0 = prev ? (prev.faces && prev.faces[id]) || c.face0 : c.face0, o0 = prev && prev.poses && prev.poses[id];
+    // 열쇠 장면: [때, 자세 값, 표정]. 마지막은 늘 이 컷의 자세·표정
+    const keys = [[0, poseVals(c.base, o0), f0], ...asList(A[id]).map(([t, pose, face]) => [t, poseVals(c.base, pose), face]), [A[id] ? 0.8 : 0.5, poseVals(c.base, o1), f1]];
+    acts.push({ c, keys, talk: talkers.has(id), hd: poseVals(c.base, o1).hd });
+  }
+  const kids = (stageNow.kids || []).map((n, i) => ({ n, y: n.position.y, rz: n.rotation.z, ph: i * 2.4 }));
+  const cheer = A.cheer == null ? 0.25 : A.cheer;
+  return function at(t, sec) { // t: 0~1, sec: 지난 초 (숨·깜빡임·말하는 입)
+    const live = 1 - sstep(0.8, 0.98, t); // 끝에서는 잔움직임이 멎어 멈춘 삽화와 같아진다
+    const k = easeIO(clamp(t / 0.86, 0, 1));
+    shotCam.position.copyFrom(BABYLON.Vector3.Lerp(start.pos, end.pos, k));
+    shotCam.setTarget(BABYLON.Vector3.Lerp(start.look, end.look, k));
+    shotCam.fov = lerp(start.fov, end.fov, k);
+    for (const a of acts) {
+      const c = a.c, K = a.keys;
+      let i = 1;
+      while (i < K.length - 1 && t > K[i][0]) i++;
+      const t0 = Math.max(K[i - 1][0], K[i][0] - 0.24), u = clamp((t - t0) / Math.max(0.01, K[i][0] - t0), 0, 1);
+      const e = u < 1 ? easeIO(u) + Math.sin(u * Math.PI) * 0.06 : 1; // 살짝 지나쳤다 돌아온다
+      const pv = mixPose(c, K[i - 1][1], K[i][1], e);
+      const s = sec * 2.2 + c.phase;
+      pv.hd = [pv.hd[0] + Math.sin(s * 0.9) * 0.03 * live, pv.hd[1] + Math.sin(s * 0.6) * 0.07 * live, pv.hd[2] + Math.sin(s * 0.7 + 1) * 0.03 * live];
+      pv.aA = [pv.aA[0] + Math.sin(s) * 0.03 * live, pv.aA[1], pv.aA[2]];
+      pv.aB = [pv.aB[0] - Math.sin(s) * 0.03 * live, pv.aB[1], pv.aB[2]];
+      pv.yy += Math.sin(s * 1.3) * 0.006 * live;
+      applyPose(c, pv);
+      const face = (u > 0.5 ? K[i][2] : K[i - 1][2]) || K[i - 1][2] || c.face0;
+      const blink = live > 0.5 && ((sec + c.phase * 0.37) % 2.3) < 0.12;
+      const talk = a.talk ? Math.abs(Math.sin(sec * 11 + c.phase)) * sstep(0.2, 0.3, t) * (1 - sstep(0.82, 0.92, t)) : 0;
+      if (face !== c.face || blink !== c.blinking || Math.abs(talk - (c.talk || 0)) > 0.05) { c.face = face; c.blinking = blink; c.talk = talk; paintFace(c, blink); }
+    }
+    kids.forEach(o => { // 배경 아이들: 들썩이고 살짝 기웃거린다
+      o.n.position.y = o.y + Math.abs(Math.sin(sec * 3.1 + o.ph)) * 0.035 * cheer * live;
+      o.n.rotation.z = o.rz + Math.sin(sec * 2.3 + o.ph) * 0.05 * cheer * live;
+    });
+  };
+}
+// 영상 찍기 창구 (?rec): 밖(tools/cuts.mjs)에서 한 장씩 불러 간다
+if (ARGS.has('rec')) {
+  window.__rec = {
+    ready: () => !!(stageNow && stageNow.name) && !capBusy,
+    panels: id => BOOK.scenes[id].panels.map((p, i) => ({ i, video: p.text == null && !p.phone && !p.note })),
+    // 컷 i 의 영상 장면들을 차례로 찍어 onFrame(jpeg 주소) 에 넘긴다
+    async cut(id, i, { fps = 24, sec = 3.6, w = 900 } = {}, onFrame = window.__frame) {
+      const ps = BOOK.scenes[id].panels, p = ps[i], hh = Math.round(w / 1.6), n = Math.round(fps * sec);
+      await serial(async () => {
+        const at = cutAnim(p, ps[i - 1]);
+        wallsForShot(shotCam.position);
+        const cv = document.createElement('canvas');
+        cv.width = w; cv.height = hh;
+        const g = cv.getContext('2d', { willReadFrequently: true });
+        try {
+          for (let f = 0; f <= n; f++) {
+            at(f / n, f / fps);
+            scene.render();
+            g.drawImage(await loadImg(await snap(shotCam, w, hh)), 0, 0);
+            screentone(g, w, hh);
+            await onFrame(cv.toDataURL('image/jpeg', 0.93));
+          }
+        } finally { restoreWalls(); hiddenKids.forEach(k => k.setEnabled(true)); hiddenKids = []; for (const k in CH) CH[k].talk = 0; applyCut(p); }
+      });
+    },
+    snapP: (p, w = 900) => { applyCut(p); return shoot(p, w, Math.round(w / 1.6)); },
+    still: (id, i, w = 900) => { const p = BOOK.scenes[id].panels[i]; applyCut(p); return shoot(p, w, Math.round(w / 1.6)); },
+  };
 }
 // ===== 옆 칸 아래: 할 일 (둘러보기, 갈림길, 만약에, 마음 살피기, 말 고르기, 숨 고르기, 결말, 내가 고른 길) =====
 const askEl = $('#ask');

@@ -64,7 +64,7 @@ check() {
 }
 
 MODEL_LIST=$(for f in assets/models/*.glb; do basename "$f" .glb; done)
-pack dist/artifact.html head.html @defs @stories @i18n @ui @starters @models js_base.js js_i18n.js js_net.js js_face.js js_note.js js_world.js js_char.js js_stage.js js_shot.js js_panel.js js_sheet.js js_story.js js_ui.js
+pack dist/artifact.html head.html @defs @stories @i18n @ui @starters @models js_base.js js_i18n.js js_net.js js_face.js js_note.js js_world.js js_char.js js_stage.js js_shot.js js_panel.js js_anim.js js_sheet.js js_story.js js_ui.js
 page dist/artifact.html index.html
 check dist/artifact.html
 
