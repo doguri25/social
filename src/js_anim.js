@@ -402,7 +402,8 @@ if (ARGS.has('rec')) window.__rec = {
         const at = cutAnim(p, prev);
         wallsForShot(shotCam.position);
         try {
-          for (let f = 0; f <= n; f++) {
+          if (!fps) { for (let f = 0; f <= 40; f++) at(f / 40, f * CUT_SEC / 40); await window.__frame(''); } // 그리지 않고 동작만 돌려 보기 (오류 점검)
+          else for (let f = 0; f <= n; f++) {
             at(f / n, f / fps);
             scene.render();
             g.drawImage(await loadImg(await snap(shotCam, w, hh)), 0, 0);
