@@ -3,7 +3,6 @@
 //  1) GLSL 인물 재질: 빛과 그늘 경계를 또렷하게, 그늘은 보랏빛, 밝은 쪽 가장자리에 따뜻한 빛
 //  2) GLSL 색 보정: 선명도, 맑은 색, 따뜻한 빛·보랏빛 그늘, 부드러운 대비, 가장자리, 종이 결 (무대와 컷 그림 모두)
 //  3) Canvas2D: 얼굴을 네 배(1024)로 그려 눈·입이 또렷하게, 머리카락 결을 두 배로 촘촘하게, 종이 결 그림
-//  4) 높은 화면 해상도 (고해상도 화면에서 두 배까지)
 // 주소에 fx=0 을 주면 꺼진 채로 시작하고, 위 가운데 단추로 켜고 끄며 견준다.
 const FX = { on: ARGS.get('fx') !== '0', pps: [] };
 
@@ -115,9 +114,9 @@ function fxAttach() {
   FX.pps.forEach(pp => { pp.fxCam.detachPostProcess(pp); if (FX.on) pp.fxCam.attachPostProcess(pp); });
 }
 
-// ---- 4) 높은 화면 해상도 (발밑이 또렷한 부드러운 그림자 PCSS 는 학교 기기에 너무 무거워 쓰지 않는다) ----
+// ---- 후처리 붙이기 ----
+// 해 본 것: 발밑이 또렷한 그림자(PCSS)는 학교 기기에 너무 무겁고, 화면 해상도를 두 배로 올리면 빛 번짐이 세져 흰 탁자·종이가 날아가서 뺐다
 function fxRender() {
-  if (tier === 'high') engine.setHardwareScalingLevel(1 / Math.min(window.devicePixelRatio || 1, FX.on ? 2 : 1.5));
   fxAttach();
   poke();
 }
