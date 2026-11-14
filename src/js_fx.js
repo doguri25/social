@@ -114,7 +114,7 @@ function fxBeam(parent, a, b) {
     alphaMode: BABYLON.Engine.ALPHA_ADD, backFaceCulling: false, disableDepthWrite: true,
   });
   fxBeamMat.setColor3('uColor', C3('#ffd9a0'));
-  fxBeamMat.setFloat('uStrength', 0.07);
+  fxBeamMat.setFloat('uStrength', 0.12);
   const pos = [], uv = [], idx = [];
   for (let i = 0; i < 4; i++) {
     const j = (i + 1) % 4, k = pos.length / 3;
