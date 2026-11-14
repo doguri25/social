@@ -196,7 +196,7 @@ const BUILD = {
     const r = room(g, W, D);
     // 왼쪽 벽의 창 (바닥 좌표 z 범위). 벽 묶음 x 는 -z 방향이라 뒤집어 쓴다
     const WIN_TOP = 2.15, WINS = [[-2.15, -1.05], [-0.75, 0.35], [0.65, 1.75]];
-    sunPatches(g, W, D, WINS, SILL, WIN_TOP);
+    sunPatches(g, W, D, WINS, SILL, WIN_TOP, r.left);
 
     // 뒤 벽
     const b = r.back;
@@ -458,7 +458,7 @@ const BUILD = {
   },
 };
 // 교실 왼쪽 창으로 든 햇빛 자국 (창살 그림자까지)
-function sunPatches(g, W, D, wins, sill, top) {
+function sunPatches(g, W, D, wins, sill, top, wall) {
   const kx = SUN_DIR.x / -SUN_DIR.y, kz = SUN_DIR.z / -SUN_DIR.y;
   const SW = 1024, SH = Math.round(1024 * D / W);
   const px = (x, z) => [(x + W / 2) / W * SW, (z + D / 2) / D * SH];
@@ -483,13 +483,14 @@ function sunPatches(g, W, D, wins, sill, top) {
       c.stroke();
     });
   }, true);
-  // 그림 윗변이 -z 쪽이 되도록 lay 의 u 뒤집기를 한 번 더 되돌린다
-  const m = flipU(lay(W, D, tex, 0, 0.004, 0, g, { glow: true }));
+  const m = lay(W, D, tex, 0, 0.004, 0, g, { glow: true }); // 그림 (x, y) = 바닥 (x, z): px 와 같은 방향
   m.material.alphaMode = BABYLON.Engine.ALPHA_ADD;
   // 창에서 바닥 빛 자국까지 비스듬히 내려오는 옅은 햇살 기둥 (화질 '높음'에서만, js_fx)
   wins.forEach(([z0, z1]) => {
     const win = [[sill, z0], [sill, z1], [top, z1], [top, z0]];
-    fxBeam(g, win.map(([hh, z]) => V3(-W / 2, hh, z)), win.map(([hh, z]) => V3(-W / 2 + hh * kx, 0.01, z + hh * kz)));
+    const beam = fxBeam(g, win.map(([hh, z]) => V3(-W / 2, hh, z)), win.map(([hh, z]) => V3(-W / 2 + hh * kx, 0.01, z + hh * kz)));
+    // 창 난 벽 묶음에 붙여, 그 벽이 걷히면(카메라가 창 바깥) 창 없이 빛줄기만 떠 보이지 않게 (자리는 그대로)
+    wall.computeWorldMatrix(true); beam.computeWorldMatrix(true); beam.setParent(wall);
   });
 }
 

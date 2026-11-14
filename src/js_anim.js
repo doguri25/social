@@ -543,8 +543,10 @@ let cutPlaying = false, wantPrev = false; // 지금 컷이 움직이는 중, 그
 let skipAhead = false; // 움직이는 동안 「다음」을 눌렀다: 끝 장면으로 건너뛰고 바로 다음 컷으로
 // replay: 「이전」·「다음」으로 지난 컷을 다시 볼 때 — 그 컷이 처음 나왔을 때의 자리(e.spots)에서 다시 움직이고, 「다음」 단추의 할 일은 건드리지 않는다
 function playCut(e, prev, my, replay = false) {
+  const cv0 = storyEl.querySelector('.pic > canvas'); // 부른 때의 이 컷 캔버스
   return serial(async () => {
-    const cv = storyEl.querySelector('.pic > canvas');
+    // 줄에서 기다리는 사이 다른 컷으로 넘어갔으면 그 컷의 캔버스에 이 컷을 그리지 않는다 (「이전」을 빨리 여러 번 누르면 글과 그림이 어긋났다). 같은 컷을 다시 그렸으면 새 캔버스에
+    const cv = cv0 && cv0.isConnected ? cv0 : hist[hi] === e ? storyEl.querySelector('.pic > canvas') : null;
     if (!cv || my !== runId) return;
     const w = CUT_W, hh = Math.round(w / 1.6), g = cv.getContext('2d', { willReadFrequently: true });
     cv.width = w; cv.height = hh;
@@ -569,7 +571,7 @@ function playCut(e, prev, my, replay = false) {
         g.drawImage(img, 0, 0);
       }
     } finally {
-      at(1, CUT_SEC);
+      if (my === runId) at(1, CUT_SEC); // 흐름이 끝났으면(책장으로 나감·다른 책) 새 무대의 인물을 이 컷의 자리·자세로 옮기지 않는다
       if (!replay) { cutPlaying = false; renderFoot(); }
       if (nextFn === skipNext) setNext(null);
       for (const k in CH) if (CH[k].blinking) setFace(CH[k], CH[k].face);

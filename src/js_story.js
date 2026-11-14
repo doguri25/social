@@ -61,6 +61,7 @@ function startBook(id, sceneId, resume) {
 async function runFrom(sceneId, opt) {
   cancelFlow();
   const my = ++runId;
+  lastSpots = { stage: null, pos: {}, ball: null, holder: null }; // 새 흐름(다른 책·이어 보기·다시 고르기)의 첫 컷이 앞 흐름의 자리에서 걸어오거나 공이 날아오지 않게
   try {
     let id = sceneId, o = opt;
     while (id && my === runId) { id = await playScene(id, o, my); o = {}; }

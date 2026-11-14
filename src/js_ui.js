@@ -385,7 +385,9 @@ async function boot() {
 // ---- 언어 바꾸기: 화면 글자는 바로, 이야기 글은 책을 다시 열 때부터 (책장이면 바로 다시 그린다) ----
 function setLang(code) {
   if (code === LANG || !langReady(code)) return;
+  const key = Object.keys(UI.ko).find(k => typeof UI.ko[k] === 'string' && t(k) === nextLabel); // 「다음」 단추에 붙은 이름(이야기 보기·계속 등)도 새 언어로
   LANG = save.set.lang = code;
+  if (key) nextLabel = t(key);
   store();
   findVoice();
   applyStatic();

@@ -133,9 +133,13 @@ function sheet(w, h, tex, x, y, z, ry, parent, o = {}) {
   m.layerMask = 1;
   return m;
 }
-// 바닥에 눕힌 그림 (지도, 바닥 무늬, 햇빛 자국): 위에서 보면 그림 윗변이 -z 쪽
+// 바닥에 눕힌 그림 (지도, 바닥 무늬, 햇빛 자국): 위에서 보면 그림 윗변이 -z 쪽, 왼쪽이 -x 쪽
+// (CreateGround 는 그림 윗변(v=1)을 +z 에 둔다. 예전엔 u 를 뒤집어 그림이 180도 돌아가 있었다: 탁자 위 「작전」 글씨가 거꾸로, 햇빛 자국이 앞뒤로 뒤집힘)
 function lay(w, d, tex, x, y, z, parent, o = {}) {
-  const m = flipU(MB.CreateGround('lay', { width: w, height: d }, scene));
+  const m = MB.CreateGround('lay', { width: w, height: d }, scene);
+  const uv = m.getVerticesData(BABYLON.VertexBuffer.UVKind);
+  for (let i = 1; i < uv.length; i += 2) uv[i] = 1 - uv[i];
+  m.setVerticesData(BABYLON.VertexBuffer.UVKind, uv);
   m.material = texMat(tex, o);
   m.position.set(x, y, z);
   m.parent = parent || null;
@@ -248,15 +252,19 @@ function wallMeshes(w) { return w.meshes || (w.meshes = w.node.getChildMeshes())
 let shotWalls = false; // 컷을 찍는 중: 찍기 안에서 도는 그리기(onBeforeRender)가 벽을 무대 카메라 기준으로 되돌리지 않게
 function updateWalls(instant) {
   if (!stageNow || shotWalls) return;
-  const dx = camera.position.x - camera.target.x, dz = camera.position.z - camera.target.z;
-  const L = Math.hypot(dx, dz) || 1;
+  const c = camera.position;
   let moving = false;
   stageNow.walls.forEach(w => {
-    const want = (w.n[0] * dx + w.n[1] * dz) / L > 0.05 ? 0 : 1;
-    if (Math.abs(w.vis - want) < 0.001) return;
-    // 끝에 닿으면 정확히 want 로 (0.1씩 더하면 0.9999…에서 멈춰 벽 묶음이 반투명으로 그려지고 문짝이 지워졌다)
-    w.vis = instant || w.vis < 0 || Math.abs(want - w.vis) <= 0.1 ? want : w.vis + clamp(want - w.vis, -0.1, 0.1);
-    wallMeshes(w).forEach(m => { m.visibility = w.vis; });
+    // 카메라가 벽 바깥(벽 안쪽 면 너머)에 있을 때만 걷는다. 예전엔 카메라가 보는 방향으로 정해서,
+    // 방 안이 다 보이는 비스듬한 각도에서도 벽이 칠판·게시판·책장째 사라졌다 (방은 볼록하니 바깥에 있을 때만 가린다)
+    const p = w.node.getAbsolutePosition();
+    const want = (c.x - p.x) * w.n[0] + (c.z - p.z) * w.n[1] > -0.06 ? 0 : 1;
+    if (w.vis === want) return;
+    // 끝에 가까우면 정확히 want 로. 0.1씩 더하면 0.8999… 다음이 1 이 아니라 0.9999…가 되어, 벽 묶음이 반투명 차례로 그려지며
+    // 벽이 앞에 선 책장·게시판을 덮어 잘리거나 사라졌다 (반투명은 깊이를 안 쓰고 가운데 거리 순으로 그린다)
+    w.vis = instant || w.vis < 0 || Math.abs(want - w.vis) < 0.15 ? want : w.vis + clamp(want - w.vis, -0.1, 0.1);
+    // 윤곽선 껍데기(hull)는 반투명이면 안쪽 면이 가구 속으로 진한 갈색으로 비쳐, 다 보일 때만 그린다
+    wallMeshes(w).forEach(m => { m.visibility = m.material === modelInk ? +(w.vis >= 1) : w.vis; });
     w.node.setEnabled(w.vis > 0.01);
     moving = true;
   });
