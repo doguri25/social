@@ -17287,8 +17287,14 @@ function mat(color) {
   return mats[color] || (mats[color] = Object.assign(new BABYLON.StandardMaterial(color, scene), { diffuseColor: C3(color), specularColor: BLACK }));
 }
 const INK = C3('#4a3428');
-// 윤곽선: 오른손 좌표계에서는 부풀린 깊이가 앞면에 쓰여서, 윤곽선 두께 안쪽에 붙은 물건(종이, 얼굴 무늬)은 가려진다
-function ink(m, w = 0.006) { m.renderOutline = true; m.outlineColor = INK; m.outlineWidth = w; return m; }
+// 윤곽선 (물건): 인물과 같은 '뒤집은 껍데기' 방식 (js_char 의 hull).
+// Babylon 의 renderOutline 은 화질 '높음'의 그늘(SSAO, 여러 화면에 동시에 그리기)과 맞지 않아 그리기가 통째로 버려졌다 (GL_INVALID_OPERATION)
+let modelInk = null;
+function ink(m, w = 0.006) {
+  modelInk = modelInk || Object.assign(inkMat.clone('inkModel'), { emissiveColor: INK });
+  hull(m, w, modelInk);
+  return m;
+}
 // 층(layerMask): 무대 물건은 1번 칸, 인물은 저마다 한 칸씩 (컷에서 가리는 아이를 빼고, 얼굴 사진에는 그 아이만 나오게).
 // 모든 물건은 solid / sheet / lay 를 거치므로 여기서 정한다 (onNewMeshAddedObservable 은 늦게 불려 인물 칸을 덮어써서 쓰지 않는다)
 function solid(m, cast = true) { m.receiveShadows = true; m.isPickable = false; m.layerMask = 1; if (cast) shadows.addShadowCaster(m); return m; }
@@ -17297,9 +17303,12 @@ function put(m, color, x, y, z, parent, cast) { m.material = typeof color === 's
 const box = (w, h, d, color, x, y, z, parent, cast = true) => put(MB.CreateBox('box', { width: w, height: h, depth: d }, scene), color, x, y, z, parent, cast);
 const cyl = (rt, rb, h, color, x, y, z, parent, seg = 24) => put(MB.CreateCylinder('cyl', { diameterTop: rt * 2, diameterBottom: rb * 2, height: h, tessellation: seg }, scene), color, x, y, z, parent);
 const ball = (r, color, x, y, z, parent, seg = 18) => put(MB.CreateSphere('ball', { diameter: r * 2, segments: seg }, scene), color, x, y, z, parent);
-function canvasTex(w, h, draw, alpha = false) {
-  const t = new BABYLON.DynamicTexture('tex', { width: w, height: h }, scene, true);
-  draw(t.getContext(), w, h);
+// k: 몇 배 크기로 그릴까 (글씨가 있는 그림을 가까이서도 또렷하게). 그리는 코드는 w×h 기준 그대로
+function canvasTex(w, h, draw, alpha = false, k = 1) {
+  const t = new BABYLON.DynamicTexture('tex', { width: Math.round(w * k), height: Math.round(h * k) }, scene, true);
+  const g = t.getContext();
+  if (k !== 1) g.scale(k, k);
+  draw(g, w, h);
   t.update();
   t.hasAlpha = alpha;
   t.anisotropicFilteringLevel = 8;
@@ -17489,15 +17498,16 @@ function applyTier() {
   // 순서: 그늘(SSAO)을 먼저 붙여야 그 위에 빛 번짐이 얹힌다
   if (hi && engine.webGLVersion >= 2 && BABYLON.SSAO2RenderingPipeline.IsSupported) {
     ssao = new BABYLON.SSAO2RenderingPipeline('ssao', scene, { ssaoRatio: 0.5, blurRatio: 1 }, [camera]);
-    Object.assign(ssao, { radius: 0.45, totalStrength: 1.1, base: 0.12, samples: 16, maxZ: 30, minZAspect: 0.4, expensiveBlur: true });
+    Object.assign(ssao, { radius: 0.5, totalStrength: 1.3, base: 0.1, samples: 16, maxZ: 30, minZAspect: 0.4, expensiveBlur: true });
   }
   pipe = new BABYLON.DefaultRenderingPipeline('pipe', false, scene, [camera]);
   pipe.imageProcessingEnabled = false; // 색 보정은 재질에서 (웹툰 컷 찍기에도 같은 색이 나오게)
   pipe.samples = hi ? 4 : 1;
   pipe.fxaaEnabled = !hi;
-  pipe.bloomEnabled = hi;
-  Object.assign(pipe, { bloomThreshold: 0.86, bloomWeight: 0.2, bloomKernel: 48, bloomScale: 0.5 });
+  // 빛 번짐은 쓰지 않는다: 밝은 탁자·흰 종이가 하얗게 날아간다 (창으로 드는 빛은 js_fx 의 햇살 기둥으로)
+  pipe.bloomEnabled = false;
   shadows.filteringQuality = hi ? BABYLON.ShadowGenerator.QUALITY_HIGH : BABYLON.ShadowGenerator.QUALITY_LOW;
+  fxApply(hi); // 셰이더로 화질 올리기 (js_fx): '높음'에서만
   poke();
 }
 
@@ -17518,6 +17528,157 @@ engine.runRenderLoop(() => {
   }
 });
 new ResizeObserver(() => { engine.resize(); fitCam(); poke(); }).observe(canvas.parentElement);
+// ===== 화질 올리기 (WebGL GLSL 셰이더 + Canvas2D): 화질 '높음'에서만 켠다 =====
+// 1) 인물 재질: 빛과 그늘 경계를 부드러운 두 단계로, 그늘은 보랏빛, 밝은 쪽 가장자리에 따뜻한 빛 (게임 색과 60% 만 섞어 모습은 그대로)
+// 2) 색 보정 (무대·컷 카메라 마지막 단계): 가벼운 선명도, 칙칙한 색만 맑게, 따뜻한 빛·보랏빛 그늘, 중간 밝기 대비, 가장자리, 종이 결
+// 3) 창으로 드는 햇살 기둥 (sunPatches 가 만든다)
+// 주소에 fx=0 을 주면 끈다 (견주어 보기), fps=1 이면 왼쪽 위에 초당 장면 수를 띄운다 (학교 기기 확인)
+const FX = { want: ARGS.get('fx') !== '0', on: false, pps: [], beams: [] };
+
+const FX_TOON = `
+#ifdef FXTOON
+{
+  vec3 fxAlb = diffuseColor * baseColor.rgb;
+  float fxL = dot(diffuseBase, vec3(0.3333));
+  float fxBand = smoothstep(0.32, 0.58, fxL);
+  vec3 fxTone = mix(fxAlb * vec3(0.8, 0.76, 0.87), fxAlb * vec3(1.04, 1.01, 0.97), fxBand);
+  vec3 fxGlow = max(color.rgb - fxAlb * diffuseBase, vec3(0.0));
+  float fxRim = pow(1.0 - clamp(dot(normalize(normalW), viewDirectionW), 0.0, 1.0), 3.0);
+  color.rgb = mix(color.rgb, fxTone + fxGlow, 0.6) + fxRim * fxBand * 0.1 * vec3(1.0, 0.95, 0.86);
+}
+#endif
+`;
+class FxToon extends BABYLON.MaterialPluginBase {
+  constructor(m) { super(m, 'FxToon', 210, { FXTOON: false }); this._on = FX.on; this._enable(true); }
+  get on() { return this._on; }
+  set on(v) { if (this._on === v) return; this._on = v; this.markAllDefinesAsDirty(); }
+  prepareDefines(d) { d.FXTOON = this._on; }
+  getClassName() { return 'FxToon'; }
+  getCustomCode(type) { return type === 'fragment' ? { CUSTOM_FRAGMENT_BEFORE_FRAGCOLOR: FX_TOON } : null; }
+}
+BABYLON.RegisterClass('BABYLON.FxToon', FxToon); // 머리카락 재질은 몸 재질을 복제해 만든다 (복제할 때 이 이름으로 다시 만든다)
+const fxPlugin = m => m && m.pluginManager && m.pluginManager.getPlugin('FxToon');
+function fxToon(m) { if (!fxPlugin(m)) new FxToon(m); return m; }
+
+BABYLON.Effect.ShadersStore.fxGradeFragmentShader = `
+precision highp float;
+varying vec2 vUV;
+uniform sampler2D textureSampler;
+uniform sampler2D paperSampler;
+uniform vec2 uTexel;
+uniform vec2 uPaperScale;
+uniform float uVignette;
+void main(void) {
+  vec4 src = texture2D(textureSampler, vUV);
+  vec3 c = src.rgb;
+  vec3 n = texture2D(textureSampler, vUV + vec2(uTexel.x, 0.0)).rgb + texture2D(textureSampler, vUV - vec2(uTexel.x, 0.0)).rgb
+         + texture2D(textureSampler, vUV + vec2(0.0, uTexel.y)).rgb + texture2D(textureSampler, vUV - vec2(0.0, uTexel.y)).rgb;
+  c += (c - n * 0.25) * 0.35;
+  float l = dot(c, vec3(0.299, 0.587, 0.114));
+  float sat = max(c.r, max(c.g, c.b)) - min(c.r, min(c.g, c.b));
+  c = mix(vec3(l), c, 1.0 + 0.22 * (1.0 - sat));
+  c *= mix(vec3(0.955, 0.96, 1.03), vec3(1.0, 0.995, 0.97), smoothstep(0.2, 0.8, l));
+  c = mix(c, c * c * (3.0 - 2.0 * c), 0.14 * (1.0 - smoothstep(0.62, 0.9, l)));
+  vec2 q = vUV - 0.5;
+  c *= 1.0 - uVignette * smoothstep(0.2, 0.9, dot(q, q) * 2.0);
+  float p = texture2D(paperSampler, vUV * uPaperScale).r;
+  c *= mix(0.978, 1.012, p);
+  gl_FragColor = vec4(clamp(c, 0.0, 1.0), src.a);
+}`;
+// 종이 결 (Canvas2D): 이음매 없이 되풀이되는 회색 점과 섬유
+let fxPaperTex = null;
+function fxPaper() {
+  if (fxPaperTex) return fxPaperTex;
+  fxPaperTex = canvasTex(512, 512, (g, W, H) => {
+    g.fillStyle = '#808080'; g.fillRect(0, 0, W, H);
+    let s = 7; const R = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+    for (let i = 0; i < 2600; i++) {
+      const x = R() * W, y = R() * H, r = 0.6 + R() * 2, v = R() < 0.5 ? 0 : 255, a = 0.05 + R() * 0.07;
+      [-W, 0, W].forEach(dx => [-H, 0, H].forEach(dy => { g.fillStyle = `rgba(${v},${v},${v},${a})`; g.beginPath(); g.arc(x + dx, y + dy, r, 0, 7); g.fill(); }));
+    }
+    for (let i = 0; i < 360; i++) {
+      const x = R() * W, y = R() * H, a = R() * 6.28, l = 6 + R() * 20, v = R() < 0.6 ? 255 : 40;
+      g.strokeStyle = `rgba(${v},${v},${v},${0.06 + R() * 0.07})`; g.lineWidth = 0.7;
+      g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke();
+    }
+  });
+  fxPaperTex.wrapU = fxPaperTex.wrapV = BABYLON.Texture.WRAP_ADDRESSMODE;
+  return fxPaperTex;
+}
+function fxGrade(cam, vignette) {
+  const pp = new BABYLON.PostProcess('fxGrade', 'fxGrade', ['uTexel', 'uPaperScale', 'uVignette'], ['paperSampler'], 1.0, null, BABYLON.Texture.BILINEAR_SAMPLINGMODE, engine);
+  pp.onApply = e => {
+    e.setFloat2('uTexel', 1 / pp.width, 1 / pp.height);
+    e.setFloat2('uPaperScale', pp.width / 512, pp.height / 512);
+    e.setFloat('uVignette', vignette);
+    e.setTexture('paperSampler', fxPaper());
+  };
+  pp.fxCam = cam;
+  return pp;
+}
+
+// ---- 햇살 기둥: 창에서 바닥 빛 자국까지 비스듬히 내려오는 옅은 빛 (더해 그리기, 아래로 갈수록 옅게) ----
+BABYLON.Effect.ShadersStore.fxBeamVertexShader = `
+precision highp float;
+attribute vec3 position;
+attribute vec2 uv;
+uniform mat4 worldViewProjection;
+varying vec2 vUV;
+void main(void) { vUV = uv; gl_Position = worldViewProjection * vec4(position, 1.0); }`;
+BABYLON.Effect.ShadersStore.fxBeamFragmentShader = `
+precision highp float;
+varying vec2 vUV;
+uniform vec3 uColor;
+uniform float uStrength;
+void main(void) {
+  float along = vUV.y;                                     // 0: 창, 1: 바닥
+  float side = smoothstep(0.0, 0.18, vUV.x) * smoothstep(1.0, 0.82, vUV.x);
+  float a = uStrength * side * (1.0 - along * 0.7) * smoothstep(0.0, 0.08, along);
+  float stripe = 0.85 + 0.15 * sin(vUV.x * 31.0 + vUV.y * 4.0);  // 먼지 낀 빛줄기 결
+  gl_FragColor = vec4(uColor * a * stripe, 1.0);
+}`;
+let fxBeamMat = null;
+// 창 하나: 창 네 귀퉁이(a)와 바닥 빛 자국 네 귀퉁이(b)를 이은 비스듬한 상자의 옆면 넷
+function fxBeam(parent, a, b) {
+  fxBeamMat = fxBeamMat || Object.assign(new BABYLON.ShaderMaterial('fxBeam', scene, 'fxBeam', { attributes: ['position', 'uv'], uniforms: ['worldViewProjection', 'uColor', 'uStrength'], needAlphaBlending: true }), {
+    alphaMode: BABYLON.Engine.ALPHA_ADD, backFaceCulling: false, disableDepthWrite: true,
+  });
+  fxBeamMat.setColor3('uColor', C3('#ffd9a0'));
+  fxBeamMat.setFloat('uStrength', 0.07);
+  const pos = [], uv = [], idx = [];
+  for (let i = 0; i < 4; i++) {
+    const j = (i + 1) % 4, k = pos.length / 3;
+    [a[i], a[j], b[j], b[i]].forEach(p => pos.push(p.x, p.y, p.z));
+    uv.push(0, 0, 1, 0, 1, 1, 0, 1);
+    idx.push(k, k + 1, k + 2, k, k + 2, k + 3);
+  }
+  const m = new BABYLON.Mesh('beam', scene);
+  Object.assign(new BABYLON.VertexData(), { positions: pos, uvs: uv, indices: idx }).applyToMesh(m);
+  m.material = fxBeamMat;
+  m.parent = parent;
+  m.isPickable = false;
+  m.layerMask = 1;
+  m.setEnabled(FX.on);
+  FX.beams.push(m);
+  return m;
+}
+
+// ---- 켜고 끄기: 화질 설정이 바뀔 때마다 (게임의 applyTier 끝에서) ----
+function fxApply(hi) {
+  FX.on = FX.want && hi;
+  if (!FX.pps.length) FX.pps = [fxGrade(camera, 0.16), fxGrade(shotCam, 0.1)];
+  FX.pps.forEach(pp => { pp.fxCam.detachPostProcess(pp); if (FX.on) pp.fxCam.attachPostProcess(pp); }); // 게임의 후처리 묶음보다 뒤에
+  scene.materials.forEach(m => { const p = fxPlugin(m); if (p) p.on = FX.on; });
+  FX.beams.forEach(m => m.setEnabled(FX.on));
+}
+
+// ---- 초당 장면 수 (학교 기기에서 느린지 볼 때): ?fps=1 ----
+if (ARGS.has('fps')) {
+  const box = h('div', '');
+  Object.assign(box.style, { position: 'fixed', left: '6px', top: '6px', zIndex: 60, font: '13px monospace', background: 'rgba(0,0,0,.6)', color: '#fff', padding: '3px 7px', borderRadius: '6px', pointerEvents: 'none' });
+  document.body.appendChild(box);
+  setInterval(() => { box.textContent = `${engine.getFps().toFixed(0)} fps · ${tier}${FX.on ? ' · fx' : ''}`; }, 500);
+}
 // ===== 인물: 몸은 기본 도형, 얼굴은 캔버스 그림을 머리에 붙인 무늬, 머리카락은 깎은 껍데기 하나. 배경 아이는 한 자세로 굳혀 합친다 =====
 const SKIN = '#ffe2cc';
 // 인물 재질: 무광 + 가장자리가 살짝 밝아지는 테두리 빛(만화 같은 입체감). 살색은 그늘에서도 밝게
@@ -17526,21 +17687,26 @@ function charMat(color) {
   if (cmats[color]) return cmats[color];
   const m = Object.assign(new BABYLON.StandardMaterial('c' + color, scene), { diffuseColor: C3(color), specularColor: BLACK });
   m.emissiveFresnelParameters = Object.assign(new BABYLON.FresnelParameters(), { bias: 0.2, power: 2.2, leftColor: C3('#fff3e0').scale(0.32), rightColor: color === SKIN ? C3(SKIN).scale(0.22) : BLACK });
-  return (cmats[color] = m);
+  return (cmats[color] = fxToon(m)); // 화질 '높음'이면 셰이더로 명암을 다듬는다 (js_fx)
 }
 // 윤곽선: 같은 모양을 법선 방향으로 조금 부풀려 뒷면만 진하게 그린다 (renderOutline 의 깊이 문제가 없다)
 const inkMat = Object.assign(new BABYLON.StandardMaterial('ink', scene), { diffuseColor: BLACK, specularColor: BLACK, emissiveColor: C3('#3b2a22'), disableLighting: true, cullBackFaces: false });
-function hull(m, w) {
+// 윤곽선 두께 w 는 세계 좌표(m) 기준: 부모까지 곱한 크기로 나눠 모델(크기를 줄여 놓은 것)도 같은 두께가 되게
+function hull(m, w, material = inkMat) {
+  const nor = m.getVerticesData(BABYLON.VertexBuffer.NormalKind);
+  if (!nor) return null;
+  m.computeWorldMatrix(true);
+  const s = m.absoluteScaling.clone();
   const h = m.clone('ink', m, true);
   h.makeGeometryUnique();
   h.position.setAll(0);
   h.rotation.setAll(0);
   h.scaling.setAll(1);
-  const pos = h.getVerticesData(BABYLON.VertexBuffer.PositionKind), nor = h.getVerticesData(BABYLON.VertexBuffer.NormalKind), s = m.scaling;
-  for (let i = 0; i < pos.length; i += 3) { pos[i] += nor[i] * w / s.x; pos[i + 1] += nor[i + 1] * w / s.y; pos[i + 2] += nor[i + 2] * w / s.z; }
+  const pos = h.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+  for (let i = 0; i < pos.length; i += 3) { pos[i] += nor[i] * w / Math.abs(s.x); pos[i + 1] += nor[i + 1] * w / Math.abs(s.y); pos[i + 2] += nor[i + 2] * w / Math.abs(s.z); }
   h.setVerticesData(BABYLON.VertexBuffer.PositionKind, pos);
   h.refreshBoundingInfo();
-  Object.assign(h, { material: inkMat, isPickable: false, receiveShadows: false, metadata: null });
+  Object.assign(h, { material, isPickable: false, receiveShadows: false, metadata: null });
   return h;
 }
 // ---- 몸 비율 (m): 2등신 SD 캐릭터. 아이는 키 약 1.09에 머리 지름 0.54(키의 절반), 어른은 키 약 1.42, 머리 약 2.8개 ----
@@ -17578,7 +17744,8 @@ const POSE0 = { aA: [0.04, 0, -0.1], aB: [0.04, 0, 0.1], eA: -0.15, eB: -0.15, l
 const CH = {};
 let blinkOff = false; // 컷과 얼굴 사진을 찍는 동안에는 깜빡이지 않는다
 const OUT_W = 0.006; // 인물 윤곽선 두께 (m)
-const FACE_TEX = FACE_W * 2; // 얼굴 무늬는 두 배 크기로 그려 가까이서도 또렷하게
+const FACE_TEX = FACE_W * 3; // 주인공 얼굴 무늬는 세 배 크기로 그려 가까이(컷)서도 또렷하게
+const FACE_X = FACE_W * 2; // 배경 아이 얼굴 (작게 보여서 두 배면 된다)
 // i: 등장 순서 — 층 번호(1 + i)로 써서 컷에서 이 인물만 빼거나 얼굴 사진에 이 인물만 나오게 한다
 // extra: 배경 아이로 쓸 몸만 만들어 돌려준다 (소품·윤곽선·CH 등록 없이)
 function makeChar(d, i, extra) {
@@ -17678,16 +17845,16 @@ function makeChar(d, i, extra) {
 const hairMats = {};
 function hairMat(color) {
   if (hairMats[color]) return hairMats[color];
-  const tex = canvasTex(256, 256, (g, W, H) => {
+  const tex = canvasTex(512, 512, (g, W, H) => { // 굵기와 밝기가 다른 가는 머리카락 결을 촘촘하게 (두 배 크기)
     g.fillStyle = color;
     g.fillRect(0, 0, W, H);
-    for (let i = 0; i < 110; i++) {
-      const x = Math.random() * W;
-      g.strokeStyle = Math.random() < 0.5 ? 'rgba(255,236,214,.16)' : 'rgba(20,10,5,.24)';
-      g.lineWidth = 1 + Math.random() * 2.5;
+    for (let i = 0; i < 260; i++) {
+      const x = Math.random() * W, light = Math.random() < 0.45;
+      g.strokeStyle = light ? `rgba(255,236,214,${0.05 + Math.random() * 0.07})` : `rgba(20,10,5,${0.07 + Math.random() * 0.12})`;
+      g.lineWidth = 0.6 + Math.random() * 2.2;
       g.beginPath();
       g.moveTo(x, 0);
-      g.bezierCurveTo(x + 6, H * 0.33, x - 6, H * 0.66, x + 2, H);
+      g.bezierCurveTo(x + 5, H * 0.33, x - 5, H * 0.66, x + 2, H);
       g.stroke();
     }
   });
@@ -17696,7 +17863,7 @@ function hairMat(color) {
   const m = charMat(color).clone('hair' + color);
   m.diffuseColor = BABYLON.Color3.White();
   m.diffuseTexture = tex;
-  return (hairMats[color] = m);
+  return (hairMats[color] = fxToon(m));
 }
 // 머리카락 껍데기: 머리보다 조금 큰 공 하나를 깎는다. 얼굴 쪽(앞머리 선 아래)과 머리 길이 아래는 머리 속으로 넣어 감춘다.
 // o.hl: 앞머리 선 높이, o.scallop: 앞머리 끝 물결, o.side: 얼굴 옆을 감싸는 정도, o.bottom(z): 길이(뒤쪽 z<0), o.curl: 곱슬 굴곡
@@ -17832,11 +17999,11 @@ scene.onBeforeRenderObservable.add(() => {
 const faceMats = {};
 function faceMatOf(kind) {
   if (faceMats[kind]) return faceMats[kind];
-  const t = new BABYLON.DynamicTexture('faceX', { width: FACE_TEX, height: FACE_TEX }, scene, true);
+  const t = new BABYLON.DynamicTexture('faceX', { width: FACE_X, height: FACE_X }, scene, true);
   t.hasAlpha = true;
   const g = t.getContext();
   g.save();
-  g.scale(FACE_TEX / FACE_W, FACE_TEX / FACE_W);
+  g.scale(FACE_X / FACE_W, FACE_X / FACE_W);
   drawFace(g, kind, false);
   g.restore();
   t.update();
@@ -17957,12 +18124,12 @@ function outsideTex(night) {
 }
 // 종이 한 장 (포스터, 간판): 글 줄마다 [글, 크기, 색]
 function paper(w, h, lines, bg = '#fffaf0', border = '#e8c9a0') {
-  return canvasTex(Math.round(w * 500), Math.round(h * 500), (c, W, H) => {
+  return canvasTex(Math.round(w * 500), Math.round(h * 500), (c, W, H) => { // 글씨가 또렷하게 두 배 크기로 (아래 2)
     c.fillStyle = bg; c.fillRect(0, 0, W, H);
     if (border) { c.strokeStyle = border; c.lineWidth = 10; c.strokeRect(5, 5, W - 10, H - 10); }
     const gap = H / (lines.length + 1);
     lines.forEach(([t, size, col], i) => write(c, t, W / 2, gap * (i + 1), size, col));
-  });
+  }, false, 2);
 }
 const PENCIL_COLS = ['#e8505b', '#f39c6b', '#ffcf3f', '#78c78a', '#6fbfee', '#5b6ee8', '#b48ad8', '#f497b6'];
 function pencilMesh(color, len = 0.17, r = 0.0055) {
@@ -18087,7 +18254,7 @@ const BUILD = {
       c.strokeRect(640, 150, 300, 200); c.beginPath(); c.moveTo(790, 150); c.lineTo(790, 350); c.stroke(); // 코트
       c.beginPath(); c.arc(720, 250, 26, 0, 7); c.stroke();
       write(c, '시간이 끝났을 때 더 많이 남은 반이 이겨요', 512, 410, 34, 'rgba(255,236,150,.9)');
-    }), -0.35, 1.6, 0.111, 0, b);
+    }, false, 1.5), -0.35, 1.6, 0.111, 0, b);
     box(2.3, 0.035, 0.1, '#c99a69', -0.35, 1.0, 0.11, b, false);
     sheet(0.56, 0.76, paper(0.56, 0.76, [['함께', 64, '#e8705a'], ['만드는', 56, '#3b302b'], ['좋은 교실', 54, '#3f9c7d']]), -2.25, 1.68, 0.075, 0, b);
     // 게시판: 우리 반 이름표와 피구 대회 포스터
@@ -18152,7 +18319,7 @@ const BUILD = {
         c.fillStyle = '#e8705a'; c.beginPath(); c.arc(0, -46, 8, 0, 7); c.fill();
         c.restore();
       });
-    }), -0.55, 1.5, 0.075, 0, rt);
+    }, false, 2), -0.55, 1.5, 0.075, 0, rt);
     model('bookcaseOpen', { w: 0.95, h: 1.55, d: 0.36, x: -1.85, z: 0.26, parent: rt, color: { wood: WOOD }, ink: 0.005 });
     model('books', { h: 0.15, x: -1.85, y: 1.55, z: 0.26, parent: rt });
     model('pottedPlant', { h: 0.85, x: 0.35, z: 0.35, parent: rt });
@@ -18360,6 +18527,11 @@ function sunPatches(g, W, D, wins, sill, top) {
   // 그림 윗변이 -z 쪽이 되도록 lay 의 u 뒤집기를 한 번 더 되돌린다
   const m = flipU(lay(W, D, tex, 0, 0.004, 0, g, { glow: true }));
   m.material.alphaMode = BABYLON.Engine.ALPHA_ADD;
+  // 창에서 바닥 빛 자국까지 비스듬히 내려오는 옅은 햇살 기둥 (화질 '높음'에서만, js_fx)
+  wins.forEach(([z0, z1]) => {
+    const win = [[sill, z0], [sill, z1], [top, z1], [top, z0]];
+    fxBeam(g, win.map(([hh, z]) => V3(-W / 2, hh, z)), win.map(([hh, z]) => V3(-W / 2 + hh * kx, 0.01, z + hh * kz)));
+  });
 }
 
 const STAGES = {};

@@ -6,21 +6,26 @@ function charMat(color) {
   if (cmats[color]) return cmats[color];
   const m = Object.assign(new BABYLON.StandardMaterial('c' + color, scene), { diffuseColor: C3(color), specularColor: BLACK });
   m.emissiveFresnelParameters = Object.assign(new BABYLON.FresnelParameters(), { bias: 0.2, power: 2.2, leftColor: C3('#fff3e0').scale(0.32), rightColor: color === SKIN ? C3(SKIN).scale(0.22) : BLACK });
-  return (cmats[color] = m);
+  return (cmats[color] = fxToon(m)); // 화질 '높음'이면 셰이더로 명암을 다듬는다 (js_fx)
 }
 // 윤곽선: 같은 모양을 법선 방향으로 조금 부풀려 뒷면만 진하게 그린다 (renderOutline 의 깊이 문제가 없다)
 const inkMat = Object.assign(new BABYLON.StandardMaterial('ink', scene), { diffuseColor: BLACK, specularColor: BLACK, emissiveColor: C3('#3b2a22'), disableLighting: true, cullBackFaces: false });
-function hull(m, w) {
+// 윤곽선 두께 w 는 세계 좌표(m) 기준: 부모까지 곱한 크기로 나눠 모델(크기를 줄여 놓은 것)도 같은 두께가 되게
+function hull(m, w, material = inkMat) {
+  const nor = m.getVerticesData(BABYLON.VertexBuffer.NormalKind);
+  if (!nor) return null;
+  m.computeWorldMatrix(true);
+  const s = m.absoluteScaling.clone();
   const h = m.clone('ink', m, true);
   h.makeGeometryUnique();
   h.position.setAll(0);
   h.rotation.setAll(0);
   h.scaling.setAll(1);
-  const pos = h.getVerticesData(BABYLON.VertexBuffer.PositionKind), nor = h.getVerticesData(BABYLON.VertexBuffer.NormalKind), s = m.scaling;
-  for (let i = 0; i < pos.length; i += 3) { pos[i] += nor[i] * w / s.x; pos[i + 1] += nor[i + 1] * w / s.y; pos[i + 2] += nor[i + 2] * w / s.z; }
+  const pos = h.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+  for (let i = 0; i < pos.length; i += 3) { pos[i] += nor[i] * w / Math.abs(s.x); pos[i + 1] += nor[i + 1] * w / Math.abs(s.y); pos[i + 2] += nor[i + 2] * w / Math.abs(s.z); }
   h.setVerticesData(BABYLON.VertexBuffer.PositionKind, pos);
   h.refreshBoundingInfo();
-  Object.assign(h, { material: inkMat, isPickable: false, receiveShadows: false, metadata: null });
+  Object.assign(h, { material, isPickable: false, receiveShadows: false, metadata: null });
   return h;
 }
 // ---- 몸 비율 (m): 2등신 SD 캐릭터. 아이는 키 약 1.09에 머리 지름 0.54(키의 절반), 어른은 키 약 1.42, 머리 약 2.8개 ----
@@ -58,7 +63,8 @@ const POSE0 = { aA: [0.04, 0, -0.1], aB: [0.04, 0, 0.1], eA: -0.15, eB: -0.15, l
 const CH = {};
 let blinkOff = false; // 컷과 얼굴 사진을 찍는 동안에는 깜빡이지 않는다
 const OUT_W = 0.006; // 인물 윤곽선 두께 (m)
-const FACE_TEX = FACE_W * 2; // 얼굴 무늬는 두 배 크기로 그려 가까이서도 또렷하게
+const FACE_TEX = FACE_W * 3; // 주인공 얼굴 무늬는 세 배 크기로 그려 가까이(컷)서도 또렷하게
+const FACE_X = FACE_W * 2; // 배경 아이 얼굴 (작게 보여서 두 배면 된다)
 // i: 등장 순서 — 층 번호(1 + i)로 써서 컷에서 이 인물만 빼거나 얼굴 사진에 이 인물만 나오게 한다
 // extra: 배경 아이로 쓸 몸만 만들어 돌려준다 (소품·윤곽선·CH 등록 없이)
 function makeChar(d, i, extra) {
@@ -158,16 +164,16 @@ function makeChar(d, i, extra) {
 const hairMats = {};
 function hairMat(color) {
   if (hairMats[color]) return hairMats[color];
-  const tex = canvasTex(256, 256, (g, W, H) => {
+  const tex = canvasTex(512, 512, (g, W, H) => { // 굵기와 밝기가 다른 가는 머리카락 결을 촘촘하게 (두 배 크기)
     g.fillStyle = color;
     g.fillRect(0, 0, W, H);
-    for (let i = 0; i < 110; i++) {
-      const x = Math.random() * W;
-      g.strokeStyle = Math.random() < 0.5 ? 'rgba(255,236,214,.16)' : 'rgba(20,10,5,.24)';
-      g.lineWidth = 1 + Math.random() * 2.5;
+    for (let i = 0; i < 260; i++) {
+      const x = Math.random() * W, light = Math.random() < 0.45;
+      g.strokeStyle = light ? `rgba(255,236,214,${0.05 + Math.random() * 0.07})` : `rgba(20,10,5,${0.07 + Math.random() * 0.12})`;
+      g.lineWidth = 0.6 + Math.random() * 2.2;
       g.beginPath();
       g.moveTo(x, 0);
-      g.bezierCurveTo(x + 6, H * 0.33, x - 6, H * 0.66, x + 2, H);
+      g.bezierCurveTo(x + 5, H * 0.33, x - 5, H * 0.66, x + 2, H);
       g.stroke();
     }
   });
@@ -176,7 +182,7 @@ function hairMat(color) {
   const m = charMat(color).clone('hair' + color);
   m.diffuseColor = BABYLON.Color3.White();
   m.diffuseTexture = tex;
-  return (hairMats[color] = m);
+  return (hairMats[color] = fxToon(m));
 }
 // 머리카락 껍데기: 머리보다 조금 큰 공 하나를 깎는다. 얼굴 쪽(앞머리 선 아래)과 머리 길이 아래는 머리 속으로 넣어 감춘다.
 // o.hl: 앞머리 선 높이, o.scallop: 앞머리 끝 물결, o.side: 얼굴 옆을 감싸는 정도, o.bottom(z): 길이(뒤쪽 z<0), o.curl: 곱슬 굴곡
@@ -312,11 +318,11 @@ scene.onBeforeRenderObservable.add(() => {
 const faceMats = {};
 function faceMatOf(kind) {
   if (faceMats[kind]) return faceMats[kind];
-  const t = new BABYLON.DynamicTexture('faceX', { width: FACE_TEX, height: FACE_TEX }, scene, true);
+  const t = new BABYLON.DynamicTexture('faceX', { width: FACE_X, height: FACE_X }, scene, true);
   t.hasAlpha = true;
   const g = t.getContext();
   g.save();
-  g.scale(FACE_TEX / FACE_W, FACE_TEX / FACE_W);
+  g.scale(FACE_X / FACE_W, FACE_X / FACE_W);
   drawFace(g, kind, false);
   g.restore();
   t.update();

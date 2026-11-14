@@ -83,12 +83,12 @@ function outsideTex(night) {
 }
 // 종이 한 장 (포스터, 간판): 글 줄마다 [글, 크기, 색]
 function paper(w, h, lines, bg = '#fffaf0', border = '#e8c9a0') {
-  return canvasTex(Math.round(w * 500), Math.round(h * 500), (c, W, H) => {
+  return canvasTex(Math.round(w * 500), Math.round(h * 500), (c, W, H) => { // 글씨가 또렷하게 두 배 크기로 (아래 2)
     c.fillStyle = bg; c.fillRect(0, 0, W, H);
     if (border) { c.strokeStyle = border; c.lineWidth = 10; c.strokeRect(5, 5, W - 10, H - 10); }
     const gap = H / (lines.length + 1);
     lines.forEach(([t, size, col], i) => write(c, t, W / 2, gap * (i + 1), size, col));
-  });
+  }, false, 2);
 }
 const PENCIL_COLS = ['#e8505b', '#f39c6b', '#ffcf3f', '#78c78a', '#6fbfee', '#5b6ee8', '#b48ad8', '#f497b6'];
 function pencilMesh(color, len = 0.17, r = 0.0055) {
@@ -213,7 +213,7 @@ const BUILD = {
       c.strokeRect(640, 150, 300, 200); c.beginPath(); c.moveTo(790, 150); c.lineTo(790, 350); c.stroke(); // 코트
       c.beginPath(); c.arc(720, 250, 26, 0, 7); c.stroke();
       write(c, '시간이 끝났을 때 더 많이 남은 반이 이겨요', 512, 410, 34, 'rgba(255,236,150,.9)');
-    }), -0.35, 1.6, 0.111, 0, b);
+    }, false, 1.5), -0.35, 1.6, 0.111, 0, b);
     box(2.3, 0.035, 0.1, '#c99a69', -0.35, 1.0, 0.11, b, false);
     sheet(0.56, 0.76, paper(0.56, 0.76, [['함께', 64, '#e8705a'], ['만드는', 56, '#3b302b'], ['좋은 교실', 54, '#3f9c7d']]), -2.25, 1.68, 0.075, 0, b);
     // 게시판: 우리 반 이름표와 피구 대회 포스터
@@ -278,7 +278,7 @@ const BUILD = {
         c.fillStyle = '#e8705a'; c.beginPath(); c.arc(0, -46, 8, 0, 7); c.fill();
         c.restore();
       });
-    }), -0.55, 1.5, 0.075, 0, rt);
+    }, false, 2), -0.55, 1.5, 0.075, 0, rt);
     model('bookcaseOpen', { w: 0.95, h: 1.55, d: 0.36, x: -1.85, z: 0.26, parent: rt, color: { wood: WOOD }, ink: 0.005 });
     model('books', { h: 0.15, x: -1.85, y: 1.55, z: 0.26, parent: rt });
     model('pottedPlant', { h: 0.85, x: 0.35, z: 0.35, parent: rt });
@@ -486,6 +486,11 @@ function sunPatches(g, W, D, wins, sill, top) {
   // 그림 윗변이 -z 쪽이 되도록 lay 의 u 뒤집기를 한 번 더 되돌린다
   const m = flipU(lay(W, D, tex, 0, 0.004, 0, g, { glow: true }));
   m.material.alphaMode = BABYLON.Engine.ALPHA_ADD;
+  // 창에서 바닥 빛 자국까지 비스듬히 내려오는 옅은 햇살 기둥 (화질 '높음'에서만, js_fx)
+  wins.forEach(([z0, z1]) => {
+    const win = [[sill, z0], [sill, z1], [top, z1], [top, z0]];
+    fxBeam(g, win.map(([hh, z]) => V3(-W / 2, hh, z)), win.map(([hh, z]) => V3(-W / 2 + hh * kx, 0.01, z + hh * kz)));
+  });
 }
 
 const STAGES = {};

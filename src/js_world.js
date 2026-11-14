@@ -78,8 +78,14 @@ function mat(color) {
   return mats[color] || (mats[color] = Object.assign(new BABYLON.StandardMaterial(color, scene), { diffuseColor: C3(color), specularColor: BLACK }));
 }
 const INK = C3('#4a3428');
-// 윤곽선: 오른손 좌표계에서는 부풀린 깊이가 앞면에 쓰여서, 윤곽선 두께 안쪽에 붙은 물건(종이, 얼굴 무늬)은 가려진다
-function ink(m, w = 0.006) { m.renderOutline = true; m.outlineColor = INK; m.outlineWidth = w; return m; }
+// 윤곽선 (물건): 인물과 같은 '뒤집은 껍데기' 방식 (js_char 의 hull).
+// Babylon 의 renderOutline 은 화질 '높음'의 그늘(SSAO, 여러 화면에 동시에 그리기)과 맞지 않아 그리기가 통째로 버려졌다 (GL_INVALID_OPERATION)
+let modelInk = null;
+function ink(m, w = 0.006) {
+  modelInk = modelInk || Object.assign(inkMat.clone('inkModel'), { emissiveColor: INK });
+  hull(m, w, modelInk);
+  return m;
+}
 // 층(layerMask): 무대 물건은 1번 칸, 인물은 저마다 한 칸씩 (컷에서 가리는 아이를 빼고, 얼굴 사진에는 그 아이만 나오게).
 // 모든 물건은 solid / sheet / lay 를 거치므로 여기서 정한다 (onNewMeshAddedObservable 은 늦게 불려 인물 칸을 덮어써서 쓰지 않는다)
 function solid(m, cast = true) { m.receiveShadows = true; m.isPickable = false; m.layerMask = 1; if (cast) shadows.addShadowCaster(m); return m; }
@@ -88,9 +94,12 @@ function put(m, color, x, y, z, parent, cast) { m.material = typeof color === 's
 const box = (w, h, d, color, x, y, z, parent, cast = true) => put(MB.CreateBox('box', { width: w, height: h, depth: d }, scene), color, x, y, z, parent, cast);
 const cyl = (rt, rb, h, color, x, y, z, parent, seg = 24) => put(MB.CreateCylinder('cyl', { diameterTop: rt * 2, diameterBottom: rb * 2, height: h, tessellation: seg }, scene), color, x, y, z, parent);
 const ball = (r, color, x, y, z, parent, seg = 18) => put(MB.CreateSphere('ball', { diameter: r * 2, segments: seg }, scene), color, x, y, z, parent);
-function canvasTex(w, h, draw, alpha = false) {
-  const t = new BABYLON.DynamicTexture('tex', { width: w, height: h }, scene, true);
-  draw(t.getContext(), w, h);
+// k: 몇 배 크기로 그릴까 (글씨가 있는 그림을 가까이서도 또렷하게). 그리는 코드는 w×h 기준 그대로
+function canvasTex(w, h, draw, alpha = false, k = 1) {
+  const t = new BABYLON.DynamicTexture('tex', { width: Math.round(w * k), height: Math.round(h * k) }, scene, true);
+  const g = t.getContext();
+  if (k !== 1) g.scale(k, k);
+  draw(g, w, h);
   t.update();
   t.hasAlpha = alpha;
   t.anisotropicFilteringLevel = 8;
@@ -280,15 +289,16 @@ function applyTier() {
   // 순서: 그늘(SSAO)을 먼저 붙여야 그 위에 빛 번짐이 얹힌다
   if (hi && engine.webGLVersion >= 2 && BABYLON.SSAO2RenderingPipeline.IsSupported) {
     ssao = new BABYLON.SSAO2RenderingPipeline('ssao', scene, { ssaoRatio: 0.5, blurRatio: 1 }, [camera]);
-    Object.assign(ssao, { radius: 0.45, totalStrength: 1.1, base: 0.12, samples: 16, maxZ: 30, minZAspect: 0.4, expensiveBlur: true });
+    Object.assign(ssao, { radius: 0.5, totalStrength: 1.3, base: 0.1, samples: 16, maxZ: 30, minZAspect: 0.4, expensiveBlur: true });
   }
   pipe = new BABYLON.DefaultRenderingPipeline('pipe', false, scene, [camera]);
   pipe.imageProcessingEnabled = false; // 색 보정은 재질에서 (웹툰 컷 찍기에도 같은 색이 나오게)
   pipe.samples = hi ? 4 : 1;
   pipe.fxaaEnabled = !hi;
-  pipe.bloomEnabled = hi;
-  Object.assign(pipe, { bloomThreshold: 0.86, bloomWeight: 0.2, bloomKernel: 48, bloomScale: 0.5 });
+  // 빛 번짐은 쓰지 않는다: 밝은 탁자·흰 종이가 하얗게 날아간다 (창으로 드는 빛은 js_fx 의 햇살 기둥으로)
+  pipe.bloomEnabled = false;
   shadows.filteringQuality = hi ? BABYLON.ShadowGenerator.QUALITY_HIGH : BABYLON.ShadowGenerator.QUALITY_LOW;
+  fxApply(hi); // 셰이더로 화질 올리기 (js_fx): '높음'에서만
   poke();
 }
 
