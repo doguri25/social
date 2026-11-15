@@ -526,6 +526,14 @@ function saveSpots() {
   if (bn && bn.isEnabled()) { bn.computeWorldMatrix(true); ball = bn.getAbsolutePosition().clone(); for (const id in CH) if (bn.parent === CH[id].armA.hand) holder = id; }
   lastSpots = { stage: stageNow && stageNow.name, pos, ball, holder, ballPar: ball ? bn.parent : null };
 }
+// 맞고 튕겨 바닥에 떨어진 공은 세트 자리 밖(부모 없음)에 남는다. applySet 은 공을 세트 자리로 되돌리므로 지난 컷을 다시 볼 때 이 자리로 다시 둔다
+const looseBall = () => { const b = PROPS.ball; return b && b.isEnabled() && !b.parent ? b.position.clone() : null; };
+function ballTo(pos) { // pos: 떨어진 자리 (없으면 세트 자리)
+  const b = PROPS.ball;
+  if (!b || !b.isEnabled()) return;
+  if (pos) { b.parent = null; b.position.copyFrom(pos); b.getChildMeshes().forEach(m => { m.layerMask = 1; }); }
+  else if (!b.parent) setProp('ball', curSet.ball);
+}
 const CUT_SEC = 3.6, CUT_W = 520; // 움직이는 시간, 움직이는 동안 찍는 그림 너비 (작게 찍어야 느린 기기에서도 끊기지 않는다)
 const canAnim = p => !REDUCED && save.set.anim !== false && p.text == null && !p.phone && !p.note;
 let skipCut = false; // 그림을 누르면 바로 끝 장면으로
@@ -554,13 +562,13 @@ function playCut(e, prev, my, replay = false) {
     const w = CUT_W, hh = Math.round(w / 1.6), g = cv.getContext('2d', { willReadFrequently: true });
     cv.width = w; cv.height = hh;
     const now = lastSpots;
-    if (replay) lastSpots = e.spots || { stage: null, pos: {} };
+    if (replay) { lastSpots = e.spots || { stage: null, pos: {} }; ballTo(e.ball0); } // 처음 움직일 때 공이 바닥에 떨어져 있었으면 그 자리에서
     let at;
     try { at = cutAnim(e.p, prev, hist.length); } finally { lastSpots = now; }
     const endPos = shotCam.position.clone(), hk = hiddenKids;
     hiddenKids = []; hk.forEach(k => k.setEnabled(true));
     skipCut = false;
-    const skipNext = () => { skipCut = true; skipAhead = true; };
+    const skipNext = () => { skipCut = true; if (wantPrev) wantPrev = false; else skipAhead = true; }; // 「이전」 뒤에 누른 「다음」은 지금 컷으로 돌아오기 (다음 컷으로 건너뛰지 않는다)
     if (!replay) { skipAhead = false; cutPlaying = true; setNext(skipNext); } // 움직이는 동안에도 「다음」을 누를 수 있다
     cv.parentElement.classList.add('playing');
     let t0 = performance.now();
@@ -589,7 +597,7 @@ function playCut(e, prev, my, replay = false) {
       cv.parentElement.classList.remove('playing');
       if (replay && my === runId) {
         if (cv.isConnected && e.img) { const img = new Image(); img.src = e.img; img.alt = ''; cv.replaceWith(img); } // 끝나면 삽화로
-        else if (hist[hi] && hist[hi] !== e) { const h2 = hist[hi]; applySet(h2.stage, h2.set, false); applyCut(h2.p); } // 보는 도중 다른 컷으로 넘어갔다: 무대를 지금 보는 컷으로 되돌린다
+        else if (hist[hi] && hist[hi] !== e) { const h2 = hist[hi]; applySet(h2.stage, h2.set, false); ballTo(h2.ball1); applyCut(h2.p); } // 보는 도중 다른 컷으로 넘어갔다: 무대를 지금 보는 컷으로 되돌린다
       }
     }
   });

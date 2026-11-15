@@ -403,11 +403,15 @@ const ACTS = { signals: askSignals, sort: askSort, role: askRole };
 // ---- 생각 나누기: 결말 뒤에 이 책의 학습지 물음 ----
 function talkCard() {
   return waitFor(done => {
-    const card = h('div', 'endcard');
-    const ol = h('ol', 'talk');
-    BOOK.talk.forEach((q, i) => ol.appendChild(withKo(h('li', '', q), BOOK.talk, i)));
-    card.append(h('div', 'eyebrow', t('talkTitle')), h('h3', '', BOOK.title), ol);
-    storyEl.replaceChildren(card);
+    const draw = () => { // 「한국어도 보기」를 바꾸면 다시 그린다
+      const card = h('div', 'endcard');
+      const ol = h('ol', 'talk');
+      BOOK.talk.forEach((q, i) => ol.appendChild(withKo(h('li', '', q), BOOK.talk, i)));
+      card.append(h('div', 'eyebrow', t('talkTitle')), h('h3', '', BOOK.title), ol);
+      storyEl.replaceChildren(card);
+    };
+    actView = draw;
+    draw();
     rise();
     setAsk('talk', () => {
       const row = h('div', 'btnrow');
@@ -416,7 +420,7 @@ function talkCard() {
     });
     setNext(() => done(), t('toEnd'));
     speak(BOOK.talk[0]);
-    return doneAsk;
+    return () => { actView = null; doneAsk(); };
   });
 }
 
@@ -457,27 +461,31 @@ function endingCard(end) {
 // ---- 내가 고른 길: 지나온 갈림길. 흐린 길을 누르면 그 장면에서 다르게 골라 본다 ----
 function reviewCard() {
   return waitFor(done => {
-    const path = h('div', 'path');
-    // 지나온 길(trail)의 물음·답은 한국어로 적어 둔다: 지금 책의 번역으로 보이고, 「한국어도 보기」면 원문을 아래에
-    const tr2 = s => (BOOK.ko2tr && BOOK.ko2tr[s]) || s;
-    const say = (node, s) => { if (showKo() && tr2(s) !== s) { const k = h('span', 'ko', s); k.lang = 'ko'; node.appendChild(k); } return node; };
-    trail.forEach((tr, i) => {
-      const sc = BOOK.scenes[tr.scene];
-      const stop = h('div', 'stop');
-      const kind = tr.type === 'whatif' ? t('stopWhatif') : tr.type === 'compose' ? (sc.compose.write ? t('stopWrote') : t('stopSaid')) : t('choiceEyebrow');
-      stop.append(h('div', 'kind', `${sc.place} · ${kind}`), say(h('p', 'sq', tr2(tr.q)), tr.q));
-      if (tr.type === 'compose') {
-        tr.opts.forEach(o => stop.appendChild(say(h('div', 'alt mine', tr2(o)), o)));
-        stop.appendChild(btn(t('pickOther'), 'sbtn', () => done({ i })));
-      } else {
-        tr.opts.forEach((o, k) => stop.appendChild(say(k === tr.pick ? h('div', 'alt mine', tr2(o)) : btn(tr2(o), 'alt', () => done({ i, k })), o)));
-      }
-      path.appendChild(stop);
-    });
-    if (lastEnd) { const e = h('div', 'stop end'); e.append(h('div', 'kind', KIND[lastEnd.kind]), h('p', 'sq', lastEnd.title)); path.appendChild(e); }
-    const card = h('div', 'endcard');
-    card.append(h('div', 'eyebrow', BOOK.title), h('h3', '', t('myPath')), path);
-    storyEl.replaceChildren(card);
+    const draw = () => { // 「한국어도 보기」를 바꾸면 다시 그린다
+      const path = h('div', 'path');
+      // 지나온 길(trail)의 물음·답은 한국어로 적어 둔다: 지금 책의 번역으로 보이고, 「한국어도 보기」면 원문을 아래에
+      const tr2 = s => (BOOK.ko2tr && BOOK.ko2tr[s]) || s;
+      const say = (node, s) => { if (showKo() && tr2(s) !== s) { const k = h('span', 'ko', s); k.lang = 'ko'; node.appendChild(k); } return node; };
+      trail.forEach((tr, i) => {
+        const sc = BOOK.scenes[tr.scene];
+        const stop = h('div', 'stop');
+        const kind = tr.type === 'whatif' ? t('stopWhatif') : tr.type === 'compose' ? (sc.compose.write ? t('stopWrote') : t('stopSaid')) : t('choiceEyebrow');
+        stop.append(h('div', 'kind', `${sc.place} · ${kind}`), say(h('p', 'sq', tr2(tr.q)), tr.q));
+        if (tr.type === 'compose') {
+          tr.opts.forEach(o => stop.appendChild(say(h('div', 'alt mine', tr2(o)), o)));
+          stop.appendChild(btn(t('pickOther'), 'sbtn', () => done({ i })));
+        } else {
+          tr.opts.forEach((o, k) => stop.appendChild(say(k === tr.pick ? h('div', 'alt mine', tr2(o)) : btn(tr2(o), 'alt', () => done({ i, k })), o)));
+        }
+        path.appendChild(stop);
+      });
+      if (lastEnd) { const e = h('div', 'stop end'); e.append(h('div', 'kind', KIND[lastEnd.kind]), h('p', 'sq', lastEnd.title)); path.appendChild(e); }
+      const card = h('div', 'endcard');
+      card.append(h('div', 'eyebrow', BOOK.title), h('h3', '', t('myPath')), path);
+      storyEl.replaceChildren(card);
+    };
+    actView = draw;
+    draw();
     rise();
     setAsk('review', () => {
       const row = h('div', 'btnrow');
@@ -485,7 +493,7 @@ function reviewCard() {
       return [heading(t('myPath')), h('p', '', t('pathBody')), row];
     });
     setNext(() => done('back'), t('toEnd'));
-    return doneAsk;
+    return () => { actView = null; doneAsk(); };
   });
 }
 // 감정 카드 그림: 살구색 동그라미 위에 같은 얼굴
