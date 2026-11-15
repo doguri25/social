@@ -36,7 +36,17 @@ function applySet(stageName, set, merge) {
   updateCast();
   poke();
 }
-function applyItemSet(it) { if (it.stage) applySet(it.stage, it.set || {}, false); else applySet(null, it.set || {}, true); }
+// 흐름이 정한 무대 상태 { stage, set }. 지난 컷을 보면 보이는 무대(curSet)가 그 컷의 것으로 바뀌므로, 흐름의 세트는 이것에 덧씌우고
+// 지금 컷으로 돌아올 때도 이것으로 되돌린다 (그림 없이 세트만 바뀐 뒤 「이전」→「다음」을 하면 그 세트가 사라지던 것)
+let liveSet = null;
+function setLive(stageName, set, merge) {
+  const base = merge && liveSet ? liveSet.set : null;
+  const s = base ? Object.assign({}, base, set, { cast: Object.assign({}, base.cast, set.cast) }) : Object.assign({}, set, { cast: Object.assign({}, set.cast) });
+  liveSet = { stage: stageName || (liveSet ? liveSet.stage : stageNow.name), set: s };
+  applySet(liveSet.stage, s, false);
+}
+const liveKey = () => (liveSet ? liveSet.stage + JSON.stringify(liveSet.set) : null);
+function applyItemSet(it) { setLive(it.stage || null, it.set || {}, !it.stage); }
 function addFlags(add) { for (const k in add || {}) flags[k] = (flags[k] || 0) + add[k]; }
 // 조건: { 이름: 수 } 는 그 수 이상, { 이름: { max: 수 } } 는 그 수 이하
 function meets(cond, f = flags) {
@@ -79,15 +89,14 @@ async function playScene(id, opt, my) {
   markResume(); // 「처음 화면으로」나 기기를 끈 뒤에 이 장면부터 이어 본다
   const from = opt.from || 0;
   const stageChanged = !stageNow || sc.stage !== stageNow.name;
-  applySet(sc.stage, sc.set || {}, false);
+  setLive(sc.stage, sc.set || {}, false);
   for (let i = 0; i < from && i < sc.panels.length; i++) if ((sc.panels[i].stage || sc.panels[i].set) && meets(sc.panels[i].when)) applyItemSet(sc.panels[i]);
   const partChanged = !!sc.part && sc.part !== curPart;
   if (sc.part) curPart = sc.part;
   setHeader(parseInt(sc.page, 10) || 1);
   keepHist(); // 앞 장면의 컷을 남겨 둔다: 다음 장으로 넘어와서도 「이전」으로 앞 장의 컷을 다시 볼 수 있다
-  // 인물의 둘러보기 말은 무대 위 점 대신 인물 카드의 ? 표시로 (점이 아이들 얼굴을 가리지 않게)
-  buildHot(asList(sc.explore).filter(x => !BOOK.castById[x.on]), it => showPop(it, it.text, it['~text']));
-  markCards();
+  viewScene = null;
+  setLook(id); // 둘러보기 점과 인물 카드의 ? (인물의 둘러보기 말은 무대 위 점 대신 인물 카드의 ? 표시로: 점이 아이들 얼굴을 가리지 않게)
   if (!from && (stageChanged || partChanged || asList(sc.explore).length)) { await askIntro(sc); chk(my); }
   if (opt.note) await showAndWait({ text: opt.note, tone: 'note' }, my);
   let pick = opt.pick;
@@ -132,13 +141,13 @@ async function playWhatif(w, sceneId, at, preset, my) {
   const o = w.opts[k];
   logAnswer('whatif', ko(w, 'q'), ko(o, 'text'));
   if (o.story) return showAndWait({ text: w.same, '~text': w['~same'], tone: 'note' }, my);
-  const keepStage = stageNow.name, keepSet = curSet;
+  const keep = liveSet;
   for (const p of o.panels) {
     if (!meets(p.when)) continue;
     if (p.stage || p.set) { applyItemSet(p); continue; }
     await showAndWait(Object.assign({ tone: 'whatif' }, p), my);
   }
-  applySet(keepStage, keepSet, false);
+  setLive(keep.stage, keep.set, false);
   await showAndWait({ text: w.back, '~text': w['~back'], tone: 'note' }, my);
 }
 

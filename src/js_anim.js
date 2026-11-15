@@ -597,7 +597,7 @@ function playCut(e, prev, my, replay = false) {
       cv.parentElement.classList.remove('playing');
       if (replay && my === runId) {
         if (cv.isConnected && e.img) { const img = new Image(); img.src = e.img; img.alt = ''; cv.replaceWith(img); } // 끝나면 삽화로
-        else if (hist[hi] && hist[hi] !== e) { const h2 = hist[hi]; applySet(h2.stage, h2.set, false); ballTo(h2.ball1); applyCut(h2.p); } // 보는 도중 다른 컷으로 넘어갔다: 무대를 지금 보는 컷으로 되돌린다
+        else if (hist[hi] && hist[hi] !== e) entryStage(hist[hi], false); // 보는 도중 다른 컷으로 넘어갔다: 무대를 지금 보는 컷으로 되돌린다
       }
     }
   });
@@ -609,7 +609,7 @@ if (ARGS.has('rec')) window.__rec = {
   run: (id, cuts, fps = 24, w = 900, keep = false) => serial(async () => { // keep: 앞 장면에서 있던 자리를 그대로 둔다 (장면이 바뀌며 걸어가는 모습을 볼 때)
     const ps = id.startsWith('end:') ? BOOK.endings.find(e => e.id === id.slice(4)).panels : BOOK.scenes[id].panels, hh = Math.round(w / 1.6), n = Math.round(fps * CUT_SEC);
     if (keep) saveSpots();
-    if (!id.startsWith('end:')) applySet(BOOK.scenes[id].stage, BOOK.scenes[id].set || {}, false);
+    if (!id.startsWith('end:')) setLive(BOOK.scenes[id].stage, BOOK.scenes[id].set || {}, false);
     const cv = Object.assign(document.createElement('canvas'), { width: w, height: hh }), g = cv.getContext('2d', { willReadFrequently: true });
     let prev = null;
     if (!keep) saveSpots();

@@ -32,7 +32,7 @@ $('#btnPrev').addEventListener('click', e => { if (e.detail > 0) e.currentTarget
 const panelW = () => Math.round(clamp(storyEl.clientWidth * 2, 560, 900));
 const stageKey = () => stageNow.name + JSON.stringify(curSet);
 async function makeEntry(p, my, anim) {
-  const e = { p, stage: stageNow.name, set: curSet, key: stageKey(), page: livePage, img: null, photo: null, lines: [] };
+  const e = { p, scene: curScene, stage: stageNow.name, set: curSet, key: stageKey(), page: livePage, img: null, photo: null, lines: [] };
   applyCut(p);
   const ph = p.phone && p.phone.profile && p.phone.profile.photo;
   if (ph) { applyCut(ph); e.photo = await shoot(ph, 320, 320, my); chk(my); applyCut(p); }
@@ -60,7 +60,7 @@ async function showPanel(p, my) {
   const prev = anim && last && !last.intro && last.key === stageKey() ? last.p : null; // 같은 무대의 앞 컷에서 이어서 움직인다
   try {
     if (anim) { // 처음 한 번은 움직이는 컷으로: 앞 컷의 자세에서 시작해 이 컷의 삽화에서 멈춘다
-      e = { p, stage: stageNow.name, set: curSet, key: stageKey(), page: livePage, img: null, photo: null,
+      e = { p, scene: curScene, stage: stageNow.name, set: curSet, key: stageKey(), page: livePage, img: null, photo: null,
         lines: asList(p.lines).map(l => { const kind = ['shout', 'think', 'whisper', 'say'].find(k => l[k]); return { who: l.who, kind, text: l[kind], ko: l['~' + kind], img: (l.who && cardPic[l.who]) || null }; }) }; // 얼굴 사진은 움직임이 끝난 뒤에 이 컷의 표정으로 찍는다
       if (my !== runId) throw CANCEL;
       e.anim = true; e.prev = prev; e.spots = lastSpots; e.ball0 = looseBall(); // 「이전」으로 돌아오면 같은 자리에서 다시 움직인다 (맞고 떨어진 공도 그 자리에서)
@@ -90,12 +90,23 @@ async function showPanel(p, my) {
 }
 function rise() { storyEl.classList.remove('rise'); void storyEl.offsetWidth; storyEl.classList.add('rise'); }
 // replay: 「이전」·「다음」으로 옮겨 온 컷이면 그 컷의 움직임을 한 번 다시 보여 준다
-function renderEntry(replay = false) {
-  const e = hist[hi], live = hi === hist.length - 1;
-  replay = replay && !!e.anim && !!e.img && canAnim(e.p) && !(actView && live);
-  if (replay || e.key !== stageKey()) applySet(e.stage, e.set, false); // 다른 무대에서 찍은 컷을 다시 볼 때는 그 무대로 (다시 움직일 때는 공·인물 자리도 그 컷의 처음으로)
+// 지금 컷인데, 그 컷 뒤에 흐름이 그림 없이 세트만 바꿨다
+const movedSince = e => e === hist[hist.length - 1] && !!liveSet && liveKey() !== e.key;
+// 그 컷을 볼 때의 무대: 지난 컷은 그 컷의 세트(다른 무대에서 찍은 컷이면 그 무대로), 지금 컷은 흐름의 무대(그 뒤에 바뀐 세트까지)
+function entryStage(e, replay) {
+  const moved = movedSince(e), lk = e === hist[hist.length - 1] && liveKey();
+  if (replay) applySet(e.stage, e.set, false); // 다시 움직일 때는 공·인물 자리도 그 컷의 처음으로
+  else if (lk) { if (lk !== stageKey()) applySet(liveSet.stage, liveSet.set, false); }
+  else if (e.key !== stageKey()) applySet(e.stage, e.set, false);
+  if (moved) return; // 세트가 바뀐 뒤의 흐름은 세트의 자세 그대로 (컷 자세·떨어진 공은 세트가 이미 되돌렸다)
   if (!replay) ballTo(e.ball1); // 세트는 공을 세트 자리로 되돌리므로, 이 컷이 끝났을 때 바닥에 떨어져 있던 공은 다시 그 자리에
   applyCut(e.p);
+}
+function renderEntry(replay = false) {
+  const e = hist[hi], live = hi === hist.length - 1;
+  replay = replay && !!e.anim && !!e.img && canAnim(e.p) && !(actView && live) && !movedSince(e);
+  entryStage(e, replay);
+  setLook(e.scene);
   if (e.page != null) setHeader(e.page, true); // 앞 장의 컷을 볼 때는 그 장의 면 번호로
   if (e.intro) titleCard(e.sc); // 장면 첫머리
   else if (actView && live) actView(); // 지난 컷을 보고 돌아오면 하던 활동 화면으로

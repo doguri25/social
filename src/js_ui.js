@@ -57,13 +57,25 @@ function placePop() {
   pop.style.top = Math.max(pop.offsetHeight + 8, s.y - 22) + 'px';
 }
 function hidePop() { $('#pop').hidden = true; popFor = null; }
-// 그 인물을 눌렀을 때 하는 말: 지금 장면의 둘러보기 말, 없으면 인물 소개
+// 둘러보기는 보고 있는 컷의 장면 것으로: 앞 장면의 지난 컷을 볼 때는 그 장면의 점·인물 카드 ?·인물이 하는 말 (예전엔 늘 지금 장면 것)
+let viewScene = null;
+function setLook(id) {
+  id = id || curScene;
+  if (id !== viewScene) {
+    viewScene = id;
+    const sc = id && BOOK.scenes[id];
+    buildHot(sc ? asList(sc.explore).filter(x => !BOOK.castById[x.on]) : [], it => showPop(it, it.text, it['~text']));
+  }
+  markCards();
+}
+const lookScene = () => { const id = viewScene || curScene; return id && BOOK.scenes[id]; };
+// 그 인물을 눌렀을 때 하는 말: 보고 있는 장면의 둘러보기 말, 없으면 인물 소개
 function sayOf(id) {
-  const ex = curScene && asList(BOOK.scenes[curScene].explore).find(x => x.on === id);
+  const sc = lookScene(), ex = sc && asList(sc.explore).find(x => x.on === id);
   return ex ? ex.text : BOOK.castById[id].intro;
 }
 function sayKo(id) {
-  const ex = curScene && asList(BOOK.scenes[curScene].explore).find(x => x.on === id);
+  const sc = lookScene(), ex = sc && asList(sc.explore).find(x => x.on === id);
   return ex ? ex['~text'] : BOOK.castById[id]['~intro'];
 }
 function pickChar(id) {
@@ -96,9 +108,9 @@ scene.onBeforeRenderObservable.add(() => {
 // ---- 인물 카드 (무대 왼쪽 아래): 지금 무대에 있는 인물. 카드 사진은 웃는 얼굴로 한 번 찍어 둔다 ----
 const cardPic = {};
 function selectCard(id) { $('#cast').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.id === id)); }
-// 지금 장면에서 할 말이 있는 인물 카드에 ? 표시
+// 보고 있는 장면에서 할 말이 있는 인물 카드에 ? 표시
 function markCards() {
-  const ex = curScene ? asList(BOOK.scenes[curScene].explore).map(x => x.on) : [];
+  const sc = lookScene(), ex = sc ? asList(sc.explore).map(x => x.on) : [];
   $('#cast').querySelectorAll('button').forEach(b => b.classList.toggle('ask', ex.includes(b.dataset.id)));
 }
 function updateCast() {
@@ -132,6 +144,8 @@ function showShelf() {
   cancelFlow();
   curScene = null;
   curPart = null;
+  viewScene = null;
+  liveSet = null;
   applySet('shelf', { cast: { yuna: 'shelf_l wave joy', seoa: 'shelf_r stand joy' } }, false);
   setHeader(null);
   resetHist();
@@ -205,6 +219,7 @@ function openAfter() {
   sfx('pick');
   runId++;
   cancelFlow();
+  viewScene = null;
   buildHot([], () => {});
   setHeader(null);
   const student = NET.mode === 'student';
