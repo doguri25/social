@@ -21,7 +21,7 @@ function buildHot(list, onPick) {
   hots = list.map(it => {
     const a = h('div', 'hs-a');
     const b = btn(it.label || '?', 'hs' + (it.cls ? ' ' + it.cls : ''), e => { e.stopPropagation(); if (e.detail > 0) b.blur(); onPick(it); });
-    b.setAttribute('aria-label', it.label || t('look', { name: BOOK.castById[it.on] ? BOOK.castById[it.on].name : t('thing') }));
+    b.setAttribute('aria-label', it.aria || it.label || t('look', { name: BOOK.castById[it.on] ? BOOK.castById[it.on].name : t('thing') }));
     a.appendChild(b);
     $('#hot').appendChild(a);
     return { it, a };
@@ -29,6 +29,7 @@ function buildHot(list, onPick) {
   placeHot();
 }
 function placeHot() {
+  if (scene.activeCamera !== camera) return; // 컷 카메라로 그린 장(움직이는 컷·삽화·얼굴 사진) 뒤에서는 옮기지 않는다: 그때 화면 크기는 컷 크기라 점·말풍선이 엉뚱한 자리로 갔다
   hots.forEach(({ it, a }) => {
     const p = anchorOf(it);
     const s = p && toScreen(p);
@@ -162,7 +163,7 @@ function showShelf() {
   setAsk('shelf', () => [heading(t('shelfAskTitle')), h('p', '', t('shelfAskBody'))]);
   const next = lastBook || ids[0];
   setNext(() => openBook(next), t('readBook', { n: ids.indexOf(next) + 1 }));
-  buildHot(stageNow.books.map(b => { const id = b.i < 4 && ids[b.i]; return { pos: b.pos, book: id, cls: 'book' + (id || unlockedAfter() ? ' ready' : ''), label: id ? t('bookN', { n: b.i + 1 }) : t('afterShort') }; }), it => (it.book ? openBook(it.book) : openAfter())); // 책등 점 글은 짧게 (다섯 개가 겹치지 않게)
+  buildHot(stageNow.books.map(b => { const id = b.i < 4 && ids[b.i]; return { pos: b.pos, book: id, cls: 'book' + (id || unlockedAfter() ? ' ready' : ''), label: id ? String(b.i + 1) : '✎', aria: id ? t('bookN', { n: b.i + 1 }) : t('afterShort') }; }), it => (it.book ? openBook(it.book) : openAfter())); // 책등 점에는 번호만 (책 사이가 좁은 휴대전화·태블릿 세로, 글이 긴 언어에서도 다섯 개가 겹치지 않게). 읽어 주는 이름은 aria-label 로
 }
 // 이어 볼 자리가 있으면 먼저 묻는다
 async function openBook(id) {
@@ -284,6 +285,8 @@ function toShelf() {
 }
 
 // ---- 설정 ----
+// 덮개(멈춤·설정·첫 화면)를 열고 닫는다. 열려 있는 동안 뒤 화면은 inert: Tab 으로 뒤의 「다음」·책장에 닿아 이야기가 넘어가지 않게, 화면 낭독기도 덮개 안만 읽게
+function veil(el, on) { el.hidden = !on; $('#app').inert = ['#pause', '#settings', '#gate'].some(s => !$(s).hidden); }
 function seg(options, value, onPick) {
   const s = h('div', 'seg');
   options.forEach(([v, text]) => {
@@ -298,6 +301,7 @@ function openSettings() {
   const card = h('div', 'card');
   card.setAttribute('role', 'dialog');
   card.setAttribute('aria-label', t('settings'));
+  card.setAttribute('aria-modal', 'true');
   const row = (name, note, ctrl) => { const r = h('div', 'setrow'); const t = h('span', '', name); if (note) t.appendChild(h('small', '', note)); r.append(t, ctrl); return r; };
   const onOff = (key, after) => seg([[true, t('on')], [false, t('off')]], !!save.set[key], v => { save.set[key] = v; store(); if (after) after(v); });
   const read = onOff('read', v => { if (!v) hush(); });
@@ -319,7 +323,7 @@ function openSettings() {
     wipe.textContent = t('wiped');
     wipe.disabled = true;
   });
-  const close = btn(t('close'), 'btn go', e => { ov.hidden = true; if (e.detail > 0) document.activeElement.blur(); else $('#btnSet').focus({ preventScroll: true }); }); // 마우스로 닫은 뒤의 Enter 는 「다음」
+  const close = btn(t('close'), 'btn go', e => { veil(ov, false); if (e.detail > 0) document.activeElement.blur(); else $('#btnSet').focus({ preventScroll: true }); }); // 마우스로 닫은 뒤의 Enter 는 「다음」
   close.style.justifySelf = 'end';
   card.append(
     h('h2', '', t('settings')),
@@ -338,12 +342,12 @@ function openSettings() {
     close,
   );
   ov.replaceChildren(card);
-  ov.hidden = false;
+  veil(ov, true);
   close.focus({ preventScroll: true });
 }
 function setPaused(on, mouse) {
   paused = on;
-  $('#pause').hidden = !on;
+  veil($('#pause'), on);
   if (on) { hush(); $('#btnResume').focus({ preventScroll: true }); } else { poke(); if (mouse) document.activeElement.blur(); else $('#btnPause').focus({ preventScroll: true }); } // 마우스로 닫은 뒤의 Enter 는 「다음」
 }
 $('#btnSet').addEventListener('click', openSettings);
@@ -357,7 +361,7 @@ $('#btnHome').addEventListener('click', () => {
   toShelf();
 });
 addEventListener('keydown', e => {
-  if (e.key === 'Escape') { if (!$('#settings').hidden) $('#settings').hidden = true; else if (paused) setPaused(false); return; }
+  if (e.key === 'Escape') { if (!$('#settings').hidden) { veil($('#settings'), false); $('#btnSet').focus({ preventScroll: true }); } else if (paused) setPaused(false); return; }
   if (!$('#settings').hidden || !$('#gate').hidden || paused) return;
   if (e.isComposing || e.target.closest('input, textarea, select, [contenteditable]')) return; // 글 쓰는 칸에서는 Enter·화살표를 그대로
   if (e.repeat && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); return; } // 누르고 있어도 새로 초점을 받은 단추(선택지·감정 카드·바구니)가 저절로 눌리지 않게
@@ -400,6 +404,7 @@ function showGate() {
   const card = h('div', 'card gatecard');
   card.setAttribute('role', 'dialog');
   card.setAttribute('aria-label', t('gateTitle'));
+  card.setAttribute('aria-modal', 'true');
   const langs = h('div', 'langs');
   LANGS.forEach(([code, name]) => {
     const ready = langReady(code);
@@ -409,7 +414,7 @@ function showGate() {
     langs.appendChild(b);
   });
   card.append(langs, h('h2', '', t('gateTitle')), h('p', 'soft', t('gateSub')));
-  const close = () => { ov.hidden = true; showShelf(); };
+  const close = () => { veil(ov, false); showShelf(); };
   if (NET.server) {
     const inp = h('input', 'codein');
     Object.assign(inp, { maxLength: 6, autocomplete: 'off', placeholder: 'ABC234', spellcheck: false });
@@ -430,7 +435,7 @@ function showGate() {
   card.append(btn(t('guest'), 'btn ghost wide', () => { enterGuest(); close(); }), h('p', 'soft small', t('guestNote')), h('p', 'soft small', t('privacy')));
   if (NET.server) { const a = h('a', 'small', t('teacher')); a.href = 'teacher.html'; card.appendChild(a); }
   ov.replaceChildren(card);
-  ov.hidden = false;
+  veil(ov, true);
   setTimeout(() => (card.querySelector('.codein') || card.querySelector('button.wide')).focus({ preventScroll: true }), 60);
 }
 boot();

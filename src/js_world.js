@@ -287,8 +287,9 @@ function restoreWalls() { shotWalls = false; updateWalls(true); }
 
 // ---- 화질: 높음(그늘, 빛 번짐, 계단 없는 선) / 낮음. 「자동」은 처음 90장이 느리면 낮춘다 ----
 // 「자동」은 그리는 동안 계속 빠르기를 보고, 느리면 한 단계씩 낮춘다 (autoStep 1: 화면 배율 1, 2: 그늘(SSAO) 끔, 3: 낮음). 셰이더 색감은 2단계까지 그대로
-let pipe = null, ssao = null, autoStep = 0, tier = 'high';
+let pipe = null, ssao = null, autoStep = 0, tier = 'high', tierEpoch = 0; // tierEpoch: 화질을 다시 맞출 때마다 (재질을 다시 만드니 움직이는 컷이 준비를 다시 본다)
 function applyTier() {
+  tierEpoch++;
   const auto = save.set.q === 'auto';
   tier = auto ? (autoStep >= 3 ? 'low' : 'high') : save.set.q;
   const hi = tier === 'high';
@@ -316,8 +317,9 @@ function applyTier() {
 // cutOwn: 움직이는 컷이 도는 동안은 컷이 큰 무대까지 한 장씩 직접 그린다 (같은 장면을 두 번 그리지 않게)
 let lastPoke = 0, paused = false, cutOwn = false, lastDraw = 0, idleSkip = 0;
 function poke() { lastPoke = performance.now(); }
-// 「자동」 화질: 쉬지 않고 그리는 동안의 한 장 간격을 45장 모아, 가운데값이 30ms(초당 33장 아래)를 넘으면 한 단계, 60ms 를 넘으면 바로 낮음
-// (평균이 아니라 가운데값: 무대를 처음 그릴 때 셰이더를 만드느라 몇 장 멈칫한 것으로 빠른 기기를 낮추지 않게)
+// 「자동」 화질: 쉬지 않고 그리는 동안의 한 장 간격을 45장 모아, 가운데값이 40ms(초당 25장 아래)를 넘으면 한 단계, 70ms 를 넘으면 바로 낮음
+// (평균이 아니라 가운데값: 무대를 처음 그릴 때 셰이더를 만드느라 몇 장 멈칫한 것으로 빠른 기기를 낮추지 않게.
+//  40ms: 전기 아끼기로 화면을 초당 30장(33ms)에 묶는 기기를 느린 기기로 보지 않게)
 const autoDts = [];
 function autoWatch(dt) {
   if (save.set.q !== 'auto' || autoStep >= 3) return;
@@ -325,8 +327,8 @@ function autoWatch(dt) {
   if (autoDts.length < 45) return;
   const mid = autoDts.sort((x, y) => x - y)[22];
   autoDts.length = 0;
-  if (mid <= 30) return;
-  autoStep = mid > 60 ? 3 : Math.min(3, autoStep + (engine.getHardwareScalingLevel() < 1 || autoStep ? 1 : 2)); // 화면 배율을 이미 1 로 그리면 바로 그늘 끄기로
+  if (mid <= 40) return;
+  autoStep = mid > 70 ? 3 : Math.min(3, autoStep + (engine.getHardwareScalingLevel() < 1 || autoStep ? 1 : 2)); // 화면 배율을 이미 1 로 그리면 바로 그늘 끄기로
   applyTier();
 }
 camera.onViewMatrixChangedObservable.add(poke);

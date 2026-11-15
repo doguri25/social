@@ -44,12 +44,12 @@ button:disabled { cursor: default; }
 :focus-visible { outline: 3px solid var(--green); outline-offset: 2px; }
 
 #app { position: fixed; inset: 0; display: flex; padding: clamp(8px, 1.4vw, 18px); }
-.frame { flex: 1; min-width: 0; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 10px; background: var(--card); border: 1.5px solid var(--line); border-radius: 22px; box-shadow: 0 10px 30px rgba(120, 90, 50, .12); padding: 10px clamp(10px, 1.2vw, 16px) 12px; }
+.frame { flex: 1; min-width: 0; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; gap: 10px; background: var(--card); border: 1.5px solid var(--line); border-radius: 22px; box-shadow: 0 10px 30px rgba(120, 90, 50, .12); padding: 10px clamp(10px, 1.2vw, 16px) 12px; }
 
 /* ---- 위: 제목과 진행 ---- */
 .top { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .logo { width: 44px; height: 40px; flex: none; }
-.top h1 { margin: 0; font-weight: 400; font-size: clamp(22px, 2.3vw, 32px); color: var(--title); white-space: nowrap; }
+.top h1 { margin: 0; min-width: 0; font-weight: 400; font-size: clamp(22px, 2.3vw, 32px); color: var(--title); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sub { font-size: clamp(14px, 1.2vw, 18px); color: var(--ink-2); border-left: 1.5px solid var(--line); padding-left: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .grow { flex: 1; }
 .count { font-size: 18px; padding: 0 14px; border-left: 1.5px solid var(--line); border-right: 1.5px solid var(--line); white-space: nowrap; font-variant-numeric: tabular-nums; }
@@ -61,6 +61,7 @@ button:disabled { cursor: default; }
 .main { display: grid; grid-template-columns: minmax(0, 1fr) clamp(300px, 31vw, 460px); gap: 14px; min-height: 0; }
 .stage { position: relative; min-width: 0; min-height: 0; border-radius: 16px; overflow: hidden; background: #f3eadb; }
 #gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; outline: none; }
+#gl:focus-visible { outline: 3px solid var(--green); outline-offset: -3px; } /* 키보드로 무대에 왔을 때 (방향키로 돌려 보기) */
 .stage::after { content: ''; position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 60px rgba(150, 110, 60, .14); border-radius: inherit; }
 #hint { position: absolute; right: 12px; top: 12px; z-index: 4; font-size: 15px; color: var(--ink-2); background: rgba(255, 253, 248, .9); border: 1.5px solid var(--line); border-radius: 999px; padding: 4px 14px; pointer-events: none; }
 #hot { position: absolute; inset: 0; z-index: 5; pointer-events: none; overflow: hidden; }
@@ -77,7 +78,7 @@ button:disabled { cursor: default; }
 .cast button.ask::after { content: '?'; position: absolute; top: -6px; right: -4px; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; border: 2px solid var(--ink); background: var(--hot); font-size: 13px; animation: pulse 1.8s ease-in-out infinite; }
 .cast img { width: 100%; aspect-ratio: 1; border-radius: 12px; background: var(--c); display: block; }
 
-.side { display: grid; grid-template-rows: minmax(0, 1fr) minmax(0, auto); gap: 12px; min-height: 0; }
+.side { display: grid; grid-template-rows: minmax(min(170px, 40%), 1fr) minmax(0, auto); gap: 12px; min-height: 0; } /* 고르는 칸이 길어도 컷 칸이 0 으로 눌리지 않게 (고르는 칸은 굴려 본다) */
 #ask { min-height: 0; overflow-y: auto; } /* 높이가 낮은 화면(휴대전화 가로·노트북 창)에서도 고르는 칸을 굴려 볼 수 있게 */
 .card { background: var(--card-2); border: 1.5px solid var(--line); border-radius: 16px; padding: 14px; }
 #story { display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow-y: auto; }
@@ -101,12 +102,12 @@ button:disabled { cursor: default; }
 .fx-sparkle::before { left: 6%; top: 10%; }
 .fx-sparkle::after { right: 6%; bottom: 12%; }
 .sfx { position: absolute; right: 7%; top: 9%; z-index: 2; font-size: calc(38px * var(--fs)); color: var(--hot); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; text-shadow: 3px 3px 0 var(--ink); transform: rotate(-8deg); pointer-events: none; }
-.textp { flex: 1; display: grid; place-content: center; gap: 8px; min-height: 140px; padding: 22px; text-align: center; border: 2px dashed var(--line); border-radius: 12px; background: var(--card); font-size: calc(21px * var(--fs)); line-height: 1.5; }
+.textp { flex: 1; display: grid; place-content: center; gap: 8px; min-height: 140px; padding: 22px; text-align: center; overflow-wrap: anywhere; hyphens: auto; border: 2px dashed var(--line); border-radius: 12px; background: var(--card); font-size: calc(21px * var(--fs)); line-height: 1.5; }
 .textp p { margin: 0; }
 .textp.whatif { border-color: var(--sky); background: var(--sky-bg); }
 .textp.next { border-style: solid; border-color: var(--hot); background: #fff8e1; }
 .textp.next p:first-child { font-size: 1.2em; }
-.textp.title .page { font-size: calc(46px * var(--fs)); color: var(--title); }
+.textp.title .page { font-size: calc(min(46px, 11vw) * var(--fs)); color: var(--title); }
 .textp.title .place { font-size: calc(20px * var(--fs)); color: var(--ink-2); }
 .cap { margin: 2px 2px 0; font-size: calc(19px * var(--fs)); line-height: 1.5; }
 .cap.pre { color: var(--ink-2); font-size: calc(17px * var(--fs)); }
@@ -308,6 +309,7 @@ svg.body [data-part].real.on { fill: #9fe0c2; }
   .sbtn, .chip, .bodychip { min-height: 44px; padding-left: 14px; padding-right: 14px; }
   .opt { min-height: 52px; }
   .piece, .emo, .bookrow { min-height: 48px; }
+  .seg button { min-height: 44px; }
   .ibtn { width: 48px; height: 48px; }
   .btn { min-height: 48px; }
   .hs { width: 38px; height: 38px; }
@@ -333,6 +335,9 @@ svg.body [data-part].real.on { fill: #9fe0c2; }
   .bottom { grid-template-columns: auto 1fr; }
   .bottom .go { justify-self: end; }
   .emo img { width: 30px; }
+}
+@media (max-width: 760px) and (pointer: coarse) {
+  .ibtn { width: 44px; height: 44px; } /* 휴대전화도 위 단추는 44px (좁은 화면 규칙이 손가락 규칙을 덮지 않게) */
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition: none !important; }
@@ -370,7 +375,7 @@ svg.body [data-part].real.on { fill: #9fe0c2; }
     </footer>
   </div>
 </div>
-<div class="veil" id="pause" hidden><div class="card" role="dialog" aria-label="잠깐 멈춤"><h2>잠깐 쉬어요</h2><p style="margin:0;font-size:18px;color:var(--ink-2)">준비되면 이어서 봐요.</p><button class="btn go" id="btnResume" style="justify-self:start">이어서 보기 ›</button></div></div>
+<div class="veil" id="pause" hidden><div class="card" role="dialog" aria-modal="true" aria-label="잠깐 멈춤"><h2>잠깐 쉬어요</h2><p style="margin:0;font-size:18px;color:var(--ink-2)">준비되면 이어서 봐요.</p><button class="btn go" id="btnResume" style="justify-self:start">이어서 보기 ›</button></div></div>
 <div class="veil" id="settings" hidden></div>
 <div class="veil" id="gate" hidden></div>
 <div class="veil" id="loading">그림책을 펼치는 중…</div>

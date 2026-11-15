@@ -563,10 +563,12 @@ function playCut(e, prev, my, replay = false) {
     const skipNext = () => { skipCut = true; skipAhead = true; };
     if (!replay) { skipAhead = false; cutPlaying = true; setNext(skipNext); } // 움직이는 동안에도 「다음」을 누를 수 있다
     cv.parentElement.classList.add('playing');
-    const t0 = performance.now();
+    let t0 = performance.now();
     cutOwn = true; // 컷이 도는 동안 큰 무대는 이 고리가 그린다
     try {
-      for (let f = 0, slow = false, ready = false; ; f++) {
+      for (let f = 0, slow = false, ready = false, ep = tierEpoch; ; f++) {
+        if (paused) { const p0 = performance.now(); while (paused && my === runId) await nextFrame(); t0 += performance.now() - p0; } // 멈춤 동안에는 컷도 멈춘다 (덮개 뒤에서 끝까지 돌지 않게)
+        if (ep !== tierEpoch) { ep = tierEpoch; ready = false; } // 도중에 화질이 바뀌면 셰이더 준비를 다시 본다 (인물이 빠진 장이 끼지 않게)
         const sec = (performance.now() - t0) / 1000, t = skipCut ? 1 : Math.min(1, sec / CUT_SEC);
         at(t, sec);
         if (t >= 1) break;

@@ -181,9 +181,10 @@ async function loadImg(src) { const img = new Image(); img.src = src; await img.
 function shoot(p, w, hh, my) {
   return serial(async () => {
     if (my != null) chk(my); // 줄에서 기다리는 사이 흐름이 취소됐으면 (책장으로 나감) 찍지 않는다
+    // 셰이더가 다 만들어질 때까지 먼저 기다린다 (가리는 배경 아이를 숨기거나 벽을 바꾸기 전에: 기다리는 동안 큰 무대에서 아이가 사라져 보이지 않게)
+    for (let k = 0; k < 90 && !cutReady(w, hh); k++) await new Promise(r => requestAnimationFrame(r));
     scene.render(); // 자세를 바꾼 뒤의 위치로 컷 자리를 계산한다
     placeShot(p);
-    for (let k = 0; k < 90 && !cutReady(w, hh); k++) await new Promise(r => requestAnimationFrame(r)); // 셰이더가 다 만들어질 때까지 (벽을 바꾸기 전에 기다린다)
     wallsForShot(shotCam.position);
     const cv = document.createElement('canvas');
     cv.width = w;
