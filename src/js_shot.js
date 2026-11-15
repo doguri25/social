@@ -103,6 +103,52 @@ function placeShot(p) {
   hiddenKids.forEach(n => n.setEnabled(false));
 }
 const snap = (cam, w, hh) => BABYLON.CreateScreenshotUsingRenderTargetAsync(engine, cam, { width: w, height: hh }, 'image/png', 1, false, undefined, false, true, true);
+// 움직이는 컷의 한 장: 렌더 타깃 하나를 계속 다시 쓰며 컷 카메라로 그리고, 픽셀을 옆 칸 캔버스에 바로 옮긴다.
+// snap 은 한 장마다 렌더 타깃을 새로 만들고, 화면 크기가 바뀌었다고 알려 무대의 그늘·후처리를 통째로 다시 만들고(두 번),
+// PNG 로 만들었다가 다시 읽어서, 움직이는 컷이 뚝뚝 끊겼다. 여기서는 snap 과 같은 길(장면 그리기 + 컷 카메라의 후처리)로 그리되 그 셋을 뺀다
+const cutRTs = new Map(); // 크기마다 하나 (움직이는 컷, 삽화)
+function cutTarget(w, hh) {
+  const k = w + 'x' + hh;
+  if (!cutRTs.has(k)) {
+    if (cutRTs.size >= 3) { const [k0, o] = cutRTs.entries().next().value; o.rt.dispose(); cutRTs.delete(k0); }
+    cutRTs.set(k, { rt: new BABYLON.RenderTargetTexture('cutRT', { width: w, height: hh }, scene, false, false, BABYLON.Constants.TEXTURETYPE_UNSIGNED_BYTE, false, BABYLON.Texture.BILINEAR_SAMPLINGMODE, true), img: new ImageData(w, hh) });
+  }
+  return cutRTs.get(k);
+}
+// 그릴 것이 모두 준비됐는지 (셰이더를 만드는 중이면 물건이 빠진 그림이 나온다. snap 이 기다리던 것과 같은 검사)
+function cutReady(w, hh) {
+  const { rt } = cutTarget(w, hh);
+  rt.renderList = scene.meshes.slice();
+  return shotCam.isReady(true) && rt.isReadyForRendering();
+}
+// check: 그리기 전에 준비를 본다 (준비 중이면 그리지 않고 false)
+async function cutDraw(g, w, hh, check = true) {
+  if (check && !cutReady(w, hh)) return false;
+  const { rt: cutRT, img: cutImg } = cutTarget(w, hh);
+  const R = engine.getRenderWidth, H = engine.getRenderHeight, cam = scene.activeCamera, cams = scene.activeCameras;
+  // 후처리가 컷 크기로 그리도록 (snap 과 같은 방법). 크기 바뀜은 알리지 않는다: 무대 카메라의 그늘·후처리를 다시 만들지 않게
+  engine.getRenderWidth = s => (!s && engine._currentRenderTarget ? engine._currentRenderTarget.width : w);
+  engine.getRenderHeight = s => (!s && engine._currentRenderTarget ? engine._currentRenderTarget.height : hh);
+  scene.activeCamera = shotCam;
+  scene.activeCameras = null;
+  shotCam.outputRenderTarget = cutRT;
+  scene.incrementRenderId();
+  scene.resetCachedMaterial();
+  try { scene.render(); } finally {
+    scene.activeCamera = cam;
+    scene.activeCameras = cams;
+    shotCam.outputRenderTarget = null;
+    engine.getRenderWidth = R;
+    engine.getRenderHeight = H;
+    shotCam.getProjectionMatrix(true);
+  }
+  const px = await cutRT.readPixels(0, 0, null, false);
+  if (!px) return false;
+  const row = w * 4, out = cutImg.data; // GL 은 아래 줄부터: 위아래를 뒤집어 옮긴다
+  for (let y = 0; y < hh; y++) out.set(px.subarray((hh - 1 - y) * row, (hh - y) * row), y * row);
+  g.putImageData(cutImg, 0, 0);
+  return true;
+}
 // 찍기는 한 번에 하나씩 (Babylon 의 화면 밖 찍기가 겹치지 않게)
 let capQ = Promise.resolve(), capBusy = 0;
 function serial(fn) {
@@ -137,15 +183,15 @@ function shoot(p, w, hh, my) {
     if (my != null) chk(my); // 줄에서 기다리는 사이 흐름이 취소됐으면 (책장으로 나감) 찍지 않는다
     scene.render(); // 자세를 바꾼 뒤의 위치로 컷 자리를 계산한다
     placeShot(p);
+    for (let k = 0; k < 90 && !cutReady(w, hh); k++) await new Promise(r => requestAnimationFrame(r)); // 셰이더가 다 만들어질 때까지 (벽을 바꾸기 전에 기다린다)
     wallsForShot(shotCam.position);
-    let url;
-    try { url = await snap(shotCam, w, hh); } finally { restoreWalls(); hiddenKids.forEach(n => n.setEnabled(true)); hiddenKids = []; }
-    const img = await loadImg(url);
     const cv = document.createElement('canvas');
     cv.width = w;
     cv.height = hh;
-    const g = cv.getContext('2d');
-    g.drawImage(img, 0, 0); // 망점은 입히지 않는다 (점이 많아 그림이 지저분해 보였다. 다시 쓰려면 여기서 screentone(g, w, hh))
+    const g = cv.getContext('2d', { willReadFrequently: true });
+    // 움직이는 컷과 같은 길로 바로 그린다 (PNG 로 만들었다 다시 읽지 않게). 컷 카메라가 아직 준비 중이면 예전 찍기로
+    try { if (!(await cutDraw(g, w, hh))) { wallsForShot(shotCam.position); g.drawImage(await loadImg(await snap(shotCam, w, hh)), 0, 0); } } finally { restoreWalls(); hiddenKids.forEach(n => n.setEnabled(true)); hiddenKids = []; }
+    // 망점은 입히지 않는다 (점이 많아 그림이 지저분해 보였다. 다시 쓰려면 여기서 screentone(g, w, hh))
     return cv.toDataURL('image/jpeg', 0.86);
   });
 }

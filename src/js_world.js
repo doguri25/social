@@ -286,16 +286,18 @@ function wallsForShot(pos) {
 function restoreWalls() { shotWalls = false; updateWalls(true); }
 
 // ---- 화질: 높음(그늘, 빛 번짐, 계단 없는 선) / 낮음. 「자동」은 처음 90장이 느리면 낮춘다 ----
-let pipe = null, ssao = null, slowDevice = false, tier = 'high';
+// 「자동」은 그리는 동안 계속 빠르기를 보고, 느리면 한 단계씩 낮춘다 (autoStep 1: 화면 배율 1, 2: 그늘(SSAO) 끔, 3: 낮음). 셰이더 색감은 2단계까지 그대로
+let pipe = null, ssao = null, autoStep = 0, tier = 'high';
 function applyTier() {
-  tier = save.set.q === 'auto' ? (slowDevice ? 'low' : 'high') : save.set.q;
+  const auto = save.set.q === 'auto';
+  tier = auto ? (autoStep >= 3 ? 'low' : 'high') : save.set.q;
   const hi = tier === 'high';
   if (pipe) pipe.dispose();
   if (ssao) ssao.dispose();
   ssao = null;
-  engine.setHardwareScalingLevel(hi ? 1 / Math.min(window.devicePixelRatio || 1, 1.5) : 1);
+  engine.setHardwareScalingLevel(hi && !(auto && autoStep >= 1) ? 1 / Math.min(window.devicePixelRatio || 1, 1.5) : 1);
   // 순서: 그늘(SSAO)을 먼저 붙여야 그 위에 빛 번짐이 얹힌다
-  if (hi && engine.webGLVersion >= 2 && BABYLON.SSAO2RenderingPipeline.IsSupported) {
+  if (hi && !(auto && autoStep >= 2) && engine.webGLVersion >= 2 && BABYLON.SSAO2RenderingPipeline.IsSupported) {
     ssao = new BABYLON.SSAO2RenderingPipeline('ssao', scene, { ssaoRatio: 0.5, blurRatio: 1 }, [camera]);
     Object.assign(ssao, { radius: 0.5, totalStrength: 1.3, base: 0.1, samples: 16, maxZ: 30, minZAspect: 0.4, expensiveBlur: true });
   }
@@ -311,19 +313,33 @@ function applyTier() {
 }
 
 // ---- 그리기: 무언가 움직일 때만. 15초 가만히 두면 쉰다 ----
-let lastPoke = 0, paused = false, frames = 0, ftime = 0;
+// cutOwn: 움직이는 컷이 도는 동안은 컷이 큰 무대까지 한 장씩 직접 그린다 (같은 장면을 두 번 그리지 않게)
+let lastPoke = 0, paused = false, cutOwn = false, lastDraw = 0, idleSkip = 0;
 function poke() { lastPoke = performance.now(); }
+// 「자동」 화질: 쉬지 않고 그리는 동안의 한 장 간격을 45장 모아, 가운데값이 30ms(초당 33장 아래)를 넘으면 한 단계, 60ms 를 넘으면 바로 낮음
+// (평균이 아니라 가운데값: 무대를 처음 그릴 때 셰이더를 만드느라 몇 장 멈칫한 것으로 빠른 기기를 낮추지 않게)
+const autoDts = [];
+function autoWatch(dt) {
+  if (save.set.q !== 'auto' || autoStep >= 3) return;
+  autoDts.push(dt);
+  if (autoDts.length < 45) return;
+  const mid = autoDts.sort((x, y) => x - y)[22];
+  autoDts.length = 0;
+  if (mid <= 30) return;
+  autoStep = mid > 60 ? 3 : Math.min(3, autoStep + (engine.getHardwareScalingLevel() < 1 || autoStep ? 1 : 2)); // 화면 배율을 이미 1 로 그리면 바로 그늘 끄기로
+  applyTier();
+}
 camera.onViewMatrixChangedObservable.add(poke);
 engine.onContextRestoredObservable.add(() => poke()); // 쉬는 동안 문맥을 잃었다 되찾으면 빈 캔버스로 남지 않게 한 번 다시 그린다
 canvas.addEventListener('pointerdown', poke);
 engine.runRenderLoop(() => {
+  const now = performance.now(), idle = now - lastPoke;
   // 깜빡이는 중이면 눈을 뜬 장면까지는 그린 뒤 쉰다 (감은 눈으로 멈추지 않게)
-  if (paused || (performance.now() - lastPoke > 15000 && !Object.values(CH).some(c => c.blinking && shown(c)))) return; // 깜빡이다 무대에서 빠진 인물은 보지 않는다
+  if (paused || cutOwn || (idle > 15000 && !Object.values(CH).some(c => c.blinking && shown(c)))) { lastDraw = 0; return; } // 깜빡이다 무대에서 빠진 인물은 보지 않는다
+  // 1.2초 넘게 아무것도 움직이지 않으면(숨쉬기·눈 깜빡임만) 세 번에 한 번만 그린다: 학교 기기가 덜 뜨거워져 느려지지 않게
+  if (idle > 1200 && ++idleSkip % 3) { lastDraw = 0; return; }
   scene.render();
-  if (save.set.q === 'auto' && !slowDevice && frames < 90) {
-    frames++;
-    ftime += engine.getDeltaTime();
-    if (frames === 90 && ftime / 90 > 45) { slowDevice = true; applyTier(); }
-  }
+  if (lastDraw && idle <= 1200) autoWatch(now - lastDraw);
+  lastDraw = now;
 });
 new ResizeObserver(() => { engine.resize(); fitCam(); poke(); }).observe(canvas.parentElement);

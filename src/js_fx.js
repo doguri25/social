@@ -147,5 +147,5 @@ if (ARGS.has('fps')) {
   const box = h('div', '');
   Object.assign(box.style, { position: 'fixed', left: '6px', top: '6px', zIndex: 60, font: '13px monospace', background: 'rgba(0,0,0,.6)', color: '#fff', padding: '3px 7px', borderRadius: '6px', pointerEvents: 'none' });
   document.body.appendChild(box);
-  setInterval(() => { box.textContent = `${engine.getFps().toFixed(0)} fps · ${tier}${FX.on ? ' · fx' : ''}`; }, 500);
+  setInterval(() => { box.textContent = `${engine.getFps().toFixed(0)} fps · ${tier}${save.set.q === 'auto' && autoStep ? ' -' + autoStep : ''}${FX.on ? ' · fx' : ''}`; }, 500);
 }

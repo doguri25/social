@@ -533,12 +533,15 @@ storyEl.addEventListener('click', e => { if (e.target.closest('.pic.playing')) s
 // 컷 e 를 옆 칸의 캔버스에 한 번 재생한다. 끝나면 인물·카메라는 삽화와 같은 자리에 있다
 // 움직이는 컷의 한 장: 큰 무대를 먼저 그리고(벽·아이들은 제대로 보이게), 찍는 그 순간에만 컷 카메라 기준으로 벽과 가리는 아이를 뺐다가 바로 되돌린다.
 // 벽은 삽화 자리(endPos) 기준으로 늘 같게 — 카메라가 움직이는 동안 벽이나 물건이 깜빡이지 않는다
-async function cutFrame(endPos, hk, w, hh) {
-  scene.render();
+// big: 큰 무대도 이번 장에 그린다 (느린 기기에서는 한 장 걸러 그려 컷이 먼저 매끄럽게)
+// check: 이 장을 그리기 전에 셰이더 준비를 본다 (준비 중이면 이 장은 건너뛴다). 한 번 준비되면 그 컷 동안은 보지 않는다
+async function cutFrame(endPos, hk, g, w, hh, big = true, check = true) {
+  if (big) scene.render();
   wallsForShot(endPos);
   hk.forEach(k => k.setEnabled(false));
-  try { return await loadImg(await snap(shotCam, w, hh)); } finally { restoreWalls(); hk.forEach(k => k.setEnabled(true)); }
+  try { return await cutDraw(g, w, hh, check); } finally { restoreWalls(); hk.forEach(k => k.setEnabled(true)); }
 }
+const nextFrame = () => new Promise(r => requestAnimationFrame(r));
 let cutPlaying = false, wantPrev = false; // 지금 컷이 움직이는 중, 그동안 「이전」을 눌렀다
 let skipAhead = false; // 움직이는 동안 「다음」을 눌렀다: 끝 장면으로 건너뛰고 바로 다음 컷으로
 // replay: 「이전」·「다음」으로 지난 컷을 다시 볼 때 — 그 컷이 처음 나왔을 때의 자리(e.spots)에서 다시 움직이고, 「다음」 단추의 할 일은 건드리지 않는다
@@ -561,16 +564,22 @@ function playCut(e, prev, my, replay = false) {
     if (!replay) { skipAhead = false; cutPlaying = true; setNext(skipNext); } // 움직이는 동안에도 「다음」을 누를 수 있다
     cv.parentElement.classList.add('playing');
     const t0 = performance.now();
+    cutOwn = true; // 컷이 도는 동안 큰 무대는 이 고리가 그린다
     try {
-      for (;;) {
+      for (let f = 0, slow = false, ready = false; ; f++) {
         const sec = (performance.now() - t0) / 1000, t = skipCut ? 1 : Math.min(1, sec / CUT_SEC);
         at(t, sec);
         if (t >= 1) break;
-        const img = await cutFrame(endPos, hk, w, hh);
+        const f0 = performance.now();
+        if (await cutFrame(endPos, hk, g, w, hh, !slow || f % 2 === 0, !ready)) ready = true;
+        slow = performance.now() - f0 > 24; // 한 장에 24ms 넘게 걸리면 큰 무대는 한 장 걸러
         if (my !== runId || !cv.isConnected) break;
-        g.drawImage(img, 0, 0);
+        await nextFrame();
+        if (my !== runId || !cv.isConnected) break;
       }
     } finally {
+      cutOwn = false;
+      poke();
       if (my === runId) at(1, CUT_SEC); // 흐름이 끝났으면(책장으로 나감·다른 책) 새 무대의 인물을 이 컷의 자리·자세로 옮기지 않는다
       if (!replay) { cutPlaying = false; renderFoot(); }
       if (nextFn === skipNext) setNext(null);
@@ -615,7 +624,7 @@ if (ARGS.has('rec')) window.__rec = {
           } // 그리지 않고 동작만 돌려 보기 (오류 점검)
           else for (let f = 0; f <= n; f++) {
             at(f / n, f / fps);
-            g.drawImage(await cutFrame(endPos, hk, w, hh), 0, 0);
+            await cutFrame(endPos, hk, g, w, hh);
             await window.__frame(cv.toDataURL('image/jpeg', 0.93));
           }
         } finally { restoreWalls(); }

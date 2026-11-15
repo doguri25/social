@@ -142,7 +142,7 @@ function makeChar(d, i, extra) {
 
   // 소품: 휴대전화(phone 자세), 줄넘기 줄(jump 자세)
   const phone = part(MB.CreateBox('phone', { width: 0.06, height: 0.11, depth: 0.012 }, scene), '#3a3f52', armA.elbow, 0, -D.fore - 0.02, 0.03);
-  const c = { id: d.id, d, D, r: D.r, i, mask, root, body, head, armA, armB, legA, legB, faceTex, meshes, phone, rope: null, base: 'stand', pose: 'stand', face0: 'calm', face: '', phase: i * 1.7, blinkAt: 0, blinking: false };
+  const c = { id: d.id, d, D, r: D.r, i, mask, root, body, head, armA, armB, legA, legB, faceTex, faceMat, faceTexs: [faceTex, null], meshes, phone, rope: null, base: 'stand', pose: 'stand', face0: 'calm', face: '', phase: i * 1.7, blinkAt: 0, blinking: false };
   setPose(c, 'jump');
   [root, ...root.getChildTransformNodes(false), ...root.getChildMeshes(false)].forEach(n => n.computeWorldMatrix(true));
   const inv = body.getWorldMatrix().clone().invert();
@@ -262,13 +262,22 @@ function setPose(c, name, over) {
   if (c.phone) c.phone.setEnabled(c.pose === 'phone');
   if (c.rope) c.rope.setEnabled(c.pose === 'jump');
 }
+// 눈 뜬 얼굴과 감은 얼굴을 따로 그려 두고 바꿔 끼운다. 깜빡일 때마다 큰 얼굴 그림을 다시 그려 올리면(두 번씩) 화면이 잠깐씩 멈칫했다.
+// 표정이 바뀌면 그 표정으로 한 번씩만 다시 그린다 (감은 얼굴은 처음 깜빡일 때)
 function paintFace(c, closed) {
-  const g = c.faceTex.getContext();
-  g.save();
-  g.scale(FACE_TEX / FACE_W, FACE_TEX / FACE_W);
-  drawFace(g, c.face, closed);
-  g.restore();
-  c.faceTex.update();
+  const k = closed ? 1 : 0;
+  let t = c.faceTexs[k];
+  if (!t) { t = c.faceTexs[k] = new BABYLON.DynamicTexture('faceB', { width: FACE_TEX, height: FACE_TEX }, scene, true); t.hasAlpha = true; }
+  if (t.drawn !== c.face) {
+    const g = t.getContext();
+    g.save();
+    g.scale(FACE_TEX / FACE_W, FACE_TEX / FACE_W);
+    drawFace(g, c.face, closed);
+    g.restore();
+    t.update();
+    t.drawn = c.face;
+  }
+  if (c.faceMat.diffuseTexture !== t) c.faceMat.diffuseTexture = t;
 }
 function setFace(c, kind) {
   c.faceN = (c.faceN || 0) + 1; // 얼굴 사진이 표정을 되돌릴 때, 그 사이 새로 정해진 표정이 있는지 본다
