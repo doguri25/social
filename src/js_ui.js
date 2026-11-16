@@ -223,7 +223,7 @@ function openAfter() {
   buildHot([], () => {});
   setHeader(null);
   const student = NET.mode === 'student';
-  const min = student ? NET.me.minChars : 200, max = student ? NET.me.maxChars || 500 : 500;
+  let min = student ? NET.me.minChars : 200, max = student ? NET.me.maxChars || 500 : 500;
   const draft = readDraft(), doc = afterDoc();
   // 이 기기 초안보다 나중에 낸 글(다른 기기)이 있으면 그 글 (시각이 없는 예전 초안은 예전처럼 초안 먼저)
   const mine = !!(draft && draft.text && !(doc && draft.at != null && doc.at > draft.at));
@@ -266,10 +266,17 @@ function openAfter() {
   };
   let typed = false;
   ta.addEventListener('input', () => { typed = true; upd(); keep(); }); // 열기만 해서는 초안을 만들지 않는다
+  const promptText = () => (student && NET.me.prompt && (LANG === 'ko' || NET.me.prompt !== AFTER_PROMPT) ? NET.me.prompt : t('afterPrompt')); // 선생님이 고친 안내는 그대로
+  const promptEl = h('p', 'aprompt', promptText());
   if (student) { // 이 화면을 연 뒤 다른 기기에서 고쳐 낸 글이 있으면 그 글로 (오래 열어 둔 화면이 옛 글을 고쳐 내어 새 글을 덮지 않게)
     const me0 = NET.me, my = runId;
     api('me', {}, false, 10000).then(m => {
-      if (NET.me !== me0 || m.no !== me0.no || !m.story || (me0.story && me0.story.at >= m.story.at)) return;
+      if (NET.me !== me0 || m.no !== me0.no) return;
+      // 선생님이 바꾼 글자 수·안내도 (들어올 때 받은 값이 아니라 지금 값으로: 최대를 늘렸는데 내기 단추가 꺼진 채 남지 않게)
+      const was = [me0.minChars, me0.maxChars, me0.prompt].join('|');
+      Object.assign(me0, { minChars: m.minChars, maxChars: m.maxChars, prompt: m.prompt });
+      if (runId === my && was !== [m.minChars, m.maxChars, m.prompt].join('|')) { min = m.minChars; max = m.maxChars || 500; promptEl.textContent = promptText(); upd(); }
+      if (!m.story || (me0.story && me0.story.at >= m.story.at)) return;
       const old = me0.story;
       me0.story = m.story;
       if (runId === my && !typed && (!old || old.text !== m.story.text || old.starter !== m.story.starter)) openAfter();
@@ -277,8 +284,7 @@ function openAfter() {
   }
   drawStarter();
   const card = h('div', 'endcard after');
-  const prompt = student && NET.me.prompt && (LANG === 'ko' || NET.me.prompt !== AFTER_PROMPT) ? NET.me.prompt : t('afterPrompt'); // 선생님이 고친 안내는 그대로
-  card.append(h('div', 'eyebrow', t('afterLabel')), h('h3', '', t('afterTitle')), box, h('p', 'aprompt', prompt), ta, count);
+  card.append(h('div', 'eyebrow', t('afterLabel')), h('h3', '', t('afterTitle')), box, promptEl, ta, count);
   if (LANG !== 'ko') card.insertBefore(h('p', 'soft', t('afterAnyLang')), ta);
   storyEl.replaceChildren(card);
   rise();

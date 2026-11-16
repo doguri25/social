@@ -1,7 +1,8 @@
 // 학생 API (POST /api/student, { action, … })
 // 접속 코드(또는 QR 의 ?c=코드)로 들어오면 서명한 쿠키를 준다. 저장하는 것: 번호, 가명(교사가 정함), 읽은 결말·이어 보기 자리, 고른 답, 「이후의 이야기」
 'use strict';
-const { db, route, httpError, sign, unsign, cookies, setCookie, text, storageReady, ipOf, throttle, blocked, storyChars } = require('../server/core');
+const crypto = require('node:crypto');
+const { db, route, httpError, sign, unsign, cookies, setCookie, text, storageReady, ipOf, throttle, refund, storyChars, num } = require('../server/core');
 const { getRoster, getSettings, unlocked, BOOKS, STARTERS } = require('../server/data');
 
 const COOKIE = 'maum_s';
@@ -14,7 +15,7 @@ async function who(req, body) {
   const s = (await getRoster()).find(x => x.no === Number(m[1]) && x.code === m[2]); // 선생님이 코드를 새로 만들면 예전 쿠키는 못 쓴다
   if (!s) throw httpError(401, '접속 코드가 바뀌었어요. 선생님께 새 코드를 받아 주세요.');
   // no: 화면이 아는 학생. 같은 브라우저의 다른 탭에서 다른 학생이 들어오면 쿠키가 그 학생 것으로 바뀐다 (앞 학생 화면의 진행·답·글이 새 학생 기록에 섞이지 않게)
-  if (body && body.no != null && Number(body.no) !== s.no) throw httpError(409, '이 기기에서 다른 학생이 들어왔어요. 내 접속 코드로 다시 들어와 주세요.');
+  if (body && body.no != null && num(body.no) !== s.no) throw httpError(409, '이 기기에서 다른 학생이 들어왔어요. 내 접속 코드로 다시 들어와 주세요.');
   return s;
 }
 // 진행: 책마다 본 결말·감정 카드 답·활동 답·역할, 책마다 이어 보기 자리. 정해진 모양만 골라 담는다(깊이·개수 제한)
@@ -22,7 +23,7 @@ const isBook = id => /^book\d{1,2}$/.test(id);
 const small = v => (typeof v === 'number' && Number.isFinite(v) ? v : typeof v === 'boolean' ? v : text(v, 80));
 const flat = (o, max) => Object.fromEntries(Object.entries(o && typeof o === 'object' && !Array.isArray(o) ? o : {}).slice(0, max).map(([k, v]) => [text(k, 40), Array.isArray(v) ? v.slice(0, 20).map(small) : small(v)]));
 const cleanTrail = t => [].concat(t || []).slice(0, 40).filter(x => x && typeof x === 'object').map(x => ({
-  type: text(x.type, 10), scene: text(x.scene, 20), at: Number(x.at) || 0, q: text(x.q, 300), opts: [].concat(x.opts || []).slice(0, 12).map(o => text(o, 200)), pick: Number(x.pick) || 0, flags: flat(x.flags, 60),
+  type: text(x.type, 10), scene: text(x.scene, 20), at: num(x.at) || 0, q: text(x.q, 300), opts: [].concat(x.opts || []).slice(0, 12).map(o => text(o, 200)), pick: num(x.pick) || 0, flags: flat(x.flags, 60),
 }));
 function cleanProgress(p) {
   const out = { books: {}, resume: {} };
@@ -31,7 +32,7 @@ function cleanProgress(p) {
     out.books[id] = { endings: [].concat(b.endings || []).map(e => text(e, 40)).slice(0, 20), feels: flat(b.feels, 100), acts: flat(b.acts, 100), role: text(b.role, 40) };
   }
   for (const [id, r] of Object.entries(p.resume || {}).slice(0, 12)) {
-    if (isBook(id) && r && typeof r === 'object') out.resume[id] = { scene: text(r.scene, 20), place: text(r.place, 80), flags: flat(r.flags, 60), trail: cleanTrail(r.trail), at: Number(r.at) || Date.now() };
+    if (isBook(id) && r && typeof r === 'object') out.resume[id] = { scene: text(r.scene, 20), place: text(r.place, 80), flags: flat(r.flags, 60), trail: cleanTrail(r.trail), at: num(r.at) || Date.now() };
   }
   return out;
 }
@@ -41,7 +42,7 @@ function cleanProgress(p) {
 function mergeProgress(next, cur, endedIn) {
   const legacy = endedIn === undefined; // v0.8.2 이하 화면: ended 없이, 결말에 닿으면 그 자리를 빼고 보낸다 (그때처럼 보내지 않은 자리는 지운다)
   const ended = { ...((cur && cur.ended) || {}) };
-  for (const [id, t] of Object.entries(endedIn && typeof endedIn === 'object' && !Array.isArray(endedIn) ? endedIn : {}).slice(0, 12)) if (isBook(id) && Number(t) > (ended[id] || 0)) ended[id] = Number(t);
+  for (const [id, t] of Object.entries(endedIn && typeof endedIn === 'object' && !Array.isArray(endedIn) ? endedIn : {}).slice(0, 12)) if (isBook(id) && num(t) > (ended[id] || 0)) ended[id] = num(t);
   next.ended = ended;
   const drop = () => { for (const id of Object.keys(next.resume)) if (ended[id] >= next.resume[id].at) delete next.resume[id]; };
   if (!cur) { drop(); return next; }
@@ -69,6 +70,16 @@ const cleanAnswer = (a, no) => ({
   q: text(a.q, 300), a: text(Array.isArray(a.a) ? a.a.join(' / ') : a.a, 1000), t: Number.isFinite(a.t) ? a.t : Date.now(),
 });
 
+// 진행 쓰기: 읽은 뒤 다른 기기가 먼저 썼으면(at 이 바뀜) 다시 읽어 합친다 (두 기기가 거의 같이 저장하면 나중에 쓴 쪽이 앞 기기의 새 결말을 지웠다)
+async function saveProgress(no, p, cur, endedIn) {
+  const id = `s${no}`;
+  for (let k = 0; ; k++) {
+    const merged = mergeProgress(cleanProgress(p), cur, endedIn), doc = { no, ...merged, at: Date.now() };
+    if (k >= 4) { await db().set('progress', id, doc); return merged; } // 네 번 겹치면 그대로 쓴다
+    if (!cur ? await db().add('progress', id, doc) : await db().patch('progress', id, doc, { cond: { at: cur.at } })) return merged; // 처음 쓰는 진행은 없을 때만, 아니면 읽은 그대로일 때만
+    cur = await db().get('progress', id);
+  }
+}
 module.exports = route({
   // 서버가 있는지 확인 (GitHub Pages·아티팩트에서는 이 주소가 없어 「로그인 없이 하기」만 보인다)
   ping: async () => ({ ok: true, ready: storageReady() }),
@@ -78,10 +89,12 @@ module.exports = route({
     const key = `code:${ipOf(req)}`;
     // 한 접속 주소에서 10분에 100번까지 틀릴 수 있다 (코드 맞히기를 막는다). 학교는 반 전체가 공인 주소 하나를 함께 쓰므로 넉넉히 두고(코드는 31^6 가지),
     // 틀린 것만 세고 맞혀도 지우지 않는다 (맞힐 때마다 지우면 자기 코드를 가진 학생이 남의 코드를 끝없이 넣어 볼 수 있다)
-    const wait = await blocked(key, 100, 600000);
-    if (wait) throw httpError(429, `코드를 너무 많이 넣었어요. ${Math.ceil(wait / 60)}분 뒤에 다시 해 주세요.`);
+    // 먼저 세고(동시에 수백 번 보내도 한 번씩 센다: 세지 않고 보기만 하면 한꺼번에 보낸 것이 모두 「아직 안 막힘」을 본다), 맞히면 그 한 번을 돌려준다
+    const t = await throttle(key, 100, 600000);
+    if (t.wait) throw httpError(429, `코드를 너무 많이 넣었어요. ${Math.ceil(t.wait / 60)}분 뒤에 다시 해 주세요.`);
     const s = (await getRoster()).find(x => x.code === code);
-    if (!s) { await throttle(key, 100, 600000); throw httpError(401, '코드를 다시 확인해 주세요.'); }
+    if (!s) throw httpError(401, '코드를 다시 확인해 주세요.');
+    await refund(key);
     setCookie(res, COOKIE, sign(`s:${s.no}:${s.code}`), 60 * 60 * 24 * 180);
     return { no: s.no, alias: s.alias };
   },
@@ -101,29 +114,40 @@ module.exports = route({
       let cur;
       [cur, wiped] = await Promise.all([db().get('progress', `s${s.no}`), wipedAt(s.no)]);
       // 선생님이 기록을 지우기 전에 받아 간 화면(since 를 보내지 않는 예전 화면 포함)이 보낸 진행은 받지 않는다 (지운 기록이 되살아나지 않게). 화면은 진행을 다시 받아 간다
-      if (wiped && !(Number(body.since) >= wiped)) stale = true;
-      else await db().set('progress', `s${s.no}`, { no: s.no, ...(merged = mergeProgress(cleanProgress(p), cur, body.ended)), at: Date.now() });
-    }
+      if (wiped && !(num(body.since) >= wiped)) stale = true;
+      else merged = await saveProgress(s.no, p, cur, body.ended);
+    } else wiped = await wipedAt(s.no);
     let answers = [].concat(body.answers || []).slice(0, 60).filter(a => a && typeof a === 'object').map(a => cleanAnswer(a, s.no));
     if (stale) answers = answers.filter(a => a.t >= wiped); // 지우기 전에 고른 답도 다시 넣지 않는다
     const have = await Promise.all(answers.map(a => a._id && db().get('answers', a._id)));
     answers = answers.filter((a, i) => !have[i]); // 이미 받은 답 (앞 저장의 답이 화면에 닿지 못해 다시 보낸 것)
     if (answers.length) answers = answers.slice(0, Math.max(0, MAX_ANSWERS - (await db().count('answers', { no: s.no })))); // 상한까지 남은 만큼은 받는다
+    answers.forEach(a => { if (!a._id) a._id = `s${s.no}:x${crypto.randomUUID()}`; }); // 아래에서 거둘 수 있게 id 를 먼저 정한다
     await db().insertMany('answers', answers);
+    // 이 저장이 읽고 쓰는 사이 선생님이 기록을 지웠으면(teacher.js wipe·clear 는 지운 때를 지우기 앞뒤로 남긴다) 지운 뒤에 써 넣은 옛 진행·답을 거둔다
+    const w2 = await wipedAt(s.no);
+    if (w2 > wiped && !(num(body.since) >= w2)) {
+      if (merged) await db().del('progress', `s${s.no}`);
+      const old = answers.filter(a => a.t < w2);
+      await Promise.all(old.map(a => db().del('answers', a._id)));
+      answers = answers.filter(a => a.t >= w2);
+      stale = true; wiped = w2; merged = null;
+    }
     // wiped: 화면이 지운 뒤에 읽은 것을 가려 다시 넣게. ends: 다른 기기에서 본 결말까지 합친 것 (화면이 「이후의 이야기」 열림을 바로 알게)
     return { ok: true, saved: answers.length, stale, wiped: stale ? wiped : undefined, ends: merged ? Object.fromEntries(Object.entries(merged.books).map(([id, b]) => [id, b.endings])) : undefined, ended: merged ? merged.ended : undefined }; // ended: 다른 기기에서 끝낸 책의 옛 이어 보기 자리를 화면도 지우게
   },
   // 이후의 이야기: 1~4권을 모두 읽은 뒤에만, 정해진 글자 수(띄어쓰기 빼고) 안에서. starter: 선생님이 들려준 이야기 시작 번호
   story: async ({ req, body }) => {
     const s = await who(req, body);
-    const [prog, set, old] = await Promise.all([db().get('progress', `s${s.no}`), getSettings(), db().get('stories', `s${s.no}`)]);
+    const [prog, set] = await Promise.all([db().get('progress', `s${s.no}`), getSettings()]);
     if (!unlocked(prog)) throw httpError(403, '1~4권을 모두 끝까지 읽으면 쓸 수 있어요.');
     const t = text(body.text, 24000).trim(); // 최대 5000자 (로마자는 두 배) + 띄어쓰기
     const n = storyChars(t);
     if (n < set.minChars) throw httpError(400, `${set.minChars}자 넘게 써 주세요.`);
     if (n > set.maxChars) throw httpError(400, `${set.maxChars}자 안으로 줄여 주세요.`);
     const starter = STARTERS.some(x => x.id === body.starter) ? body.starter : null;
-    await db().set('stories', `s${s.no}`, { no: s.no, text: t, starter, at: Date.now(), versions: ((old && old.versions) || 0) + 1, teacher: (old && old.teacher) || null, ai: (old && old.ai) || null });
+    // 글·시작·때만 바꾼다: 읽고-고쳐-통째로 쓰면 그사이 선생님이 저장한 채점(teacher·ai)을 옛 값으로 덮는다
+    await db().patch('stories', `s${s.no}`, { no: s.no, text: t, starter, at: Date.now() }, { inc: { versions: 1 }, insert: { teacher: null, ai: null }, upsert: true });
     return { ok: true };
   },
 });

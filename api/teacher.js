@@ -1,6 +1,6 @@
 // 교사 API (POST /api/teacher, { action, … }): 비밀번호 로그인(처음 1324), 명단·코드, 학생 기록, 「이후의 이야기」 채점(교사·AI), 설정
 'use strict';
-const { db, route, httpError, sign, unsign, cookies, setCookie, validPin, makePin, checkPassword, encrypt, newCode, text, int, storyChars } = require('../server/core');
+const { db, route, httpError, sign, unsign, cookies, setCookie, validPin, makePin, checkPassword, encrypt, newCode, text, int, num, storyChars } = require('../server/core');
 const { getSettings, publicSettings, getRoster, setRoster, aiGrade, pingAI, PROVIDERS, PROVIDER_IDS } = require('../server/data');
 const { makeDemo } = require('../server/demo');
 
@@ -17,7 +17,9 @@ async function auth(req) {
   return pin;
 }
 // 한 학생의 진행·답·글을 지운다 (명단은 그대로). 지운 때를 남겨, 그 전에 열린 학생 화면이 옛 진행을 다시 올리지 못하게 한다 (api/student.js save)
-const wipe = no => Promise.all([db().del('progress', `s${no}`), db().delWhere('answers', { no }), db().del('stories', `s${no}`), db().set('meta', `wiped:s${no}`, { at: Date.now() })]);
+// 지운 때는 지우기 앞뒤로 남긴다: 그사이 저장하던 학생 화면이 지운 뒤에 써 넣은 것은 그 저장이 지운 때를 다시 보고 거둔다
+const mark = key => db().set('meta', key, { at: Date.now() });
+const wipe = async no => { await mark(`wiped:s${no}`); await Promise.all([db().del('progress', `s${no}`), db().delWhere('answers', { no }), db().del('stories', `s${no}`)]); await mark(`wiped:s${no}`); };
 // 명단 한 줄: 「번호 가명」. 「1. 햇살」「1) 햇살」「1번 햇살」「1햇살」「１ 햇살」도 받는다 (teacher.html 도 같은 규칙)
 // 「3학년 2반 명단」「10월 5일」「1모둠 …」처럼 숫자에 바로 붙은 머리 줄은 학생으로 보지 않는다 (「5 조 민수」처럼 띄어 쓴 성은 받는다)
 const ROSTER_LINE = /^\s*(\d{1,3})(?!\d)(?!(?:학년|반|모둠|월|일|교시|차시|층|조)(?:\s|$|[0-9]))(?:번(?=[\s.,):-]|$))?[\s.,):-]*(\S.*?)\s*$/;
@@ -92,14 +94,14 @@ const guarded = {
     const removed = old.filter(s => !s.demo && !seen.has(s.no)).map(s => s.no);
     // base: 화면이 받아 간 명단 번호. 그 뒤 다른 화면(기기)에서 들어온 학생은, 그 학생을 본 적 없는 옛 화면의 저장으로 빼거나 기록을 지우지 않는다
     if (Array.isArray(body.base)) {
-      const base = new Set(body.base.map(Number));
+      const base = new Set(body.base.map(num));
       const unseen = old.filter(s => removed.includes(s.no) && !base.has(s.no));
       if (unseen.length) throw httpError(409, `그사이 다른 화면에서 명단에 ${unseen.map(s => `「${s.no} ${s.alias}」`).join(', ')} 학생이 들어왔어요. 남기려면 글상자에 그 줄을 넣고, 빼려면 그대로 한 번 더 저장해 주세요.`);
     }
     for (const d of demo) if (seen.has(d.no)) await wipe(d.no); else students.push(d);
     students.sort((a, b) => a.no - b.no);
     if (body.dropRemoved) for (const no of removed) await wipe(no);
-    const fresh = new Set([].concat(body.wipeNew || []).map(Number));
+    const fresh = new Set([].concat(body.wipeNew || []).map(num));
     for (const st of students) if (!st.demo && fresh.has(st.no) && !old.some(o => o.no === st.no)) await wipe(st.no); // 지금 명단에 있던 학생 기록은 건드리지 않는다
     await setRoster(students);
     return { students, removed, skipped: skipped.slice(0, 10) };
@@ -128,12 +130,18 @@ const guarded = {
     if (!y) throw httpError(404, '아직 쓴 글이 없어요.');
     const scores = {};
     s.rubric.forEach(r => { if (body.scores && body.scores[r.id] != null) scores[r.id] = int(body.scores[r.id], 1, 3); });
-    const { id, ...doc } = y;
     // textAt: 화면이 보고 매긴 글의 때. 그사이 학생이 고쳐 냈으면 읽지 않은 새 글의 채점으로 붙이지 않고, 옛 글의 채점으로 남긴다
     // (AI 채점과 같게 teacher.at < 글 at 이 되어 화면이 「고친 뒤라 다시 보면 좋아요」를 알린다)
-    const stale = body.textAt != null && Number(body.textAt) < y.at;
-    const at = stale ? y.at - 1 : Date.now();
-    await db().set('stories', `s${no}`, { ...doc, teacher: { scores, comment: text(body.comment, 600), at } });
+    let stale = body.textAt != null && num(body.textAt) < y.at;
+    let at = stale ? y.at - 1 : Date.now();
+    const teacher = () => ({ teacher: { scores, comment: text(body.comment, 600), at } });
+    // 채점 칸만, 읽은 글 그대로일 때만 바꾼다 (통째로 쓰면 그사이 학생이 고쳐 낸 글을 옛 글로 되돌린다)
+    if (!(await db().patch('stories', `s${no}`, teacher(), { cond: { at: y.at } }))) {
+      const cur = await db().get('stories', `s${no}`);
+      if (!cur) throw httpError(404, '아직 쓴 글이 없어요.');
+      stale = true; at = Math.min(at, cur.at - 1);
+      await db().patch('stories', `s${no}`, teacher());
+    }
     return { ok: true, at, stale };
   },
   // AI 채점: 한 명(no) 또는 아직 AI 채점이 없는 글 모두(all). 학생 글만 AI 로 간다
@@ -141,7 +149,7 @@ const guarded = {
     const s = await getSettings();
     // 모두 채점에서는 예시 학생 글을 빼서 선생님 키를 쓰지 않는다
     const demo = body.all ? new Set((await getRoster()).filter(x => x.demo).map(x => x.no)) : null;
-    const skip = new Set([].concat(body.skip || []).map(Number)); // 이번 「모두 채점」에서 이미 못 한 글은 다시 보내지 않는다
+    const skip = new Set([].concat(body.skip || []).map(num)); // 이번 「모두 채점」에서 이미 못 한 글은 다시 보내지 않는다
     const list = body.all ? (await db().find('stories')).filter(y => !demo.has(y.no) && !skip.has(y.no) && (!y.ai || y.ai.at < y.at)) : [await db().get('stories', `s${int(body.no, 0, 999)}`)];
     let done = 0;
     const failed = [];
@@ -159,10 +167,12 @@ const guarded = {
         continue;
       }
       // AI 를 기다리는 동안 학생이 글을 고쳐 냈을 수 있다: 새 글을 덮어쓰지 않고, 옛 글의 점수로 남겨 「다시 채점」 대상이 되게 한다
-      const cur = await db().get('stories', `s${y.no}`);
-      if (!cur) continue;
-      const { id, ...doc } = cur;
-      await db().set('stories', `s${y.no}`, { ...doc, ai: cur.text === y.text ? ai : { ...ai, at: Math.min(ai.at, cur.at - 1) } });
+      // (AI 칸만 바꾼다: 통째로 쓰면 그사이 저장한 선생님 채점이나 고친 글을 옛 값으로 덮는다)
+      if (!(await db().patch('stories', `s${y.no}`, { ai }, { cond: { text: y.text } }))) {
+        const cur = await db().get('stories', `s${y.no}`);
+        if (!cur) continue;
+        await db().patch('stories', `s${y.no}`, { ai: { ...ai, at: Math.min(ai.at, cur.at - 1) } });
+      }
       done++;
     }
     return { done, failed, left: Math.max(0, list.length - done - failed.length) };
@@ -219,7 +229,7 @@ const guarded = {
   },
   // 기록 지우기: 한 명(no) 또는 반 전체(all). 명단과 설정은 남는다
   clear: async ({ body }) => {
-    if (body.all) { for (const col of ['progress', 'answers', 'stories']) await db().delWhere(col, {}); await db().set('meta', 'wiped:all', { at: Date.now() }); return { ok: true }; }
+    if (body.all) { await mark('wiped:all'); for (const col of ['progress', 'answers', 'stories']) await db().delWhere(col, {}); await mark('wiped:all'); return { ok: true }; }
     await wipe(int(body.no, 0, 999));
     return { ok: true };
   },

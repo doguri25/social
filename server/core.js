@@ -58,7 +58,14 @@ function mongo(uri) {
     find: async (col, filter = {}) => (await (await c(col)).find(filter).toArray()).map(plain),
     count: async (col, filter = {}) => (await c(col)).countDocuments(filter),
     countBy: async (col, field) => Object.fromEntries((await (await c(col)).aggregate([{ $group: { _id: '$' + field, n: { $sum: 1 } } }]).toArray()).map(r => [r._id, r.n])),
-    inc: async (col, id, field) => plain(await (await c(col)).findOneAndUpdate({ _id: id }, { $inc: { [field]: 1 } }, { upsert: true, returnDocument: 'after' })), // 여러 서버가 동시에 세어도 정확히
+    inc: async (col, id, field) => plain(await (await c(col)).findOneAndUpdate({ _id: id }, { $inc: { [field]: 1 }, $setOnInsert: { start: Date.now() } }, { upsert: true, returnDocument: 'after' })), // 여러 서버가 동시에 세어도 정확히 (처음 센 때도 함께)
+    // 일부 칸만 바꾼다 (읽고-고쳐-통째로 쓰기 사이에 다른 요청이 쓴 칸을 덮지 않게). cond 가 맞는 문서만. upsert: 없으면 만든다. 바꿨으면 true
+    patch: async (col, id, set, { cond = {}, inc, insert, upsert = false } = {}) => {
+      const r = await (await c(col)).updateOne({ _id: id, ...cond }, { ...(Object.keys(set).length ? { $set: set } : {}), ...(inc ? { $inc: inc } : {}), ...(insert ? { $setOnInsert: insert } : {}) }, { upsert });
+      return r.matchedCount + (r.upsertedCount || 0) > 0;
+    },
+    // 없을 때만 넣는다. 넣었으면 true, 이미 있으면 false (두 요청이 같은 문서를 처음 쓸 때 나중 쪽이 앞 쪽을 덮지 않게)
+    add: async (col, id, doc) => { try { await (await c(col)).insertOne({ _id: id, ...doc }); return true; } catch (e) { if (e && e.code === 11000) return false; throw e; } },
     del: async (col, id) => void (await (await c(col)).deleteOne({ _id: id })),
     delWhere: async (col, filter) => void (await (await c(col)).deleteMany(filter)),
   };
@@ -78,7 +85,15 @@ function local() {
     find: async (col, filter = {}) => rows(col, filter).map(([id, d]) => ({ id, ...d })),
     count: async (col, filter = {}) => rows(col, filter).length,
     countBy: async (col, field) => { const out = {}; rows(col, {}).forEach(([, d]) => { out[d[field]] = (out[d[field]] || 0) + 1; }); return out; },
-    inc: async (col, id, field) => edit(col, r => { r[id] = { ...(r[id] || {}), [field]: ((r[id] || {})[field] || 0) + 1 }; return { id, ...r[id] }; }),
+    inc: async (col, id, field) => edit(col, r => { r[id] = { start: Date.now(), ...(r[id] || {}), [field]: ((r[id] || {})[field] || 0) + 1 }; return { id, ...r[id] }; }),
+    patch: async (col, id, set, { cond = {}, inc, insert, upsert = false } = {}) => edit(col, r => {
+      if (r[id] ? !hit(r[id], cond) : !upsert) return false;
+      const d = r[id] || (r[id] = { ...(insert || {}) });
+      Object.assign(d, set);
+      for (const [k, n] of Object.entries(inc || {})) d[k] = (d[k] || 0) + n;
+      return true;
+    }),
+    add: async (col, id, doc) => edit(col, r => { if (r[id]) return false; r[id] = { ...doc }; return true; }),
     del: async (col, id) => edit(col, r => { delete r[id]; }),
     delWhere: async (col, filter) => edit(col, r => { for (const [id, d] of Object.entries(r)) if (hit(d, filter)) delete r[id]; }),
   };
@@ -97,10 +112,14 @@ const storageReady = () => !!process.env.MONGODB_URI || !onVercel();
 const ipOf = req => crypto.createHash('sha256').update(String((onVercel() && (req.headers['x-real-ip'] || String(req.headers['x-forwarded-for'] || '').split(',')[0])) || (req.socket && req.socket.remoteAddress) || '').trim()).digest('base64url').slice(0, 16);
 async function throttle(key, max, windowMs) {
   const id = `try:${key}`;
-  let doc = await db().inc('meta', id, 'n');
-  if (!doc.start || Date.now() - doc.start > windowMs) { doc = { n: 1, start: Date.now() }; await db().set('meta', id, doc); }
+  let doc = await db().inc('meta', id, 'n'); // 처음 센 때(start)는 inc 가 함께 넣는다 (따로 쓰면 동시에 온 첫 요청들이 셈을 1 로 되돌린다)
+  if (!doc.start || Date.now() - doc.start > windowMs) { // 시간이 다 됐으면 새로 센다. 동시에 여럿이 와도 하나만 되돌린다
+    const fresh = { n: 1, start: Date.now() };
+    doc = (await db().patch('meta', id, fresh, { cond: { start: doc.start } })) ? fresh : await db().get('meta', id);
+  }
   return doc.n > max ? { wait: Math.ceil((doc.start + windowMs - Date.now()) / 1000) } : {};
 }
+const refund = key => db().patch('meta', `try:${key}`, {}, { inc: { n: -1 } }); // 먼저 센 한 번을 돌려준다
 const forgive = key => db().del('meta', `try:${key}`);
 // 세지 않고 지금 막혀 있는지만 본다 (틀렸을 때만 throttle 로 세는 곳에서 쓴다). 막혔으면 남은 초
 async function blocked(key, max, windowMs) {
@@ -119,12 +138,15 @@ async function checkPassword(input, pin, req) {
   const master = process.env.TEACHER_PASSWORD;
   const ip = ipOf(req);
   if (master && same(master, got)) { await forgive(`teacher:${ip}`); return { ok: true, master: true }; } // 잠긴 기기에서 되찾기 비밀번호로 들어와 새 비밀번호를 정한 뒤, 그 비밀번호로 바로 들어갈 수 있게
-  for (const [key, max] of [[`teacher:${ip}`, 5], ['teacher:all', 30]]) { // 한 기기는 1분에 5번, 반 전체는 1분에 30번
-    const t = await throttle(key, max, 60000);
+  // 한 기기는 1분에 5번·1시간에 20번, 반 전체는 1분에 30번. 맞힌 것은 세지 않는다(돌려준다): 학교는 반 전체가 공인 주소 하나라,
+  // 선생님이 맞게 넣은 것까지 세면 학생이 몇 번 틀리게 넣은 뒤 선생님이 막혔다. 1시간 상한: 숫자 비밀번호를 오래 두고 하나씩 맞혀 보는 것을 늦춘다
+  const keys = [[`teacher:${ip}`, 5, 60000], [`teacher-h:${ip}`, 20, 3600000], ['teacher:all', 30, 60000]];
+  for (const [key, max, ms] of keys) {
+    const t = await throttle(key, max, ms);
     if (t.wait) return { ok: false, wait: t.wait };
   }
   const ok = pin ? same(scrypt(got, pin.salt), pin.hash) : !master && same('1324', got);
-  if (ok) await forgive(`teacher:${ip}`);
+  if (ok) { await forgive(`teacher:${ip}`); await Promise.all([refund(`teacher-h:${ip}`), refund('teacher:all')]); }
   return { ok };
 }
 
@@ -209,10 +231,13 @@ function route(actions) {
 }
 
 // ---- 값 다듬기 ----
-const text = (v, max) => String(v == null ? '' : v).slice(0, max);
-const int = (v, lo, hi) => { const n = Math.round(Number(v)); if (!Number.isFinite(n) || n < lo || n > hi) throw httpError(400, '숫자가 맞지 않아요.'); return n; };
+// 보낸 JSON 의 객체({"toString":1} 등)는 String()·Number() 가 TypeError 를 던져 500(과 서버 기록의 오류 더미)이 된다: 글자는 빈 칸, 숫자는 NaN 으로
+const str = v => { try { return String(v); } catch { return ''; } };
+const num = v => (v !== null && typeof v === 'object' ? NaN : Number(v));
+const text = (v, max) => str(v == null ? '' : v).slice(0, max);
+const int = (v, lo, hi) => { const n = Math.round(num(v)); if (!Number.isFinite(n) || n < lo || n > hi) throw httpError(400, '숫자가 맞지 않아요.'); return n; };
 
 // 「이후의 이야기」 글자 수 (띄어쓰기 빼고). 한글·한자는 한 자, 로마자·키릴 문자는 두 자를 한 자로 센다:
 // 같은 분량의 글이 베트남어·러시아어로는 한국어보다 글자가 두 배쯤 많다 (번역한 네 권으로 잰 값 2.05·2.21배, 중국어 0.89배)
 const storyChars = s => Math.round([...String(s || '').replace(/\s/g, '')].reduce((n, c) => n + (/[\p{Script=Latin}\p{Script=Cyrillic}]/u.test(c) ? 0.5 : 1), 0));
-module.exports = { storyChars, storageReady, httpError, sign, unsign, db, ipOf, throttle, forgive, blocked, validPin, makePin, checkPassword, encrypt, decrypt, mask, newCode, cookies, setCookie, route, text, int };
+module.exports = { storyChars, storageReady, httpError, sign, unsign, db, ipOf, throttle, refund, forgive, blocked, validPin, makePin, checkPassword, encrypt, decrypt, mask, newCode, cookies, setCookie, route, text, int, num };

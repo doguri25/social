@@ -62,7 +62,8 @@ async function netBoot() {
   try { enterStudent(await api('me', {}, false, 10000)); return true; } catch (e) { return false; }
 }
 async function loginCode(code) { await api('login', { code }); enterStudent(await api('me')); }
-function enterStudent(me) {
+// restore: 이 기기에 적어 둔 못 보낸 것을 되살린다 (선생님이 지운 뒤 진행을 다시 받아 올 때는 하지 않는다)
+function enterStudent(me, restore = true) {
   NET.mode = 'student';
   NET.me = me;
   NET.skew = me.since ? me.since - Date.now() : 0;
@@ -70,6 +71,17 @@ function enterStudent(me) {
   try { localStorage.removeItem('social-out'); } catch (e) { /* 없음 */ }
   save.books = me.progress.books || {}; // 이 기기 기록과 섞지 않는다
   save.resume = me.progress.resume || {};
+  const pend = restore ? takePending(me.no) : null;
+  if (!restore) dropPending(me.no);
+  if (pend) { // 끊긴 채 닫았던 화면이 못 보낸 것: 본 결말·더 새 이어 보기 자리·고른 답(같은 답은 서버가 한 번만 쌓는다)
+    for (const [id, b] of Object.entries(pend.books)) if (isObj(b) && Array.isArray(b.endings)) { const r = bookRec(id); b.endings.forEach(e => r.endings.includes(e) || r.endings.push(e)); if (isObj(b.endAt)) r.endAt = Object.assign({}, b.endAt, r.endAt); }
+    for (const [id, r] of Object.entries(pend.resume)) if (isObj(r) && typeof r.scene === 'string' && Array.isArray(r.trail) && !(save.resume[id] && save.resume[id].at >= r.at)) save.resume[id] = r;
+    for (const [id, t] of Object.entries(isObj(pend.ended) ? pend.ended : {})) if (!(NET.ended[id] >= t)) NET.ended[id] = t;
+    const have = new Set(NET.queue.map(a => a.id));
+    pend.queue.forEach(a => { if (isObj(a) && a.no === me.no && !have.has(a.id)) NET.queue.push(a); });
+    if (pend.since) me.since = Math.min(me.since || pend.since, pend.since); // 그 진행을 받아 온 때로 보낸다: 그 뒤에 선생님이 지웠으면 서버가 받지 않고 화면은 다시 받아 온다
+    netStore();
+  }
   const lost = NET.lost;
   NET.lost = null;
   if (lost && lost.no === me.no) { // 코드가 바뀌어 못 보낸 진행(본 결말·이어 보기)을 새 코드로 들어온 뒤 다시 보낸다
@@ -93,9 +105,24 @@ async function logout() {
   try { await api('logout'); } catch (e) { try { localStorage.setItem('social-out', '1'); } catch (e2) { /* 없음 */ } } // 쿠키가 남으면 다음에 열 때 지운다
   enterGuest();
 }
+// 학생이 아직 서버로 보내지 못한 것(고른 답·본 결말·이어 보기 자리)은 이 기기에도 적어 둔다: 인터넷이 끊긴 채 탭을 닫거나
+// 기기가 뒤의 탭을 버려도, 같은 학생이 다시 들어오면 보낸다 (since: 그 진행을 받아 온 때 — 그 뒤 선생님이 지웠으면 서버가 받지 않는다)
+const pendKey = no => 'social-pending-' + no;
+function keepPending() {
+  if (NET.mode !== 'student') return;
+  try { localStorage.setItem(pendKey(NET.me.no), JSON.stringify({ since: NET.me.since, queue: NET.queue.filter(a => a.no === NET.me.no), books: save.books, resume: save.resume, ended: NET.ended })); } catch (e) { /* 없음 */ }
+}
+function dropPending(no) { try { localStorage.removeItem(pendKey(no)); } catch (e) { /* 없음 */ } }
+function takePending(no) {
+  let d = null;
+  try { d = JSON.parse(localStorage.getItem(pendKey(no))); } catch (e) { /* 없음 */ }
+  return isObj(d) && isObj(d.books) && isObj(d.resume) && Array.isArray(d.queue) ? d : null;
+}
 // store() 가 부른다: 학생이면 설정만 이 기기에, 진행은 잠시 모았다가 서버로
 function netStore() {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 1, set: save.set, books: GUEST.books, resume: GUEST.resume, answers: GUEST.answers, after: save.after, cleared: save.cleared, done: save.done })); } catch (e) { /* 저장 실패해도 놀이는 계속 */ }
+  NET.rev = (NET.rev || 0) + 1;
+  keepPending();
   clearTimeout(NET.timer);
   NET.timer = setTimeout(() => flush(), 2500);
 }
@@ -105,7 +132,7 @@ async function flush(now) { // 보냈으면(보낼 것이 없으면) true
   NET.queue = NET.queue.filter(a => a.no === NET.me.no); // 앞서 나간 학생이 못 보낸 답을 이 학생 기록에 넣지 않는다
   const answers = NET.queue.splice(0, 60);
   let r = null, sent = true;
-  const who = NET.me; // 저장이 돌아오는 사이 나가거나 다른 학생이 들어오면 돌아온 값을 이 화면에 넣지 않는다
+  const who = NET.me, rev = NET.rev; // rev: 보내는 사이 새로 바뀐 것이 있는지 (있으면 기기에 적어 둔 것을 지우지 않는다) // 저장이 돌아오는 사이 나가거나 다른 학생이 들어오면 돌아온 값을 이 화면에 넣지 않는다
   // since: 진행을 받아 온 때. 그 뒤에 선생님이 기록을 지웠으면 서버는 이 진행을 받지 않고(stale) 화면은 진행을 다시 받아 온다
   // no: 이 화면의 학생. 다른 탭에서 다른 학생이 들어와 쿠키가 바뀌었으면 서버가 받지 않는다(409)
   try { r = await api('save', { no: who.no, since: NET.me.since, progress: { books: save.books, resume: save.resume }, ended: NET.ended, answers }, !!now); }
@@ -116,7 +143,7 @@ async function flush(now) { // 보냈으면(보낼 것이 없으면) true
     let me = null;
     try { me = await api('me'); } catch (e) { /* 다음 저장 때 다시 */ }
     if (me && NET.me === who && me.no === who.no) {
-      enterStudent(me);
+      enterStudent(me, false);
       // 지운 뒤에 읽은 것(지금 읽는 자리, 그 뒤에 본 결말)은 다시 넣어 보낸다
       for (const [id, res] of Object.entries(old.resume)) if (res.at > r.wiped) save.resume[id] = res;
       for (const [id, b] of Object.entries(old.books)) for (const [e, t] of Object.entries(b.endAt || {})) if (t > r.wiped && !bookRec(id).endings.includes(e)) bookRec(id).endings.push(e);
@@ -131,6 +158,8 @@ async function flush(now) { // 보냈으면(보낼 것이 없으면) true
     if (!was && unlockedAfter() && askKind === 'ending') renderAsk(); // 4권 결말 화면에 「이후의 이야기 쓰기」
   }
   if (NET.mode === 'student' && (NET.queue.length || !sent)) NET.timer = setTimeout(() => flush(), sent ? 2500 : 8000); // 못 보냈으면 진행만 바뀌었어도 다시 (인터넷이 돌아오면 보내게)
+  else if (sent && r && NET.me === who && NET.rev === rev) dropPending(who.no); // 다 보냈다: 이 기기에 적어 둔 것은 지운다
+  else keepPending(); // 남은 답(다음 묶음)을 적어 둔다
   return sent;
 }
 addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(true); });
