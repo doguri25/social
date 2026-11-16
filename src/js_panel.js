@@ -26,7 +26,7 @@ $('#btnNext').addEventListener('click', e => {
   if (hi < hist.length - 1) { hi++; renderEntry(true); return; }
   if (nextFn) nextFn();
 });
-$('#btnPrev').addEventListener('click', e => { if (e.detail > 0) e.currentTarget.blur(); if (hi > 0 && making && cutPlaying) { sfx('tap'); if (skipAhead) skipAhead = false; else wantPrev = true; skipCut = true; return; } /* 움직이는 중: 끝 장면으로 건너뛴 뒤 앞 컷으로 */ if (hi > 0 && !making) { sfx('tap'); hi--; renderEntry(true); } }); // 마우스로 누른 뒤의 Enter 는 「다음」
+$('#btnPrev').addEventListener('click', e => { if (e.detail > 0) e.currentTarget.blur(); hush(); /* 지난 컷을 볼 때 읽어 주던 문장은 멈춘다 */ if (hi > 0 && making && cutPlaying) { sfx('tap'); if (skipAhead) skipAhead = false; else wantPrev = true; skipCut = true; return; } /* 움직이는 중: 끝 장면으로 건너뛴 뒤 앞 컷으로 */ if (hi > 0 && !making) { sfx('tap'); hi--; renderEntry(true); } }); // 마우스로 누른 뒤의 Enter 는 「다음」
 
 // ---- 컷 만들기: 무대를 찍고, 말하는 사람 얼굴 사진을 붙인다 ----
 const panelW = () => Math.round(clamp(storyEl.clientWidth * 2, 560, 900));

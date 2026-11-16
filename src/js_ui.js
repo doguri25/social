@@ -142,6 +142,7 @@ const bookIds = () => Object.keys(STORIES).sort(); // book1, book2 …
 function showShelf() {
   runId++;
   cancelFlow();
+  hush(); // 「처음 화면으로」·책장으로 나가면 읽어 주던 문장도 멈춘다
   curScene = null;
   curPart = null;
   viewScene = null;
@@ -214,7 +215,8 @@ function readDraft() {
   try { raw = localStorage.getItem(draftKey()); const d = JSON.parse(raw); if (d && typeof d === 'object') return d; } catch (e) { /* v0.7 은 글만 그대로 저장했다 */ }
   return raw ? { text: raw } : null;
 }
-function openAfter() {
+let afterSt = null; // 이 화면에서 보고 있는 이야기 시작 (언어를 바꿔 다시 그려도 그대로)
+function openAfter(again) {
   if (!unlockedAfter()) return toast(t('afterLockedToast'));
   sfx('pick');
   runId++;
@@ -229,7 +231,8 @@ function openAfter() {
   const mine = !!(draft && draft.text && !(doc && draft.at != null && doc.at > draft.at));
   // 이야기 시작: 보여 주는 글(쓰던 글이나 낸 글)의 시작을 그대로, 없으면 여섯 가지 가운데 하나를 무작위로 (옛 초안의 시작이 다른 기기에서 낸 글에 붙지 않게)
   let starter = (mine ? [draft.starter, doc && doc.starter] : [doc && doc.starter, draft && draft.starter]).find(v => STARTERS.some(x => x.id === v));
-  if (starter == null) starter = STARTERS[Math.floor(Math.random() * STARTERS.length)].id;
+  if (starter == null) starter = again === true && STARTERS.some(x => x.id === afterSt) ? afterSt : STARTERS[Math.floor(Math.random() * STARTERS.length)].id;
+  afterSt = starter;
   const ta = h('textarea', 'afterta');
   ta.value = (mine && draft.text) || afterText();
   ta.placeholder = t('afterPlaceholder');
@@ -291,7 +294,7 @@ function openAfter() {
   setAsk('after', () => {
     const r = h('div', 'btnrow');
     // 아직 한 글자도 쓰지 않았을 때만 다른 이야기 시작으로 바꿀 수 있다
-    if (!ta.value.trim()) r.append(btn(t('otherStarter'), 'sbtn', () => { const rest = STARTERS.filter(x => x.id !== starter); starter = rest[Math.floor(Math.random() * rest.length)].id; drawStarter(); keep(); sfx('tap'); }));
+    if (!ta.value.trim()) r.append(btn(t('otherStarter'), 'sbtn', () => { const rest = STARTERS.filter(x => x.id !== starter); starter = afterSt = rest[Math.floor(Math.random() * rest.length)].id; drawStarter(); keep(); sfx('tap'); }));
     r.append(btn(t('toShelf'), 'sbtn', showShelf));
     const rules = h('ul', 'rules');
     afterRules().forEach(t2 => rules.appendChild(h('li', '', t2)));
@@ -417,7 +420,7 @@ function setLang(code) {
   findVoice();
   applyStatic();
   renderFoot();
-  if (askKind === 'shelf') { loadBook('book1'); showShelf(); } else renderAsk(); // 책장은 바로 그 언어로, 읽던 책은 다시 열 때부터
+  if (askKind === 'shelf') { loadBook('book1'); showShelf(); } else if (askKind === 'after') openAfter(true); else renderAsk(); // 책장은 바로 그 언어로, 읽던 책은 다시 열 때부터
 }
 // ---- 첫 화면: 언어 고르기, 접속 코드, 로그인 없이 하기, 저장하는 것 안내 ----
 function showGate() {

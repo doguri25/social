@@ -445,7 +445,8 @@ function endingCard(end) {
       const row = h('div', 'btnrow');
       row.append(
         btn(t('seePath'), 'sbtn primary', () => { sfx('tap'); done('review'); }),
-        btn(trail.length && trail[trail.length - 1].type === 'compose' ? (BOOK.scenes[trail[trail.length - 1].scene].compose.write ? t('retryWrite') : t('retrySay')) : t('retryChoice'), 'sbtn', () => { sfx('tap'); done('retry'); }),
+        // 지나온 갈림길이 있을 때만 (수업 링크로 마지막 장면을 바로 열면 없다: 누르면 처음부터가 되어 「처음부터」와 같았다)
+        ...(trail.length ? [btn(trail[trail.length - 1].type === 'compose' ? (BOOK.scenes[trail[trail.length - 1].scene].compose.write ? t('retryWrite') : t('retrySay')) : t('retryChoice'), 'sbtn', () => { sfx('tap'); done('retry'); })] : []),
         btn(t('restart'), 'sbtn', () => { sfx('tap'); done('restart'); }),
         btn(t('toShelf'), 'sbtn', () => { sfx('tap'); done('shelf'); }),
       );
