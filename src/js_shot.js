@@ -102,7 +102,8 @@ function placeShot(p) {
   hiddenKids = keepAll ? [] : (stageNow.kids || []).filter(n => n.isEnabled() && blocksAt(BABYLON.Vector3.TransformCoordinates(n.head, stageNow.root.getWorldMatrix()), pos, look));
   hiddenKids.forEach(n => n.setEnabled(false));
 }
-const snap = (cam, w, hh) => BABYLON.CreateScreenshotUsingRenderTargetAsync(engine, cam, { width: w, height: hh }, 'image/png', 1, false, undefined, false, true, true);
+// Babylon 의 화면 밖 찍기는 준비가 30초 안에 끝나지 않으면 알리지 않고 멈춘다: 35초가 지나면 null (찍기 줄 전체가 멈춰 「다음」이 꺼진 채 남지 않게)
+const snap = (cam, w, hh) => Promise.race([BABYLON.CreateScreenshotUsingRenderTargetAsync(engine, cam, { width: w, height: hh }, 'image/png', 1, false, undefined, false, true, true), new Promise(r => setTimeout(() => r(null), 35000))]);
 // 움직이는 컷의 한 장: 렌더 타깃 하나를 계속 다시 쓰며 컷 카메라로 그리고, 픽셀을 옆 칸 캔버스에 바로 옮긴다.
 // snap 은 한 장마다 렌더 타깃을 새로 만들고, 화면 크기가 바뀌었다고 알려 무대의 그늘·후처리를 통째로 다시 만들고(두 번),
 // PNG 로 만들었다가 다시 읽어서, 움직이는 컷이 뚝뚝 끊겼다. 여기서는 snap 과 같은 길(장면 그리기 + 컷 카메라의 후처리)로 그리되 그 셋을 뺀다
@@ -121,9 +122,24 @@ function cutReady(w, hh) {
   rt.renderList = scene.meshes.slice();
   return shotCam.isReady(true) && rt.isReadyForRendering();
 }
+// WebGL 문맥을 잃은 동안(학교 크롬북에서 탭을 오래 두거나 GPU 가 다시 시작될 때) 찍으면 검은 컷·빈 얼굴 사진이 나와 그대로 남는다.
+// 잃은 동안은 되찾을 때까지 기다리고, 찍는 사이에 잃었으면 다시 찍는다
+let glDown = false, glLost = 0;
+engine.onContextLostObservable.add(() => { glDown = true; glLost++; });
+engine.onContextRestoredObservable.add(() => { glDown = false; });
+const glGone = () => glDown || !!(engine._gl && engine._gl.isContextLost()); // 잃은 알림(webglcontextlost)은 조금 늦게 온다
+async function glSafe(fn) {
+  for (let k = 0; k < 4; k++) {
+    for (let w = 0; glGone(); w++) { if (w >= 30) return null; await new Promise(r => setTimeout(r, 1000)); } // 되찾기를 30초까지 기다린다 (영영 안 돌아오면 그림 없이)
+    const ep = glLost, v = await fn();
+    if (ep === glLost && !glGone()) return v;
+  }
+  return null;
+}
 // check: 그리기 전에 준비를 본다 (준비 중이면 그리지 않고 false)
 async function cutDraw(g, w, hh, check = true) {
-  if (check && !cutReady(w, hh)) return false;
+  if (glGone() || (check && !cutReady(w, hh))) return false;
+  const ep = glLost;
   const { rt: cutRT, img: cutImg } = cutTarget(w, hh);
   const R = engine.getRenderWidth, H = engine.getRenderHeight, cam = scene.activeCamera, cams = scene.activeCameras;
   // 후처리가 컷 크기로 그리도록 (snap 과 같은 방법). 크기 바뀜은 알리지 않는다: 무대 카메라의 그늘·후처리를 다시 만들지 않게
@@ -143,7 +159,7 @@ async function cutDraw(g, w, hh, check = true) {
     shotCam.getProjectionMatrix(true);
   }
   const px = await cutRT.readPixels(0, 0, null, false);
-  if (!px) return false;
+  if (!px || ep !== glLost || glGone()) return false; // 그리는 사이에 문맥을 잃었으면 빈 그림이다
   const row = w * 4, out = cutImg.data; // GL 은 아래 줄부터: 위아래를 뒤집어 옮긴다
   for (let y = 0; y < hh; y++) out.set(px.subarray((hh - 1 - y) * row, (hh - y) * row), y * row);
   g.putImageData(cutImg, 0, 0);
@@ -179,7 +195,7 @@ function screentone(g, W, H) {
 async function loadImg(src) { const img = new Image(); img.src = src; await img.decode(); return img; }
 // 컷 한 장: 지금 무대(표정·자세는 applyCut 으로 맞춘 상태)를 컷 카메라로 찍어 jpeg 주소로
 function shoot(p, w, hh, my) {
-  return serial(async () => {
+  return serial(() => glSafe(async () => {
     if (my != null) chk(my); // 줄에서 기다리는 사이 흐름이 취소됐으면 (책장으로 나감) 찍지 않는다
     // 셰이더가 다 만들어질 때까지 먼저 기다린다 (가리는 배경 아이를 숨기거나 벽을 바꾸기 전에: 기다리는 동안 큰 무대에서 아이가 사라져 보이지 않게)
     for (let k = 0; k < 90 && !cutReady(w, hh); k++) await new Promise(r => requestAnimationFrame(r));
@@ -191,10 +207,10 @@ function shoot(p, w, hh, my) {
     cv.height = hh;
     const g = cv.getContext('2d', { willReadFrequently: true });
     // 움직이는 컷과 같은 길로 바로 그린다 (PNG 로 만들었다 다시 읽지 않게). 컷 카메라가 아직 준비 중이면 예전 찍기로
-    try { if (!(await cutDraw(g, w, hh))) { wallsForShot(shotCam.position); g.drawImage(await loadImg(await snap(shotCam, w, hh)), 0, 0); } } finally { restoreWalls(); hiddenKids.forEach(n => n.setEnabled(true)); hiddenKids = []; }
+    try { if (!(await cutDraw(g, w, hh))) { wallsForShot(shotCam.position); const u = await snap(shotCam, w, hh); if (!u) return null; g.drawImage(await loadImg(u), 0, 0); } } finally { restoreWalls(); hiddenKids.forEach(n => n.setEnabled(true)); hiddenKids = []; }
     // 망점은 입히지 않는다 (점이 많아 그림이 지저분해 보였다. 다시 쓰려면 여기서 screentone(g, w, hh))
     return cv.toDataURL('image/jpeg', 0.86);
-  });
+  }));
 }
 // 얼굴 사진 (말풍선 옆, 인물 카드): 그 인물만 보이게 앞에서 찍는다. face 를 주면 그 표정으로
 const portraits = {};
@@ -214,7 +230,7 @@ function portrait(c, face, my) {
     faceCam.setTarget(hp.add(V3(0, r * 0.05, 0)));
     faceCam.fov = 0.42;
     faceCam.layerMask = c.mask;
-    try { return (portraits[key] = await snap(faceCam, 160, 160)); } finally { if (face && c.faceN === n) setFace(c, keep); if (night) setLight(stageNow.def.light, stageNow.def.lamp); }
+    try { const u = await glSafe(() => snap(faceCam, 160, 160)); if (u) portraits[key] = u; return u; } finally { if (face && c.faceN === n) setFace(c, keep); if (night) setLight(stageNow.def.light, stageNow.def.lamp); }
   });
 }
 // 컷 하나의 표정과 자세를 무대 인물에게도 (다른 인물은 무대에서 정한 표정·자세로)
